@@ -1,4 +1,4 @@
-# Long-Running Agent Harness
+# Claude Auto Loop
 
 [中文](README.md) | **English**
 
@@ -17,15 +17,24 @@ Based on [Anthropic: Effective harnesses for long-running agents](https://www.an
 ```bash
 # 1. Clone this repo into your project directory
 cd /path/to/your/project
-git clone --depth 1 https://github.com/lk19940215/long_running_agent.git
-rm -rf long_running_agent/.git    # Remove the tool's own git history to avoid nested repos
+git clone --depth 1 https://github.com/lk19940215/claude-auto-loop.git
+rm -rf claude-auto-loop/.git    # Remove the tool's own git history to avoid nested repos
 
-# 2. Launch (first run auto-scans the project + decomposes tasks)
-bash long_running_agent/run.sh "Implement user login with email and OAuth support"
+# 2. Launch (pick one)
+
+# Quick mode: one-liner requirement
+bash claude-auto-loop/run.sh "Implement user login with email and OAuth support"
+
+# Detailed mode: write a requirements doc (recommended for specific tech/design preferences)
+cp claude-auto-loop/requirements.example.md requirements.md
+vim requirements.md                # Edit your requirements
+bash claude-auto-loop/run.sh     # Automatically reads requirements.md
 
 # 3. Resume later (automatically picks up where it left off)
-bash long_running_agent/run.sh
+bash claude-auto-loop/run.sh
 ```
+
+> **Tip**: `requirements.md` takes priority over CLI arguments. You can edit it anytime — the next session will automatically pick up the latest content.
 
 That's it. Details below.
 
@@ -34,7 +43,7 @@ That's it. Details below.
 ## What Happens After You Run It
 
 ```
-bash long_running_agent/run.sh "your requirement"
+bash claude-auto-loop/run.sh "your requirement"
         |
         v
   ┌─────────────────────────────────────────────┐
@@ -79,9 +88,9 @@ bash long_running_agent/run.sh "your requirement"
 ### Check Progress
 
 ```bash
-cat long_running_agent/progress.txt          # Work log for each session
-cat long_running_agent/tasks.json            # Task list and statuses
-cat long_running_agent/project_profile.json  # Auto-detected project metadata
+cat claude-auto-loop/progress.txt          # Work log for each session
+cat claude-auto-loop/tasks.json            # Task list and statuses
+cat claude-auto-loop/project_profile.json  # Auto-detected project metadata
 ```
 
 ---
@@ -211,11 +220,11 @@ Safeguards to prevent the Agent from running indefinitely or going out of contro
 | Max sessions | Defaults to 50 sessions, then auto-stops with instructions on how to continue |
 | Per-task max retry | After 3 consecutive failures on the same task, force-marks it as `failed` and moves on |
 | Periodic human check | Pauses every 5 sessions, waits for user confirmation to continue |
-| Ctrl+C safe exit | Gracefully exits on interrupt signal, shows how to resume with `bash long_running_agent/run.sh` |
+| Ctrl+C safe exit | Gracefully exits on interrupt signal, shows how to resume with `bash claude-auto-loop/run.sh` |
 | Init retry | Project scan phase retries up to 3 times to handle transient errors |
 | Git rollback | Auto `git reset --hard` on every validation failure — code never stays in a broken state |
 
-**Checkpoint recovery**: Whether interrupted by Ctrl+C, unexpected terminal closure, or session limit reached — just re-run `bash long_running_agent/run.sh` to resume from where it left off. All progress is persisted in `tasks.json` and `progress.txt`.
+**Checkpoint recovery**: Whether interrupted by Ctrl+C, unexpected terminal closure, or session limit reached — just re-run `bash claude-auto-loop/run.sh` to resume from where it left off. All progress is persisted in `tasks.json` and `progress.txt`.
 
 ---
 
@@ -228,7 +237,7 @@ If you use Cursor instead of Claude CLI, this tool still works. The difference: 
 ```bash
 # One-time: copy the rules file to Cursor config
 mkdir -p .cursor/rules
-cp long_running_agent/cursor.mdc .cursor/rules/long-running-agent.mdc
+cp claude-auto-loop/cursor.mdc .cursor/rules/claude-auto-loop.mdc
 ```
 
 ### Usage
@@ -247,7 +256,7 @@ cp long_running_agent/cursor.mdc .cursor/rules/long-running-agent.mdc
 3. **After each conversation** (optional): Run validation to confirm the Agent's output is acceptable
 
    ```bash
-   bash long_running_agent/validate.sh
+   bash claude-auto-loop/validate.sh
    ```
 
 ### CLI Mode vs Cursor Mode
@@ -266,7 +275,7 @@ cp long_running_agent/cursor.mdc .cursor/rules/long-running-agent.mdc
 By default, no configuration is needed. The following are **optional**.
 
 ```bash
-bash long_running_agent/setup.sh
+bash claude-auto-loop/setup.sh
 ```
 
 ### Alternative Models (Cost Reduction)
@@ -304,6 +313,7 @@ This tool builds on Anthropic's [long-running agent harness](https://www.anthrop
 | Testing tools | None | Pluggable Playwright MCP browser automation |
 | Validation hooks | None | `validate.d/` hook directory, user-extensible |
 | Model selection | Claude only | GLM 4.7 and other Anthropic-compatible models |
+| Requirements input | CLI one-liner argument | `requirements.md` document (specify tech stack, styles, editable anytime) |
 
 ---
 
@@ -320,6 +330,7 @@ This tool builds on Anthropic's [long-running agent harness](https://www.anthrop
 | `validate.sh` | Standalone validation script: auto-called by CLI / manually run for Cursor |
 | `setup.sh` | Interactive setup (model selection + MCP tool installation) |
 | `cursor.mdc` | Cursor rules file: copy to `.cursor/rules/` to use |
+| `requirements.example.md` | Requirements template: copy as `requirements.md` and fill in your detailed needs |
 | `README.md` | Chinese documentation |
 | `README.en.md` | This file (English documentation) |
 
@@ -339,10 +350,10 @@ This tool builds on Anthropic's [long-running agent harness](https://www.anthrop
 Place `.sh` scripts in the `validate.d/` directory. `validate.sh` will automatically execute them:
 
 ```bash
-mkdir -p long_running_agent/validate.d
+mkdir -p claude-auto-loop/validate.d
 
 # Example: add a lint check
-cat > long_running_agent/validate.d/lint.sh << 'EOF'
+cat > claude-auto-loop/validate.d/lint.sh << 'EOF'
 #!/bin/bash
 cd "$(dirname "$0")/../.."
 npm run lint 2>&1 || exit 2  # exit 2 = warning, exit 1 = fatal

@@ -1,5 +1,5 @@
 <!-- 
-  This file is the Agent Protocol for the Long-Running Agent Harness.
+  This file is the Agent Protocol for Claude Auto Loop.
   It is read by Claude Code / Cursor at the start of each session.
   The instructions are written in Chinese, which Claude handles natively.
   See README.en.md for the English user guide.
@@ -14,7 +14,7 @@
 
 ## 项目上下文
 
-读取 `long_running_agent/project_profile.json` 获取项目信息。
+读取 `claude-auto-loop/project_profile.json` 获取项目信息。
 该文件包含项目名称、技术栈、服务启动命令、健康检查 URL 等。
 
 **如果该文件不存在，你必须先执行下方的「项目扫描协议」。**
@@ -24,12 +24,28 @@
 | 文件 | 用途 | 你的权限 |
 |---|---|---|
 | `CLAUDE.md` | 本文件，你的全局指令 | 只读，不得修改 |
+| `requirements.md` | **用户的需求文档（用户输入，禁止修改）** | **只读，绝对不得修改、删除或重写** |
 | `project_profile.json` | 项目元数据（技术栈、服务等） | 首次扫描时创建，之后只读 |
 | `init.sh` | 环境初始化脚本 | 首次扫描时创建，之后只读，只能执行 |
 | `tasks.json` | 功能任务列表，带状态跟踪 | 只能修改 `status` 字段 |
 | `progress.txt` | 跨会话记忆日志 | 只能在末尾追加 |
 | `session_result.json` | 本次会话的结构化输出 | 每次会话结束时覆盖写入 |
 | `validate.sh` | 校验脚本 | 只读，只能执行 |
+
+### requirements.md 处理原则
+
+`requirements.md` 是用户的需求输入，你**绝对不能修改它**。但"不能改"不等于"必须盲从"。遇到以下情况时，在 `progress.txt` 中用 `⚠️ 需求问题` 标记，然后按最合理的方式继续执行：
+
+| 场景 | 处理方式 |
+|---|---|
+| 需求自相矛盾（如"用 React"+"不用 JavaScript"） | 记录矛盾，按技术可行的方案执行，说明你的选择理由 |
+| 需求与已有代码冲突（如项目已用 React，用户写"改用 Vue"） | 记录冲突，说明重构成本，本次按现有架构继续，建议用户确认 |
+| 需求太模糊无法执行（如"做得好看点"） | 自行做出合理决策，在 progress.txt 中记录你的选择（如"选用 Tailwind + 暗色主题"），供用户确认 |
+| 需求中途变更，与已完成任务矛盾 | 记录变更影响，优先完成当前任务，下一个 session 再处理适配 |
+| 需求引用了你无法访问的资源（如 Figma 链接） | 记录无法访问，根据需求文字描述尽力实现 |
+| 需求指定了不存在的依赖或版本 | 记录问题，使用最接近的可用版本，说明替代方案 |
+
+**核心原则：不停工、不擅改、留记录。** 用户会在 `PAUSE_EVERY` 暂停时看到你的记录，然后决定是否修改 `requirements.md`。
 
 ---
 
@@ -41,7 +57,7 @@
 
 检查项目根目录：
 - 如果存在代码文件（`.py`, `.js`, `.ts`, `package.json`, `requirements.txt` 等）→ **旧项目**（已有代码）
-- 如果根目录几乎为空（仅有 `long_running_agent/` 和少量文件）→ **新项目**（从零开始）
+- 如果根目录几乎为空（仅有 `claude-auto-loop/` 和少量文件）→ **新项目**（从零开始）
 
 ### 步骤 2A：旧项目 — 扫描现有代码
 
@@ -60,15 +76,16 @@
 
 ### 步骤 2B：新项目 — 脚手架搭建
 
-1. 根据用户提供的需求，设计技术架构
-2. 创建项目目录结构和基础文件（入口文件、配置文件、依赖文件等）
-3. 生成 `README.md`，说明项目用途和技术栈
-4. 初始化包管理（`npm init` / `pip freeze` 等）
-5. 完成后，执行**步骤 2A 的扫描流程**生成 `project_profile.json` 和 `init.sh`
+1. **优先检查项目根目录是否存在 `requirements.md`**，如果存在，以其中的技术约束和设计要求为准
+2. 根据需求（`requirements.md` 或 harness 传入的需求文本），设计技术架构
+3. 创建项目目录结构和基础文件（入口文件、配置文件、依赖文件等）
+4. 生成 `README.md`，说明项目用途和技术栈
+5. 初始化包管理（`npm init` / `pip freeze` 等）
+6. 完成后，执行**步骤 2A 的扫描流程**生成 `project_profile.json` 和 `init.sh`
 
 ### 步骤 3：生成 tasks.json
 
-根据用户需求，将功能分解为具体任务（格式见下方 tasks.json 章节）。
+根据用户需求（优先参考 `requirements.md`，其次参考 harness 传入的需求文本），将功能分解为具体任务（格式见下方 tasks.json 章节）。如果 `requirements.md` 中有明确的功能列表，按其内容拆分；如果只有模糊描述，自行合理拆分。
 
 ### 步骤 4：收尾
 
@@ -137,7 +154,7 @@
 - 字段值必须基于实际扫描结果，**禁止猜测**
 - 如果某个字段无法确定，使用 `"none"` 或空数组 `[]`
 - `services` 中的 `command` 必须来自实际的配置文件（package.json scripts、Procfile 等）或标准命令
-- `mcp_tools` 字段：检查 `long_running_agent/config.env` 中的 `MCP_PLAYWRIGHT` 等变量。如果 `config.env` 不存在，则全部设为 `false`
+- `mcp_tools` 字段：检查 `claude-auto-loop/config.env` 中的 `MCP_PLAYWRIGHT` 等变量。如果 `config.env` 不存在，则全部设为 `false`
 
 ---
 
@@ -201,14 +218,15 @@ pending ──→ in_progress ──→ testing ──→ done
 ### 第一步：恢复上下文
 
 1. 运行 `pwd` 确认工作目录
-2. 读取 `long_running_agent/project_profile.json` 了解项目概况
-3. 读取 `long_running_agent/progress.txt` 了解最近的工作进展
-4. 读取 `long_running_agent/tasks.json` 查看所有任务的状态
+2. 读取 `claude-auto-loop/project_profile.json` 了解项目概况
+3. 读取 `claude-auto-loop/progress.txt` 了解最近的工作进展
+4. 读取 `claude-auto-loop/tasks.json` 查看所有任务的状态
 5. 运行 `git log --oneline -20` 查看最近提交
+6. 如果项目根目录存在 `requirements.md`，读取用户的详细需求和偏好（技术约束、样式要求等），作为本次会话的参考依据
 
 ### 第二步：环境与健康检查
 
-1. 运行 `bash long_running_agent/init.sh` 确保开发环境就绪
+1. 运行 `bash claude-auto-loop/init.sh` 确保开发环境就绪
 2. 根据 `project_profile.json` 中的 `services[].health_check` 逐个检查服务
 3. 如果发现已有 Bug，**先修复再开发新功能**
 
@@ -227,6 +245,8 @@ pending ──→ in_progress ──→ testing ──→ done
 2. 按照 `tasks.json` 中该任务的 `steps` 逐步完成
 3. 写出清晰、可维护的代码
 4. **不要试图同时实现多个功能**
+5. 如果 `project_profile.json` 中 `existing_docs` 非空，在实现前先读取相关文档，了解项目的编码规范、API 约定、架构决策等
+6. 如果本次修改影响了已有文档中描述的功能，在收尾阶段同步更新对应文档
 
 ### 第五步：测试验证
 
@@ -292,7 +312,8 @@ pending ──→ in_progress ──→ testing ──→ done
 8. **发现 Bug 优先修复**：先确保现有功能正常，再开发新功能
 9. **不得修改 CLAUDE.md**：这是你的指令文件，不是你的编辑对象
 10. **不得修改 validate.sh**：如需改校验逻辑，记录到 progress.txt 让人类处理
-11. **project_profile.json 基于事实**：所有字段必须来自实际文件扫描，禁止猜测或编造
+11. **不得修改 requirements.md**：这是用户的需求输入，你只能读取和遵循，绝对不能修改、删除或重写
+12. **project_profile.json 基于事实**：所有字段必须来自实际文件扫描，禁止猜测或编造
 
 ---
 

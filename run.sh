@@ -1,10 +1,11 @@
 #!/bin/bash
 # ============================================================
-# Long-Running Agent Harness (通用版)
+# Claude Auto Loop Harness (通用版)
 #
 # 用法:
-#   首次运行:  bash long_running_agent/run.sh "你的需求描述"
-#   继续运行:  bash long_running_agent/run.sh
+#   首次运行（详细需求）: 创建 requirements.md 后运行 bash claude-auto-loop/run.sh
+#   首次运行（快捷模式）: bash claude-auto-loop/run.sh "你的需求描述"
+#   继续运行:             bash claude-auto-loop/run.sh
 #
 # 核心职责（harness 不信任 Agent，做外部校验）：
 #   1. 首次运行时：项目扫描 → 生成 profile/init.sh → 任务分解
@@ -72,16 +73,16 @@ check_prerequisites() {
     if [ ! -f "$SCRIPT_DIR/config.env" ]; then
         log_warn "未找到模型配置文件"
         log_warn "如需使用 GLM 4.7 等替代模型降低成本，请先运行:"
-        log_warn "  bash long_running_agent/setup.sh"
+        log_warn "  bash claude-auto-loop/setup.sh"
         log_info "本次将使用默认 Claude 模型继续"
     fi
 
     # 提示 Cursor 用户复制规则文件
-    if [ -d "$PROJECT_ROOT/.cursor" ] && [ ! -f "$PROJECT_ROOT/.cursor/rules/long-running-agent.mdc" ]; then
+    if [ -d "$PROJECT_ROOT/.cursor" ] && [ ! -f "$PROJECT_ROOT/.cursor/rules/claude-auto-loop.mdc" ]; then
         if [ -f "$SCRIPT_DIR/cursor.mdc" ]; then
             log_warn "检测到 .cursor/ 目录但未安装 Cursor 规则文件"
             log_warn "如需 Cursor IDE 支持，请执行:"
-            log_warn "  mkdir -p .cursor/rules && cp long_running_agent/cursor.mdc .cursor/rules/long-running-agent.mdc"
+            log_warn "  mkdir -p .cursor/rules && cp claude-auto-loop/cursor.mdc .cursor/rules/claude-auto-loop.mdc"
         fi
     fi
 
@@ -110,7 +111,7 @@ try:
         data = json.load(f)
     features = data.get('features', [])
     if not features:
-        print('false')
+        print('true')
         sys.exit(0)
     all_done = all(f.get('status') == 'done' for f in features)
     print('true' if all_done else 'false')
@@ -195,18 +196,18 @@ run_scan() {
     fi
 
     claude -p "
-你是项目初始化 Agent。请严格按照 long_running_agent/CLAUDE.md 中的「项目扫描协议」执行。
+你是项目初始化 Agent。请严格按照 claude-auto-loop/CLAUDE.md 中的「项目扫描协议」执行。
 
 项目类型: $project_type
 用户需求: $requirement
 
 执行步骤:
-1. 阅读 long_running_agent/CLAUDE.md 了解完整的扫描协议和文件格式
+1. 阅读 claude-auto-loop/CLAUDE.md 了解完整的扫描协议和文件格式
 
 2. 如果是旧项目 (existing):
    - 按照扫描清单检查项目文件
-   - 生成 long_running_agent/project_profile.json（严格按照 CLAUDE.md 中的格式）
-   - 基于扫描结果生成 long_running_agent/init.sh（严格按照 CLAUDE.md 中的 init.sh 生成规则）
+   - 生成 claude-auto-loop/project_profile.json（严格按照 CLAUDE.md 中的格式）
+   - 基于扫描结果生成 claude-auto-loop/init.sh（严格按照 CLAUDE.md 中的 init.sh 生成规则）
 
 3. 如果是新项目 (new):
    - 根据需求设计技术架构
@@ -214,7 +215,7 @@ run_scan() {
    - 生成 README.md
    - 然后执行旧项目的扫描流程生成 profile 和 init.sh
 
-4. 将需求分解为具体功能点，生成 long_running_agent/tasks.json
+4. 将需求分解为具体功能点，生成 claude-auto-loop/tasks.json
    - 严格按照 CLAUDE.md 中定义的 tasks.json 格式
    - 所有任务初始 status 为 \"pending\"
    - 功能点要足够细粒度，每个功能应能在一个会话内完成
@@ -222,9 +223,9 @@ run_scan() {
    - 设置正确的 depends_on 依赖关系
    - 最后一个 step 必须包含验证方法（如何测试这个功能）
 
-5. 创建 long_running_agent/progress.txt，记录本次初始化的摘要
+5. 创建 claude-auto-loop/progress.txt，记录本次初始化的摘要
 
-6. 写入 long_running_agent/session_result.json
+6. 写入 claude-auto-loop/session_result.json
 
 7. Git 提交: git add -A && git commit -m 'init: 项目扫描 + 任务分解'
 
@@ -283,7 +284,7 @@ run_coding_session() {
 
     set +e
     claude -p "
-按照 long_running_agent/CLAUDE.md 中定义的工作流程执行。这是 Session $session_num。
+按照 claude-auto-loop/CLAUDE.md 中定义的工作流程执行。这是 Session $session_num。
 
 严格执行 6 步流程：
 1. 恢复上下文（读取 project_profile.json、progress.txt、tasks.json、git log）
@@ -297,7 +298,7 @@ ${mcp_hint:+
 $mcp_hint}
 
 特别注意：
-- 你必须在结束前写入 long_running_agent/session_result.json
+- 你必须在结束前写入 claude-auto-loop/session_result.json
 - 严格遵守状态机迁移规则，不得跳步
 " --cwd "$PROJECT_ROOT"
     local claude_exit=$?
@@ -314,12 +315,12 @@ $mcp_hint}
 main() {
     echo ""
     echo "============================================"
-    echo "  Long-Running Agent Harness"
+    echo "  Claude Auto Loop"
     echo "============================================"
     echo ""
 
     # 信号处理：Ctrl+C / kill 时优雅退出
-    trap 'echo ""; log_warn "收到中断信号，正在安全退出..."; log_info "下次运行 bash long_running_agent/run.sh 即可恢复"; exit 130' INT TERM
+    trap 'echo ""; log_warn "收到中断信号，正在安全退出..."; log_info "下次运行 bash claude-auto-loop/run.sh 即可恢复"; exit 130' INT TERM
 
     # 加载模型配置（如果存在）
     if [ -f "$SCRIPT_DIR/config.env" ]; then
@@ -334,7 +335,15 @@ main() {
 
     check_prerequisites
 
-    local requirement="${1:-}"
+    # ---------- 读取需求（优先 requirements.md，其次 CLI 参数） ----------
+    local requirement=""
+    local req_file="$PROJECT_ROOT/requirements.md"
+    if [ -f "$req_file" ]; then
+        requirement=$(cat "$req_file")
+        log_ok "已读取需求文件: requirements.md"
+    else
+        requirement="${1:-}"
+    fi
 
     # ---------- 初始化阶段（带重试） ----------
     # 判断顺序: profile → tasks → 需要初始化
@@ -342,7 +351,14 @@ main() {
         if [ -z "$requirement" ]; then
             log_error "首次运行需要提供需求描述"
             echo ""
-            echo "用法: bash long_running_agent/run.sh \"你的需求描述\""
+            echo "用法（二选一）:"
+            echo "  方式 1: 在项目根目录创建 requirements.md（推荐，可写详细需求）"
+            echo "          cp claude-auto-loop/requirements.example.md requirements.md"
+            echo "          vim requirements.md"
+            echo "          bash claude-auto-loop/run.sh"
+            echo ""
+            echo "  方式 2: 直接传入一句话需求"
+            echo "          bash claude-auto-loop/run.sh \"你的需求描述\""
             exit 1
         fi
 
@@ -492,7 +508,7 @@ except Exception:
 
     if [ $session -ge $MAX_SESSIONS ]; then
         log_warn "已达到最大会话数 ($MAX_SESSIONS)，仍有未完成任务"
-        log_info "继续运行: bash long_running_agent/run.sh"
+        log_info "继续运行: bash claude-auto-loop/run.sh"
     fi
 
     log_info "查看进度: cat $PROGRESS_FILE"

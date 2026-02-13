@@ -4,8 +4,8 @@
 #
 # 用法:
 #   CLI 模式:    run.sh 内部自动调用
-#   Cursor 模式: 用户手动执行 bash long_running_agent/validate.sh
-#   带 HEAD 参数: bash long_running_agent/validate.sh <head_before>
+#   Cursor 模式: 用户手动执行 bash claude-auto-loop/validate.sh
+#   带 HEAD 参数: bash claude-auto-loop/validate.sh <head_before>
 #
 # 校验内容:
 #   1. session_result.json 是否存在且合法

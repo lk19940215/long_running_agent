@@ -1,4 +1,4 @@
-# Long-Running Agent Harness
+# Claude Auto Loop
 
 **中文** | [English](README.en.md)
 
@@ -17,15 +17,24 @@ AI Agent 单次会话的上下文有限，面对大型需求时容易丢失进�
 ```bash
 # 1. 克隆本项目到你的工程目录下
 cd /path/to/your/project
-git clone --depth 1 https://github.com/lk19940215/long_running_agent.git
-rm -rf long_running_agent/.git    # 移除工具自带的 git 历史，避免嵌套仓库
+git clone --depth 1 https://github.com/lk19940215/claude-auto-loop.git
+rm -rf claude-auto-loop/.git    # 移除工具自带的 git 历史，避免嵌套仓库
 
-# 2. 启动（首次运行会自动扫描项目 + 分解任务）
-bash long_running_agent/run.sh "实现用户登录功能，支持邮箱和 OAuth"
+# 2. 启动（二选一）
+
+# 快捷模式：一句话需求
+bash claude-auto-loop/run.sh "实现用户登录功能，支持邮箱和 OAuth"
+
+# 详细模式：写需求文档（推荐，可指定技术栈、样式、功能细节）
+cp claude-auto-loop/requirements.example.md requirements.md
+vim requirements.md                # 编辑你的需求
+bash claude-auto-loop/run.sh     # 自动读取 requirements.md
 
 # 3. 后续继续（自动从上次中断处恢复）
-bash long_running_agent/run.sh
+bash claude-auto-loop/run.sh
 ```
+
+> **提示**：`requirements.md` 优先于 CLI 参数。你可以随时修改它，下一个 session 会自动读取最新内容。
 
 就这么多。下面是详细说明。
 
@@ -34,7 +43,7 @@ bash long_running_agent/run.sh
 ## 运行后会发生什么
 
 ```
-bash long_running_agent/run.sh "你的需求"
+bash claude-auto-loop/run.sh "你的需求"
         |
         v
   ┌─────────────────────────────────────────┐
@@ -79,9 +88,9 @@ bash long_running_agent/run.sh "你的需求"
 ### 查看进度
 
 ```bash
-cat long_running_agent/progress.txt          # 每次 session 的工作记录
-cat long_running_agent/tasks.json            # 任务列表和状态
-cat long_running_agent/project_profile.json  # 自动检测的项目元数据
+cat claude-auto-loop/progress.txt          # 每次 session 的工作记录
+cat claude-auto-loop/tasks.json            # 任务列表和状态
+cat claude-auto-loop/project_profile.json  # 自动检测的项目元数据
 ```
 
 ---
@@ -211,11 +220,11 @@ Agent 崩溃 / 超时 / 没写 session_result.json / JSON 格式错误
 | 最大会话数 | 默认 50 个 session 后自动停止，达到上限后提示如何继续 |
 | 单任务最大重试 | 同一任务连续失败 3 次后强制标记为 `failed`，跳到下一个任务 |
 | 定期人工确认 | 每 5 个 session 暂停一次，等待用户确认是否继续 |
-| Ctrl+C 安全退出 | 收到中断信号时优雅退出，并提示 `bash long_running_agent/run.sh` 即可恢复 |
+| Ctrl+C 安全退出 | 收到中断信号时优雅退出，并提示 `bash claude-auto-loop/run.sh` 即可恢复 |
 | 初始化重试 | 项目扫描阶段最多重试 3 次，避免因偶发错误导致无法启动 |
 | git 回滚 | 每次校验失败自动 `git reset --hard`，代码永远不会停留在不可用状态 |
 
-**断点恢复**：无论是 Ctrl+C 中断、终端意外关闭、还是达到会话上限，只需重新运行 `bash long_running_agent/run.sh` 即可从上次中断处继续。所有进度都持久化在 `tasks.json` 和 `progress.txt` 中。
+**断点恢复**：无论是 Ctrl+C 中断、终端意外关闭、还是达到会话上限，只需重新运行 `bash claude-auto-loop/run.sh` 即可从上次中断处继续。所有进度都持久化在 `tasks.json` 和 `progress.txt` 中。
 
 ---
 
@@ -228,7 +237,7 @@ Agent 崩溃 / 超时 / 没写 session_result.json / JSON 格式错误
 ```bash
 # 一次性：复制规则文件到 Cursor 配置目录
 mkdir -p .cursor/rules
-cp long_running_agent/cursor.mdc .cursor/rules/long-running-agent.mdc
+cp claude-auto-loop/cursor.mdc .cursor/rules/claude-auto-loop.mdc
 ```
 
 ### 使用
@@ -247,7 +256,7 @@ cp long_running_agent/cursor.mdc .cursor/rules/long-running-agent.mdc
 3. **每次对话结束后**（可选）：运行校验确认 Agent 的产出合格
 
    ```bash
-   bash long_running_agent/validate.sh
+   bash claude-auto-loop/validate.sh
    ```
 
 ### CLI 模式 vs Cursor 模式
@@ -266,7 +275,7 @@ cp long_running_agent/cursor.mdc .cursor/rules/long-running-agent.mdc
 默认情况下，不需要任何配置就能运行。以下配置是**可选的**。
 
 ```bash
-bash long_running_agent/setup.sh
+bash claude-auto-loop/setup.sh
 ```
 
 ### 替代模型（降低成本）
@@ -304,6 +313,7 @@ bash long_running_agent/setup.sh
 | 测试工具 | 无 | 可插拔 Playwright MCP 浏览器自动化 |
 | 校验扩展 | 无 | `validate.d/` 钩子目录，用户可自定义 |
 | 模型选择 | 仅 Claude | 支持 GLM 4.7 等 Anthropic 兼容模型 |
+| 需求输入 | CLI 一句话参数 | 支持 `requirements.md` 需求文档（可指定技术栈、样式、随时可改） |
 
 ---
 
@@ -320,6 +330,7 @@ bash long_running_agent/setup.sh
 | `validate.sh` | 独立校验脚本：CLI 自动调用 / Cursor 手动运行 |
 | `setup.sh` | 交互式前置配置（模型选择 + MCP 工具安装） |
 | `cursor.mdc` | Cursor 规则文件：复制到 `.cursor/rules/` 使用 |
+| `requirements.example.md` | 需求文档模板：复制为 `requirements.md` 填写详细需求 |
 | `README.md` | 本文件 |
 
 **运行时生成**（项目特定，由 Agent 或 setup.sh 创建）：
@@ -338,10 +349,10 @@ bash long_running_agent/setup.sh
 在 `validate.d/` 目录下放置 `.sh` 脚本，`validate.sh` 会自动执行它们：
 
 ```bash
-mkdir -p long_running_agent/validate.d
+mkdir -p claude-auto-loop/validate.d
 
 # 示例：添加 lint 检查
-cat > long_running_agent/validate.d/lint.sh << 'EOF'
+cat > claude-auto-loop/validate.d/lint.sh << 'EOF'
 #!/bin/bash
 cd "$(dirname "$0")/../.."
 npm run lint 2>&1 || exit 2  # exit 2 = 警告，exit 1 = 致命

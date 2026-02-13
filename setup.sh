@@ -1,14 +1,14 @@
 #!/bin/bash
 # ============================================================
-# Long-Running Agent 前置配置
+# Claude Auto Loop 前置配置
 #
-# 用法: bash long_running_agent/setup.sh
+# 用法: bash claude-auto-loop/setup.sh
 #
 # 交互式配置：
 #   1. 模型提供商（Claude 官方 / GLM / 自定义）
 #   2. MCP 工具（Playwright 浏览器自动化等）
 #
-# 配置保存到 long_running_agent/config.env。
+# 配置保存到 claude-auto-loop/config.env。
 # run.sh 启动时自动加载此文件。
 #
 # config.env 包含 API Key，不应提交到 git。
@@ -34,7 +34,7 @@ log_warn()  { echo -e "${YELLOW}[WARN]${NC}  $1"; }
 main() {
     echo ""
     echo "============================================"
-    echo "  Long-Running Agent 前置配置"
+    echo "  Claude Auto Loop 前置配置"
     echo "============================================"
     echo ""
     echo "  第一步: 模型提供商配置"
@@ -134,8 +134,9 @@ main() {
     log_ok "配置完成！"
     echo ""
     echo "  配置文件: $CONFIG_FILE"
-    echo "  使用方式: bash long_running_agent/run.sh \"你的需求\""
-    echo "  重新配置: bash long_running_agent/setup.sh"
+    echo "  使用方式: bash claude-auto-loop/run.sh \"你的需求\""
+    echo "  详细需求: cp claude-auto-loop/requirements.example.md requirements.md && vim requirements.md"
+    echo "  重新配置: bash claude-auto-loop/setup.sh"
     echo ""
 }
 
@@ -156,7 +157,7 @@ read_api_key() {
 
 write_claude_config() {
     cat > "$CONFIG_FILE" << 'EOF'
-# Long-Running Agent 模型配置
+# Claude Auto Loop 模型配置
 # 由 setup.sh 生成，请勿提交到 git（包含 API Key）
 #
 # 提供商: Claude 官方
@@ -173,7 +174,7 @@ write_glm_config() {
     local api_key="$3"
 
     cat > "$CONFIG_FILE" << EOF
-# Long-Running Agent 模型配置
+# Claude Auto Loop 模型配置
 # 由 setup.sh 生成，请勿提交到 git（包含 API Key）
 #
 # 提供商: GLM ($provider)
@@ -193,7 +194,7 @@ write_custom_config() {
     local api_key="$2"
 
     cat > "$CONFIG_FILE" << EOF
-# Long-Running Agent 模型配置
+# Claude Auto Loop 模型配置
 # 由 setup.sh 生成，请勿提交到 git（包含 API Key）
 #
 # 提供商: 自定义
@@ -271,15 +272,15 @@ ensure_gitignore() {
 
     # 检查 config.env 是否已在 .gitignore 中
     if [ -f "$gitignore" ]; then
-        if grep -q "long_running_agent/config.env" "$gitignore" 2>/dev/null; then
+        if grep -q "claude-auto-loop/config.env" "$gitignore" 2>/dev/null; then
             return  # 已存在，无需添加
         fi
     fi
 
     # 追加到 .gitignore
     echo "" >> "$gitignore"
-    echo "# Long-Running Agent 模型配置（含 API Key）" >> "$gitignore"
-    echo "long_running_agent/config.env" >> "$gitignore"
+    echo "# Claude Auto Loop 模型配置（含 API Key）" >> "$gitignore"
+    echo "claude-auto-loop/config.env" >> "$gitignore"
     log_info "已将 config.env 添加到 .gitignore"
 }
 
