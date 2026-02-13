@@ -1,5 +1,7 @@
 # Long-Running Agent Harness
 
+**中文** | [English](README.en.md)
+
 让 AI Agent 自动完成复杂的多步编码任务。
 
 AI Agent 单次会话的上下文有限，面对大型需求时容易丢失进度、过早宣布完成、或改出不可用的代码。本工具通过**外部 harness** 管理任务状态、自动校验每次会话的产出、失败时自动 git 回滚并重试，让 Agent 变成一个"可靠的、可重试的函数"。
@@ -13,8 +15,10 @@ AI Agent 单次会话的上下文有限，面对大型需求时容易丢失进�
 **前置条件**: [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code) (`npm install -g @anthropic-ai/claude-code`) + Python 3 + Git
 
 ```bash
-# 1. 复制工具到你的项目
-cp -r long_running_agent/ /path/to/your/project/long_running_agent/
+# 1. 克隆本项目到你的工程目录下
+cd /path/to/your/project
+git clone --depth 1 https://github.com/lk19940215/long_running_agent.git
+rm -rf long_running_agent/.git    # 移除工具自带的 git 历史，避免嵌套仓库
 
 # 2. 启动（首次运行会自动扫描项目 + 分解任务）
 bash long_running_agent/run.sh "实现用户登录功能，支持邮箱和 OAuth"

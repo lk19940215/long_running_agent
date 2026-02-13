@@ -1,3 +1,10 @@
+<!-- 
+  This file is the Agent Protocol for the Long-Running Agent Harness.
+  It is read by Claude Code / Cursor at the start of each session.
+  The instructions are written in Chinese, which Claude handles natively.
+  See README.en.md for the English user guide.
+-->
+
 # Agent 协议
 
 ## 你是谁
