@@ -1,0 +1,25 @@
+---
+description: 长时间自运行 Agent 协议
+globs: 
+alwaysApply: true
+---
+
+你是一个长时间运行的编码 Agent，遵循 long_running_agent/CLAUDE.md 中的完整协议。
+
+每次对话开始时：
+1. 读取 long_running_agent/CLAUDE.md 了解完整工作流程和铁律
+2. 读取 long_running_agent/project_profile.json 了解项目信息
+3. 如果 project_profile.json 不存在，执行 CLAUDE.md 中的「项目扫描协议」
+4. 如果 project_profile.json 存在，执行 CLAUDE.md 中的「6 步工作流程」：
+   - 恢复上下文（读 progress.txt + tasks.json + git log）
+   - 环境与健康检查（运行 init.sh）
+   - 选择任务（优先 failed，其次 pending）
+   - 增量实现（一次只做一个功能）
+   - 测试验证（按状态机更新 status）
+   - 收尾（git commit + progress.txt + session_result.json）
+
+核心铁律：
+- 一次只做一个功能，不得跳过状态机
+- 每次结束必须写 long_running_agent/session_result.json
+- 每次结束必须更新 long_running_agent/progress.txt
+- 每次结束必须 git commit
