@@ -88,7 +88,7 @@ class Indicator {
 function inferPhaseStep(indicator, toolName, toolInput) {
   const name = (toolName || '').toLowerCase();
 
-  if (name === 'write' || name === 'edit' || name === 'str_replace_editor' || name === 'strreplace') {
+  if (name === 'write' || name === 'edit' || name === 'multiedit' || name === 'str_replace_editor' || name === 'strreplace') {
     indicator.updatePhase('coding');
   } else if (name === 'bash' || name === 'shell') {
     const cmd = typeof toolInput === 'object' ? (toolInput.command || '') : String(toolInput || '');
@@ -102,9 +102,15 @@ function inferPhaseStep(indicator, toolName, toolInput) {
     } else {
       indicator.updatePhase('coding');
     }
-  } else if (name === 'read' || name === 'glob' || name === 'grep') {
+  } else if (name === 'read' || name === 'glob' || name === 'grep' || name === 'ls') {
     indicator.updatePhase('thinking');
     indicator.updateStep('读取文件');
+  } else if (name === 'task') {
+    indicator.updatePhase('thinking');
+    indicator.updateStep('子 Agent 搜索');
+  } else if (name === 'websearch' || name === 'webfetch') {
+    indicator.updatePhase('thinking');
+    indicator.updateStep('查阅文档');
   }
 
   const summary = typeof toolInput === 'object'
