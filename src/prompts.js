@@ -67,12 +67,25 @@ function buildCodingPrompt(sessionNum, opts = {}) {
     } catch { /* ignore */ }
   }
 
+  // Hint 6: Project documentation awareness
+  let docsHint = '';
+  if (fs.existsSync(p.profile)) {
+    try {
+      const profile = JSON.parse(fs.readFileSync(p.profile, 'utf8'));
+      const docs = profile.existing_docs || [];
+      if (docs.length > 0) {
+        docsHint = `项目文档: ${docs.join(', ')}。Step 4 编码前先读与任务相关的文档，了解接口约定和编码规范。完成后若新增了模块或 API，更新对应文档。`;
+      }
+    } catch { /* ignore */ }
+  }
+
   return [
     `Session ${sessionNum}。执行 6 步流程。`,
     '效率要求：先规划后编码，完成全部编码后再统一测试，禁止编码-测试反复跳转。后端任务用 curl 验证，不启动浏览器。',
     reqSyncHint,
     mcpHint,
     testHint,
+    docsHint,
     envHint,
     `完成后写入 session_result.json。${retryContext}`,
   ].filter(Boolean).join('\n');

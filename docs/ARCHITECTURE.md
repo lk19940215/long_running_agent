@@ -188,18 +188,19 @@ flowchart TB
 
 | Session 类型 | systemPrompt | user prompt | 触发条件 |
 |---|---|---|---|
-| **编码** | CLAUDE.md | `buildCodingPrompt()` + 5 个条件 hint | 主循环每次迭代 |
+| **编码** | CLAUDE.md | `buildCodingPrompt()` + 6 个条件 hint | 主循环每次迭代 |
 | **扫描** | CLAUDE.md + SCAN_PROTOCOL.md | `buildScanPrompt()` + 任务分解指导 | 首次运行 |
 | **观测** | CLAUDE.md (± SCAN_PROTOCOL.md) | `buildViewPrompt()` | `auto-coder view` |
 | **追加** | CLAUDE.md | `buildAddPrompt()` + 任务分解指导 | `auto-coder add` |
 
-### 编码 Session 的 5 个条件 Hint
+### 编码 Session 的 6 个条件 Hint
 
 | Hint | 触发条件 | 影响 |
 |---|---|---|
 | `reqSyncHint` | 需求 hash 变化 | Step 1：追加新任务 |
 | `mcpHint` | MCP_PLAYWRIGHT=true | Step 5：可用 Playwright |
 | `testHint` | tests.json 有记录 | Step 5：避免重复验证 |
+| `docsHint` | profile.existing_docs 非空 | Step 4：读文档后再编码，完成后更新文档 |
 | `envHint` | 连续成功且 session>1 | Step 2：跳过 init |
 | `retryContext` | 上次校验失败 | 全局：避免同样错误 |
 
@@ -224,6 +225,7 @@ CLAUDE.md 的内容按 LLM 注意力 U 型曲线排列：
 | **静态规则 vs 动态上下文分离** | CLAUDE.md 是"宪法"（低频修改），hints 依赖运行时状态（动态生成） |
 | **扫描协议单独文件** | 仅首次注入，编码 session 不需要，节省 ~2000 token |
 | **任务分解指导在 user prompt** | 从系统 prompt 中部（低注意力）迁移到 user prompt（recency zone），提升遵循率 |
+| **docsHint 动态注入** | 当 profile.existing_docs 非空时，在 user prompt 提醒 Agent 读文档再编码。CLAUDE.md Step 4 有静态指令，docsHint 在 recency zone 强化 |
 | **tests.json 保留 last_run_session** | Agent 判断是否需要重新验证的依据（代码可能在中间 session 被修改） |
 | **prompts.js 集中管理** | 所有 prompt 文本一处可见，与 session.js 的 SDK 交互职责分离 |
 
