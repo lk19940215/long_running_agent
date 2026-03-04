@@ -2,6 +2,11 @@
 
 const fs = require('fs');
 const { paths, loadConfig, getRequirementsHash } = require('./config');
+const { loadTasks, findNextTask, getStats } = require('./tasks');
+
+function normalizeJson(text) {
+  return text.replace(/[\u201c\u201d]/g, '"').replace(/[\u2018\u2019]/g, "'");
+}
 
 /**
  * Build system prompt by combining template files.
@@ -79,6 +84,35 @@ function buildCodingPrompt(sessionNum, opts = {}) {
     } catch { /* ignore */ }
   }
 
+  // Hint 7: Task context (harness pre-read, saves Agent 2-3 Read calls)
+  let taskHint = '';
+  try {
+    const taskData = loadTasks();
+    if (taskData) {
+      const next = findNextTask(taskData);
+      const stats = getStats(taskData);
+      if (next) {
+        taskHint = `任务上下文: ${next.id} "${next.description}" (${next.status}), ` +
+          `category=${next.category}, steps=${next.steps.length}步。` +
+          `进度: ${stats.done}/${stats.total} done, ${stats.failed} failed。` +
+          `第一步无需读取 tasks.json（已注入），直接确认任务后进入 Step 2。`;
+      }
+    }
+  } catch { /* ignore */ }
+
+  // Hint 8: Session memory (last session summary, recency zone for attention)
+  let memoryHint = '';
+  if (fs.existsSync(p.sessionResult)) {
+    try {
+      const sr = JSON.parse(normalizeJson(fs.readFileSync(p.sessionResult, 'utf8')));
+      const last = sr.current || (sr.history?.length ? sr.history[sr.history.length - 1] : null);
+      if (last?.task_id) {
+        memoryHint = `上次会话: ${last.task_id} → ${last.status_after || last.session_result}` +
+          (last.notes ? `, 要点: ${last.notes.slice(0, 100)}` : '') + '。';
+      }
+    } catch { /* ignore */ }
+  }
+
   return [
     `Session ${sessionNum}。执行 6 步流程。`,
     '效率要求：先规划后编码，完成全部编码后再统一测试，禁止编码-测试反复跳转。后端任务用 curl 验证，不启动浏览器。',
@@ -87,6 +121,8 @@ function buildCodingPrompt(sessionNum, opts = {}) {
     testHint,
     docsHint,
     envHint,
+    taskHint,
+    memoryHint,
     `完成后写入 session_result.json。${retryContext}`,
   ].filter(Boolean).join('\n');
 }

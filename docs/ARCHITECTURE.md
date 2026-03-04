@@ -188,21 +188,23 @@ flowchart TB
 
 | Session 类型 | systemPrompt | user prompt | 触发条件 |
 |---|---|---|---|
-| **编码** | CLAUDE.md | `buildCodingPrompt()` + 6 个条件 hint | 主循环每次迭代 |
+| **编码** | CLAUDE.md | `buildCodingPrompt()` + 8 个条件 hint | 主循环每次迭代 |
 | **扫描** | CLAUDE.md + SCAN_PROTOCOL.md | `buildScanPrompt()` + 任务分解指导 | 首次运行 |
 | **观测** | CLAUDE.md (± SCAN_PROTOCOL.md) | `buildViewPrompt()` | `claude-coder view` |
 | **追加** | CLAUDE.md | `buildAddPrompt()` + 任务分解指导 | `claude-coder add` |
 
-### 编码 Session 的 6 个条件 Hint
+### 编码 Session 的 8 个条件 Hint
 
-| Hint | 触发条件 | 影响 |
-|---|---|---|
-| `reqSyncHint` | 需求 hash 变化 | Step 1：追加新任务 |
-| `mcpHint` | MCP_PLAYWRIGHT=true | Step 5：可用 Playwright |
-| `testHint` | tests.json 有记录 | Step 5：避免重复验证 |
-| `docsHint` | profile.existing_docs 非空 | Step 4：读文档后再编码，完成后更新文档 |
-| `envHint` | 连续成功且 session>1 | Step 2：跳过 init |
-| `retryContext` | 上次校验失败 | 全局：避免同样错误 |
+| # | Hint | 触发条件 | 影响 |
+|---|---|---|---|
+| 1 | `reqSyncHint` | 需求 hash 变化 | Step 1：追加新任务 |
+| 2 | `mcpHint` | MCP_PLAYWRIGHT=true | Step 5：可用 Playwright |
+| 3 | `testHint` | tests.json 有记录 | Step 5：避免重复验证 |
+| 4 | `docsHint` | profile.existing_docs 非空 | Step 4：读文档后再编码，完成后更新文档 |
+| 5 | `envHint` | 连续成功且 session>1 | Step 2：跳过 init |
+| 6 | `retryContext` | 上次校验失败 | 全局：避免同样错误 |
+| 7 | `taskHint` | tasks.json 存在且有待办任务 | Step 1：跳过读取 tasks.json，harness 已注入当前任务上下文 |
+| 8 | `memoryHint` | session_result.json 存在且有历史记录 | Step 1：跳过读取 session_result.json，harness 已注入上次会话摘要 |
 
 ---
 
@@ -270,7 +272,7 @@ sequenceDiagram
 | 维度 | 评分 | 说明 |
 |------|------|------|
 | **CLAUDE.md 系统提示** | 8/10 | U 型注意力设计；铁律清晰；状态机和 6 步流程是核心竞争力 |
-| **动态 prompt** | 8/10 | 5 个条件 hint 精准注入，不浪费 token |
+| **动态 prompt** | 8.5/10 | 8 个条件 hint 精准注入，含 task/memory 上下文注入，减少 Agent 冗余 Read 调用 |
 | **SCAN_PROTOCOL.md** | 8.5/10 | 新旧项目分支完整，profile 格式全面 |
 | **tests.json 设计** | 7.5/10 | 精简字段，核心目的（防反复测试）明确 |
 | **注入时机** | 9/10 | 静态规则 vs 动态上下文分离干净 |
@@ -278,7 +280,59 @@ sequenceDiagram
 
 ---
 
-## 9. Claude Agent SDK V1/V2 对比与迁移计划
+## 9. Context Injection 架构（v1.0.4+）
+
+### 设计原则
+
+**Harness 准备上下文，Agent 直接执行。** Agent 不应浪费工具调用读取 harness 已知的数据。
+
+### 优化前后对比
+
+```mermaid
+flowchart TD
+    subgraph before ["优化前：Agent 自行读取"]
+        A1[Agent starts] --> A2["Read tasks.json"]
+        A2 --> A3["Read profile.json"]
+        A3 --> A4["Read session_result.json"]
+        A4 --> A5["Read requirements.md"]
+        A5 --> A6["Read tests.json"]
+        A6 --> A7["开始编码（5+ Read 调用浪费）"]
+    end
+
+    subgraph after ["优化后：Harness 注入上下文"]
+        B1["Harness 预读文件"] --> B2["注入 Hint 7: 任务上下文"]
+        B1 --> B3["注入 Hint 8: 会话记忆"]
+        B2 --> B4["Agent prompt 就绪"]
+        B3 --> B4
+        B4 --> B5["Agent 直接开始编码"]
+    end
+```
+
+### Hint 7: 任务上下文注入
+
+Harness 在 `buildCodingPrompt()` 中预读 `tasks.json`，将下一个待办任务的 id、description、category、steps 数量和整体进度注入 user prompt。Agent 无需自行读取 `tasks.json`。
+
+### Hint 8: 会话记忆注入
+
+Harness 在 `buildCodingPrompt()` 中预读 `session_result.json`，将上次会话的 task_id、结果和 notes 摘要注入 user prompt。Agent 无需自行读取历史 session 数据。
+
+### Loop Detection（编辑死循环检测）
+
+PreToolUse hook 中追踪每个文件的编辑次数。当同一文件被 Write/Edit 超过 5 次时，hook 返回 `decision: "block"` 阻止操作并提示 Agent 重新审视方案。
+
+### 文件权限模型
+
+| 文件 | 写入方 | Agent 权限 |
+|------|--------|-----------|
+| `progress.json` | Harness | 只读 |
+| `sync_state.json` | Harness | 只读 |
+| `session_result.json` | Agent 写 `current`，Harness 归档到 `history` | 写 `current` |
+| `tasks.json` | Agent（仅 `status` 字段） | 修改 `status` |
+| `project_profile.json` | Agent（仅扫描阶段） | 扫描时写入 |
+
+---
+
+## 10. Claude Agent SDK V1/V2 对比与迁移计划
 
 当前使用 **V1 稳定 API**（`query()`），V2 为 preview 状态（`unstable_` 前缀）。
 
@@ -336,14 +390,13 @@ query({
 
 ---
 
-## 10. 后续优化方向
+## 11. 后续优化方向
 
 ### P0 — 近期
 
 | 方向 | 说明 |
 |------|------|
 | **文件保护 Deny-list** | PreToolUse hook 拦截对保护文件的写入（比文字规则更硬性） |
-| **TUI 终端监控** | 基于 ANSI 的全屏界面，替代单行 spinner |
 | **成本预算控制** | `.env` 新增 `MAX_COST_USD`，超预算自动停止 |
 
 ### P1 — 中期
@@ -359,6 +412,7 @@ query({
 
 | 方向 | 说明 |
 |------|------|
+| **TUI 终端监控** | 基于 ANSI 的全屏界面，替代单行 spinner |
 | **Web UI 监控** | 可选插件包 `@claude-coder/web-ui` |
 | **PR/CI 集成** | Session 完成后自动创建 PR、监控 CI |
 | **Prompt A/B 测试** | 多版本 CLAUDE.md 并行对比效果 |

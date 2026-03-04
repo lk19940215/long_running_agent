@@ -89,6 +89,9 @@ async function runCodingSession(sessionNum, opts = {}) {
 
   indicator.start(sessionNum);
 
+  const editCounts = {};
+  const EDIT_THRESHOLD = 5;
+
   try {
     const queryOpts = buildQueryOptions(config, opts);
     queryOpts.systemPrompt = systemPrompt;
@@ -97,6 +100,18 @@ async function runCodingSession(sessionNum, opts = {}) {
         matcher: '*',
         hooks: [async (input) => {
           inferPhaseStep(indicator, input.tool_name, input.tool_input);
+
+          const filePath = input.tool_input?.file_path || input.tool_input?.path || '';
+          if (['Write', 'Edit', 'MultiEdit'].includes(input.tool_name) && filePath) {
+            editCounts[filePath] = (editCounts[filePath] || 0) + 1;
+            if (editCounts[filePath] > EDIT_THRESHOLD) {
+              return {
+                decision: 'block',
+                message: `已对 ${filePath} 编辑 ${editCounts[filePath]} 次，疑似死循环。请重新审视方案后再继续。`,
+              };
+            }
+          }
+
           return {};
         }]
       }]
