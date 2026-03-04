@@ -242,9 +242,10 @@ pending ──→ in_progress ──→ testing ──→ done
 ### 第六步：收尾（每次会话必须执行）
 
 1. **停止本次启动的后台服务**：`lsof -ti :端口 | xargs kill`，避免下次 session 端口冲突
-2. **按需更新文档**：
+2. **按需更新文档和 profile**：
    - **README / 用户文档**：仅当对外行为变化（新增功能、API 变更、使用方式变化）时更新
    - **架构 / API 文档**：如果本次新增了模块、改变了模块职责或新增了 API 端点，更新 `existing_docs` 中对应的架构或 API 文档。同时更新 `project_profile.json` 的 `existing_docs` 列表（若新增了文档文件）
+   - **profile 补全**：如果 prompt 中提示 `project_profile.json` 有缺陷（如 services 为空、existing_docs 为空），在此步骤补全。Harness 依赖 profile 做环境初始化和上下文注入
 3. **Git 提交**：`git add -A && git commit -m "feat(task-id): 功能描述"`
 4. **写入 session_result.json**（notes 要充分记录上下文供下次恢复）：
    ```json

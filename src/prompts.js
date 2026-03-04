@@ -78,7 +78,7 @@ function buildCodingPrompt(sessionNum, opts = {}) {
     } catch { /* ignore */ }
   }
 
-  // Hint 6: Project documentation awareness
+  // Hint 6: Project documentation awareness + profile quality check
   let docsHint = '';
   if (fs.existsSync(p.profile)) {
     try {
@@ -86,6 +86,13 @@ function buildCodingPrompt(sessionNum, opts = {}) {
       const docs = profile.existing_docs || [];
       if (docs.length > 0) {
         docsHint = `项目文档: ${docs.join(', ')}。Step 4 编码前先读与任务相关的文档，了解接口约定和编码规范。完成后若新增了模块或 API，更新对应文档。`;
+      }
+      if (profile.tech_stack?.backend?.framework &&
+          (!profile.services || profile.services.length === 0)) {
+        docsHint += ' 注意：project_profile.json 的 services 为空，请在本次 session 末尾补全 services 数组（command, port, health_check）。';
+      }
+      if (!docs.length) {
+        docsHint += ' 注意：project_profile.json 的 existing_docs 为空，请在 Step 6 收尾时补全文档列表。';
       }
     } catch { /* ignore */ }
   }
@@ -176,26 +183,19 @@ function buildScanPrompt(projectType, requirement) {
     `用户需求: ${requirement || '(无指定需求)'}`,
     '',
     '步骤 1-2：按「项目扫描协议」扫描项目、生成 project_profile.json。',
+    '',
+    'profile 质量要求（必须遵守，harness 会校验）：',
+    '- services 数组必须包含所有可启动服务（command、port、health_check），不得为空',
+    '- existing_docs 必须列出所有实际存在的文档路径',
+    '- 前后端分离项目必须生成 docs/ARCHITECTURE.md（模块职责、数据流、API 路由），并加入 existing_docs',
+    '- scan_files_checked 必须列出所有实际扫描过的文件',
+    '',
     '步骤 3：根据以下指导分解任务到 tasks.json（格式见 CLAUDE.md）：',
     '',
     taskGuide,
     '',
     '步骤 4：写入 session_result.json 并 git commit。',
   ].join('\n');
-}
-
-/**
- * Build user prompt for view sessions.
- * @param {Object} opts - { needsScan, projectType, requirement, allDone }
- */
-function buildViewPrompt(opts = {}) {
-  if (opts.needsScan) {
-    return `你是项目初始化 Agent。项目类型: ${opts.projectType}。用户需求: ${opts.requirement || ''}。按照「项目扫描协议」执行。`;
-  }
-  if (opts.allDone) {
-    return '所有任务已完成，无需执行 6 步流程。直接与用户对话，按需回答问题或执行临时请求。';
-  }
-  return '执行 6 步流程，完成下一个任务。';
 }
 
 /**
@@ -226,6 +226,5 @@ module.exports = {
   buildCodingPrompt,
   buildTaskGuide,
   buildScanPrompt,
-  buildViewPrompt,
   buildAddPrompt,
 };

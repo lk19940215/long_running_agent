@@ -60,9 +60,6 @@ flowchart TB
 flowchart LR
     start(["claude-coder run ..."]) --> mode{模式?}
 
-    mode -->|view| view["runViewSession()"]
-    view --> exit_view([exit 0])
-
     mode -->|"add 指令"| add["runAddSession()"]
     add --> exit_add([exit 0])
 
@@ -165,7 +162,6 @@ flowchart TB
         coding_p["buildCodingPrompt()<br/>编码 session prompt"]
         task_g["buildTaskGuide()<br/>任务分解指导"]
         scan_p["buildScanPrompt()<br/>扫描 session prompt"]
-        view_p["buildViewPrompt()"]
         add_p["buildAddPrompt()"]
     end
 
@@ -180,7 +176,6 @@ flowchart TB
     task_g --> scan_p
     task_g --> add_p
     scan_p --> query
-    view_p --> query
     add_p --> query
 ```
 
@@ -189,8 +184,7 @@ flowchart TB
 | Session 类型 | systemPrompt | user prompt | 触发条件 |
 |---|---|---|---|
 | **编码** | CLAUDE.md | `buildCodingPrompt()` + 8 个条件 hint | 主循环每次迭代 |
-| **扫描** | CLAUDE.md + SCAN_PROTOCOL.md | `buildScanPrompt()` + 任务分解指导 | 首次运行 |
-| **观测** | CLAUDE.md (± SCAN_PROTOCOL.md) | `buildViewPrompt()` | `claude-coder view` |
+| **扫描** | CLAUDE.md + SCAN_PROTOCOL.md | `buildScanPrompt()` + 任务分解指导 + profile 质量要求 | 首次运行 |
 | **追加** | CLAUDE.md | `buildAddPrompt()` + 任务分解指导 | `claude-coder add` |
 
 ### 编码 Session 的 8 个条件 Hint
@@ -200,7 +194,7 @@ flowchart TB
 | 1 | `reqSyncHint` | 需求 hash 变化 | Step 1：追加新任务 |
 | 2 | `mcpHint` | MCP_PLAYWRIGHT=true | Step 5：可用 Playwright |
 | 3 | `testHint` | tests.json 有记录 | Step 5：避免重复验证 |
-| 4 | `docsHint` | profile.existing_docs 非空 | Step 4：读文档后再编码，完成后更新文档 |
+| 4 | `docsHint` | profile.existing_docs 非空或 profile 有缺陷 | Step 4：读文档后再编码；profile 缺陷时提示 Agent 在 Step 6 补全 services/docs |
 | 5 | `envHint` | 连续成功且 session>1 | Step 2：跳过 init |
 | 6 | `retryContext` | 上次校验失败 | 全局：避免同样错误 |
 | 7 | `taskHint` | tasks.json 存在且有待办任务 | Step 1：跳过读取 tasks.json，harness 已注入当前任务上下文 |
@@ -429,3 +423,14 @@ query({
 5. **跨平台**：纯 Node.js + `child_process` 调用 git，无平台特定脚本
 6. **运行时隔离**：每个项目的 `.claude-coder/` 独立，不同项目互不干扰
 7. **Prompt 架构分离**：静态规则在 `templates/`，动态上下文在 `src/prompts.js`
+8. **文档即上下文**：文档在 harness 中分两层角色——Blueprint（`project_profile.json`，给 harness 的结构化元数据）和 Context Docs（`docs/ARCHITECTURE.md` 等，给 Agent 的人类可读文档）。Harness 通过 Hint 6 动态提醒 Agent 读取相关文档，并在 profile 有缺陷时提示补全
+
+### 文档架构的学术依据
+
+| 来源 | 核心概念 | 本项目映射 |
+|------|----------|-----------|
+| DeepCode (arXiv 2512.07921) | Blueprint Distillation — 源文档压缩为结构化蓝图 | `project_profile.json` 是项目蓝图 |
+| CodeMem (arXiv 2512.15813) | Procedural Memory — 验证过的逻辑持久化为可索引技能库 | 架构文档记录"决策"供 Agent 按需检索 |
+| Anthropic Memory Tool | Just-in-time 检索 — 按需从文件系统拉取 | Hint 6 按需提示 Agent 读文档 |
+| ContextBench (arXiv 2602.05892) | 复杂脚手架边际收益递减 | 不过度设计文档体系，关键信息必须准确 |
+| LangChain Harness Engineering | Build-Verify + Context on behalf of Agent | Harness 准备上下文，Agent 专注编码 |

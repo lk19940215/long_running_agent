@@ -7,7 +7,6 @@ const COMMANDS = {
   run:      { desc: '自动编码循环',             usage: 'claude-coder run [需求] [--max N] [--pause N] [--dry-run]' },
   setup:    { desc: '交互式模型配置',           usage: 'claude-coder setup' },
   init:     { desc: '初始化项目环境',           usage: 'claude-coder init' },
-  view:     { desc: '观测模式（交互式单次）',   usage: 'claude-coder view [需求]' },
   add:      { desc: '追加任务到 tasks.json',    usage: 'claude-coder add "指令"' },
   validate: { desc: '手动校验上次 session',     usage: 'claude-coder validate' },
   status:   { desc: '查看任务进度和成本',       usage: 'claude-coder status' },
@@ -24,6 +23,7 @@ function showHelp() {
   console.log('\n示例:');
   console.log('  claude-coder setup                   配置模型和 API Key');
   console.log('  claude-coder run "实现用户登录"       开始自动编码');
+  console.log('  claude-coder run --max 1             单次执行（替代旧 view 模式）');
   console.log('  claude-coder run --max 5 --dry-run   预览模式');
   console.log('  claude-coder status                  查看进度和成本');
   console.log(`\n前置条件: npm install -g @anthropic-ai/claude-agent-sdk`);
@@ -45,9 +45,6 @@ function parseArgs(argv) {
         break;
       case '--dry-run':
         opts.dryRun = true;
-        break;
-      case '--view':
-        opts.viewMode = true;
         break;
       case '--help':
       case '-h':
@@ -81,11 +78,7 @@ async function main() {
   switch (command) {
     case 'run': {
       const runner = require('../src/runner');
-      if (opts.viewMode) {
-        await runner.view(positional[0] || null, opts);
-      } else {
-        await runner.run(positional[0] || null, opts);
-      }
+      await runner.run(positional[0] || null, opts);
       break;
     }
     case 'setup': {
@@ -96,11 +89,6 @@ async function main() {
     case 'init': {
       const { init } = require('../src/init');
       await init();
-      break;
-    }
-    case 'view': {
-      const runner = require('../src/runner');
-      await runner.view(positional[0] || null, opts);
       break;
     }
     case 'add': {

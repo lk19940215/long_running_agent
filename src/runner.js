@@ -8,7 +8,7 @@ const { paths, log, COLOR, loadConfig, ensureLoopDir, getProjectRoot, getRequire
 const { loadTasks, saveTasks, getFeatures, getStats, findNextTask } = require('./tasks');
 const { validate } = require('./validator');
 const { scan } = require('./scanner');
-const { runCodingSession, runViewSession, runAddSession } = require('./session');
+const { runCodingSession, runAddSession } = require('./session');
 
 const MAX_RETRY = 3;
 
@@ -338,18 +338,6 @@ async function run(requirement, opts = {}) {
   printStats();
 }
 
-async function view(requirement, opts = {}) {
-  await requireSdk();
-  const projectRoot = getProjectRoot();
-  ensureLoopDir();
-
-  log('info', '观测模式：交互式运行，实时显示工具调用和决策过程');
-  log('info', '退出：Ctrl+C');
-  console.log('--------------------------------------------');
-
-  await runViewSession(requirement, { projectRoot, ...opts });
-}
-
 async function add(instruction, opts = {}) {
   await requireSdk();
   const p = paths();
@@ -365,4 +353,4 @@ async function add(instruction, opts = {}) {
   printStats();
 }
 
-module.exports = { run, view, add };
+module.exports = { run, add };

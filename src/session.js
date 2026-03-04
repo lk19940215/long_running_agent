@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const { paths, loadConfig, buildEnvVars, getAllowedTools, log } = require('./config');
 const { Indicator, inferPhaseStep } = require('./indicator');
-const { buildSystemPrompt, buildCodingPrompt, buildScanPrompt, buildViewPrompt, buildAddPrompt } = require('./prompts');
+const { buildSystemPrompt, buildCodingPrompt, buildScanPrompt, buildAddPrompt } = require('./prompts');
 
 let _sdkModule = null;
 async function loadSDK() {
@@ -204,42 +204,6 @@ async function runScanSession(requirement, opts = {}) {
   }
 }
 
-async function runViewSession(requirement, opts = {}) {
-  const sdk = await loadSDK();
-  const p = paths();
-  const config = loadConfig();
-  applyEnvConfig(config);
-
-  let systemPrompt;
-  let prompt;
-
-  if (!fs.existsSync(p.profile) || !fs.existsSync(p.tasksFile)) {
-    systemPrompt = buildSystemPrompt(true);
-    const projectType = hasCodeFiles(opts.projectRoot || process.cwd()) ? 'existing' : 'new';
-    prompt = buildViewPrompt({ needsScan: true, projectType, requirement });
-  } else {
-    systemPrompt = buildSystemPrompt(false);
-    const { loadTasks, getFeatures } = require('./tasks');
-    const data = loadTasks();
-    const features = getFeatures(data);
-    const allDone = features.length > 0 && features.every(f => f.status === 'done');
-    prompt = buildViewPrompt({ allDone });
-  }
-
-  try {
-    const queryOpts = buildQueryOptions(config, opts);
-    queryOpts.systemPrompt = systemPrompt;
-
-    const session = sdk.query({ prompt, options: queryOpts });
-
-    for await (const message of session) {
-      logMessage(message, null);
-    }
-  } catch (err) {
-    log('error', `观测模式错误: ${err.message}`);
-  }
-}
-
 async function runAddSession(instruction, opts = {}) {
   const sdk = await loadSDK();
   const config = loadConfig();
@@ -289,7 +253,6 @@ function hasCodeFiles(projectRoot) {
 module.exports = {
   runCodingSession,
   runScanSession,
-  runViewSession,
   runAddSession,
   hasCodeFiles,
 };
