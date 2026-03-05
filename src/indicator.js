@@ -17,7 +17,6 @@ class Indicator {
     this.sessionNum = 0;
     this.startTime = Date.now();
     this._lastContentKey = '';
-    this._lastRenderTime = 0;
   }
 
   start(sessionNum) {
@@ -88,15 +87,6 @@ class Indicator {
 
   _render() {
     this.spinnerIndex++;
-    const contentKey = `${this.phase}|${this.step}|${this.toolTarget}`;
-    const now = Date.now();
-
-    if (contentKey === this._lastContentKey && now - this._lastRenderTime < 5000) {
-      return;
-    }
-    this._lastContentKey = contentKey;
-    this._lastRenderTime = now;
-
     const line = this.getStatusLine();
     const maxWidth = process.stderr.columns || 80;
     const truncated = line.length > maxWidth + 20 ? line.slice(0, maxWidth + 20) : line;
