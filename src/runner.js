@@ -183,7 +183,7 @@ async function run(requirement, opts = {}) {
   ensureLoopDir();
 
   const maxSessions = opts.max || 50;
-  const pauseEvery = opts.pause || 5;
+  const pauseEvery = opts.pause ?? 0;
   const dryRun = opts.dryRun || false;
 
   console.log('');

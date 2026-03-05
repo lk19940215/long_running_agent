@@ -1,154 +1,161 @@
-# Playwright MCP 凭证持久化方案
+# 测试凭证持久化方案
 
-## 背景
+## 设计思想
 
-在使用 claude-coder 运行涉及前端测试的任务时，Playwright MCP 可能需要：
-1. 已登录状态的 cookies（如后台管理页面）
-2. API Key 等测试凭证（如 AI 生成功能需要真实 API 调用）
+claude-coder 的核心目标是让 Agent **完全自主测试**，不因凭证缺失而中断。测试中涉及三类凭证：
 
-本文档描述如何在 claude-coder 工作流中管理这些凭证。
+| 类型 | 示例 | 特点 |
+|------|------|------|
+| 浏览器状态 | 登录 cookies、localStorage 中的用户配置 | 有过期时间，跨 session 需要持久化 |
+| API Key | OPENAI_API_KEY、ZHIPU_API_KEY | 长期有效，需安全存储 |
+| 测试账号 | 注册的测试用户名密码、生成的 token | 可能是 Agent 自己创建的，需跨 session 传递 |
+
+**核心原则**：
+1. **Agent 可自行发现并持久化凭证** — 测试中发现需要的 API Key 或账号，直接写入 `test.env`
+2. **凭证不受回滚影响** — `git reset --hard` 不会摧毁已保存的凭证
+3. **零手动干预** — 除首次浏览器登录态外，其余由 Agent 自动处理
 
 ---
 
-## 方案 1: Playwright --storage-state（推荐用于 cookies）
+## 持久化架构
 
-### 原理
+```
+.claude-coder/
+  .env                    ← 模型配置（ANTHROPIC_API_KEY 等）     [用户配置]
+  test.env                ← 测试凭证（API Key、测试账号等）      [Agent 可写]
+  playwright-auth.json    ← 浏览器状态（cookies + localStorage） [auth 命令生成]
+```
 
-`@playwright/mcp` 支持 `--storage-state=<path>` 参数，加载预存的浏览器状态（cookies、localStorage）。
+### 文件生命周期
 
-### 步骤
+| 文件 | 创建方 | 写入方 | 回滚保护 | 生命周期 |
+|------|--------|--------|----------|----------|
+| `.env` | `claude-coder setup` | 用户 | 是 | 长期 |
+| `test.env` | Agent 或用户 | Agent + 用户 | 是 | 长期，按需更新 |
+| `playwright-auth.json` | `claude-coder auth` | auth 命令 | 是 | 中期，cookies 过期后需刷新 |
 
-**1. 手动登录并导出状态**
+### 回滚保护机制
+
+Harness 在 `git reset --hard` 前备份、后恢复以下文件：
+- `session_result.json` — 会话结果
+- `progress.json` — 历史记录
+- `test.env` — 测试凭证
+- `playwright-auth.json` — 浏览器状态
+
+这确保无论回滚多少次，凭证始终保留。
+
+---
+
+## 核心流程
+
+### 流程 1：Agent 自动发现凭证
+
+```
+Agent 测试 → 发现需要 API Key → 写入 test.env → 下次 session 自动加载
+```
+
+Agent 在 CLAUDE.md Step 5 中被指导：测试中发现的凭证追加到 `.claude-coder/test.env`。Harness 在每次 session 的 prompt 中注入 hint，告知 Agent `test.env` 的存在和用法。
+
+### 流程 2：用户预配置浏览器登录态
+
+```
+用户运行 claude-coder auth → 手动登录 → 状态自动保存 → Agent 测试时使用
+```
+
+适用于需要已登录状态才能测试的前端页面（如后台管理、需要 cookie 的 SPA）。
+
+### 流程 3：用户预配置 API Key
+
+```
+用户编辑 test.env → 填入 API Key → Agent 测试前 source 加载
+```
+
+适用于后端功能依赖真实 API 调用的场景。
+
+---
+
+## CLI 命令
+
+### `claude-coder auth [url]`
+
+一键导出浏览器登录态：
 
 ```bash
-# 启动 Playwright，手动登录后导出
-npx playwright codegen --save-storage=.claude-coder/playwright-auth.json http://localhost:3000
+# 默认打开 http://localhost:3000
+claude-coder auth
+
+# 指定 URL
+claude-coder auth http://localhost:8080/admin
 ```
 
-登录完成后关闭浏览器，状态自动保存到 `playwright-auth.json`。
-
-**2. 配置 MCP 使用保存的状态**
-
-在项目的 `.mcp.json`（Claude Code MCP 配置）中：
-
-```json
-{
-  "mcpServers": {
-    "playwright": {
-      "command": "npx",
-      "args": [
-        "@playwright/mcp@latest",
-        "--storage-state=.claude-coder/playwright-auth.json"
-      ]
-    }
-  }
-}
-```
-
-**3. 安全注意事项**
-
-```gitignore
-# .gitignore
-.claude-coder/playwright-auth.json
-```
-
-### 注意
-
-- 状态文件包含敏感 cookies，必须加入 `.gitignore`
-- cookies 有过期时间，需要定期重新导出
-- `--storage-state` 与 `--isolated` 模式配合使用效果最佳
-
----
-
-## 方案 2: test.env（推荐用于 API Key）
-
-### 原理
-
-在 `.claude-coder/test.env` 中存放测试专用的环境变量（如 API Key）。claude-coder 会自动检测此文件存在，并通过 Hint 提示 Agent 在测试前加载它。
-
-### 步骤
-
-**1. 创建 test.env**
-
-```bash
-# .claude-coder/test.env
-OPENAI_API_KEY=sk-xxx
-ZHIPU_API_KEY=xxx.xxx
-TEST_USER_TOKEN=xxx
-```
-
-**2. Agent 自动感知**
-
-当 `.claude-coder/test.env` 存在时，harness 在编码 session 的 prompt 中注入提示：
-
-> 测试环境变量在 .claude-coder/test.env（含 API Key 等），测试前用 source .claude-coder/test.env 或 export 加载。
-
-Agent 在执行测试时会自动 `source` 该文件。
-
-**3. 安全注意事项**
-
-```gitignore
-# .gitignore
-.claude-coder/test.env
-```
-
----
-
-## 方案 3: project_profile.json 中声明测试依赖
-
-在扫描阶段或手动编辑 `project_profile.json`，声明哪些测试需要真实 API Key：
-
-```json
-{
-  "test_dependencies": {
-    "real_api_key": true,
-    "required_env_vars": ["OPENAI_API_KEY", "ZHIPU_API_KEY"],
-    "env_file": ".claude-coder/test.env"
-  }
-}
-```
-
-Agent 在 Step 5 测试时，如果检测到 `preconditions.real_api_key: true`，会先检查环境变量是否可用，不可用则跳过该测试并标记为 `skip`。
-
----
-
-## 最佳实践
-
-| 场景 | 推荐方案 |
-|------|----------|
-| 需要已登录状态测试页面 | 方案 1 (--storage-state) |
-| 需要 API Key 测试后端功能 | 方案 2 (test.env) |
-| 需要区分 mock 测试和集成测试 | 方案 3 (profile 声明) |
-| 以上组合 | 方案 1 + 2 + 3 |
-
-### 工作流示例
-
-```
-1. claude-coder setup                      → 配置模型
-2. 创建 .claude-coder/test.env             → 填入 API Key
-3. claude-coder auth http://localhost:3000  → 一键导出登录状态
-4. claude-coder run                        → Agent 自动使用凭证测试
-```
-
----
-
-## CLI 集成：`claude-coder auth`（v1.2.0+）
-
-方案 1 的手动步骤已封装为 CLI 命令，一键完成：
-
-```bash
-claude-coder auth [url]
-```
-
-**自动执行**：
+**自动完成**：
 1. 启动 Playwright 浏览器，用户手动登录后关闭
 2. 保存 cookies + localStorage 到 `.claude-coder/playwright-auth.json`
-3. 创建/更新 `.mcp.json`，配置 `--storage-state` 参数
-4. 自动将 `playwright-auth.json` 加入 `.gitignore`
-5. 在 `.claude-coder/.env` 中启用 `MCP_PLAYWRIGHT=true`
+3. 创建/更新 `.mcp.json`，配置 `--storage-state`
+4. 添加 `.gitignore` 条目
+5. 启用 `.claude-coder/.env` 中 `MCP_PLAYWRIGHT=true`
 
-**Prompt 自动感知**：当 `playwright-auth.json` 存在时，harness 在编码 session 的 prompt 中注入提示：
+### `claude-coder setup`（相关）
 
-> 已检测到 Playwright 登录状态（.claude-coder/playwright-auth.json），前端/全栈测试将使用已认证的浏览器会话。
+配置模型时可启用 Playwright MCP：
 
-Agent 在执行前端测试时会自动使用已认证状态，无需手动登录。
+```bash
+claude-coder setup
+# 选择启用 MCP_PLAYWRIGHT=true
+```
+
+---
+
+## 场景示例
+
+### 场景 1：全栈项目首次测试
+
+```bash
+# 1. 配置模型
+claude-coder setup
+
+# 2. 填入后端测试需要的 API Key
+cat >> .claude-coder/test.env << 'EOF'
+OPENAI_API_KEY=sk-xxx
+ZHIPU_API_KEY=xxx.xxx
+EOF
+
+# 3. 导出前端登录态（可选，Agent 也能用 Playwright MCP 自动登录）
+claude-coder auth http://localhost:3000
+
+# 4. 开始自动编码和测试
+claude-coder run
+```
+
+### 场景 2：Agent 自主发现并处理凭证缺失
+
+Agent 在测试 feat-005（AI 内容生成）时发现需要 `OPENAI_API_KEY`：
+
+1. Agent 尝试调用 API → 报错 "API key required"
+2. Agent **不中断任务**，改用替代验证方式（如 mock 响应、检查代码逻辑是否正确、验证接口可达性）
+3. Agent 将凭证需求写入 `test.env`：`echo 'OPENAI_API_KEY=需要配置' >> .claude-coder/test.env`
+4. Agent 在 `session_result.json` 的 notes 中记录："AI 内容生成功能已实现，但需要真实 OPENAI_API_KEY 才能完整测试，已记录到 test.env"
+5. Agent 完成其他可验证的步骤后标记任务为 `done`（功能已实现）或 `testing`（等待凭证后完整验证）
+
+**核心原则**：缺少凭证不等于任务失败。Agent 应最大化推进，将凭证问题记录为后续补充项，而非阻塞整个 session。
+
+### 场景 3：前端 localStorage 配置持久化
+
+项目的前端将 LLM 服务商配置存储在 localStorage 中：
+
+```bash
+# 启动前后端服务
+# 运行 auth，手动在页面中配置 LLM 设置
+claude-coder auth http://localhost:3000
+
+# playwright-auth.json 中已包含 localStorage 数据
+# 后续 Agent 使用 Playwright MCP 测试时自动加载这些配置
+```
+
+### 场景 4：cookies 过期后刷新
+
+```bash
+# 重新运行 auth 即可
+claude-coder auth http://localhost:3000
+# 新的 cookies 覆盖旧文件，立即生效
+```

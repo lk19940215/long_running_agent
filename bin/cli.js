@@ -112,14 +112,16 @@ async function main() {
       break;
     }
     case 'add': {
+      const fs = require('fs');
+      const nodePath = require('path');
       let instruction = positional[0] || '';
       if (opts.readFile) {
-        const reqPath = require('path').resolve(opts.readFile);
-        if (!require('fs').existsSync(reqPath)) {
+        const reqPath = nodePath.resolve(opts.readFile);
+        if (!fs.existsSync(reqPath)) {
           console.error(`文件不存在: ${reqPath}`);
           process.exit(1);
         }
-        instruction = require('fs').readFileSync(reqPath, 'utf8');
+        instruction = fs.readFileSync(reqPath, 'utf8');
         console.log(`已读取需求文件: ${opts.readFile}`);
       }
       if (!instruction) {

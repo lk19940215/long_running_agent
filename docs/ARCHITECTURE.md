@@ -10,6 +10,54 @@
 
 ---
 
+## 0. 核心设计规则（MUST READ）
+
+> 以下规则按重要性排序（注意力 primacy zone），所有代码修改和架构决策必须遵循。
+
+### 规则 1：长 Session 不停工
+
+Agent 在单次 session 中应最大化推进任务进度。**任何非致命问题都不应中断 session**。
+
+- 缺少 API Key → 用 mock 或代码逻辑验证替代，记录到 `test.env`，继续推进
+- 测试环境未就绪 → 跳过该测试步骤，完成其余可验证的步骤
+- 服务启动失败 → 尝试排查修复，无法修复则记录问题后推进代码实现
+
+**反面案例**：Agent 因 `OPENAI_API_KEY` 缺失直接标记任务 `failed` → 浪费整个 session
+
+### 规则 2：回滚即彻底回滚
+
+`git reset --hard` 是全量回滚，不做部分文件保护。
+
+- 凭证文件（`test.env`、`playwright-auth.json`）应通过 `.gitignore` 排除在 git 之外
+- 如果回滚发生，说明 session 确实失败，代码应全部还原
+- 不需要 backup/restore 机制 — 这是过度设计
+
+### 规则 3：分层校验（fatal / recoverable / pass）
+
+不是所有校验失败都需要回滚：
+
+| 情况 | 有新 commit | 处理 |
+|------|------------|------|
+| session_result.json 格式异常 | 是 | **warn** — 代码已提交且可能正确，不回滚 |
+| session_result.json 格式异常 | 否 | **fatal** — 无进展，回滚 |
+| 代码结构性错误 | — | **fatal** — 回滚 |
+| 全部通过 | — | **pass** — 推送 |
+
+### 规则 4：凭证与代码分离
+
+| 文件 | git 状态 | 说明 |
+|------|---------|------|
+| `test.env` | .gitignore | Agent 可写入发现的 API Key、测试账号 |
+| `playwright-auth.json` | .gitignore | 用户通过 `claude-coder auth` 生成 |
+| `session_result.json` | git-tracked | Agent 每次 session 覆盖写入 |
+| `tasks.json` | git-tracked | Agent 修改 status 字段 |
+
+### 规则 5：Harness 准备上下文，Agent 直接执行
+
+Agent 不应浪费工具调用读取 harness 已知的数据。所有可预读的上下文通过 prompt hint 注入（见第 5 节 Prompt 注入架构）。
+
+---
+
 ## 1. 核心架构
 
 ```mermaid
@@ -200,7 +248,7 @@ flowchart TB
 | 4 | `testHint` | tests.json 有记录 | Step 5：避免重复验证 |
 | 5 | `docsHint` | profile.existing_docs 非空或 profile 有缺陷 | Step 4：读文档后再编码；profile 缺陷时提示 Agent 在 Step 6 补全 services/docs |
 | 6 | `taskHint` | tasks.json 存在且有待办任务 | Step 1：跳过读取 tasks.json，harness 已注入当前任务上下文 + 项目绝对路径 |
-| 6b | `testEnvHint` | .claude-coder/test.env 存在 | Step 5：提示 Agent 在测试前加载测试环境变量 |
+| 6b | `testEnvHint` | 始终注入（内容因 test.env 是否存在而不同） | Step 5：存在时提示加载；不存在时告知可创建 |
 | 6c | `playwrightAuthHint` | .claude-coder/playwright-auth.json 存在 | Step 5：提示 Agent 前端测试可使用已认证的浏览器状态 |
 | 7 | `memoryHint` | session_result.json 存在（扁平格式） | Step 1：跳过读取 session_result.json，harness 已注入上次会话摘要 |
 | 8 | `serviceHint` | 始终注入 | Step 6：单次模式停止服务，连续模式保持服务运行 |
@@ -322,13 +370,14 @@ PreToolUse hook 中追踪每个文件的编辑次数。当同一文件被 Write/
 
 ### 文件权限模型
 
-| 文件 | 写入方 | Agent 权限 |
-|------|--------|-----------|
-| `progress.json` | Harness | 只读 |
-| `sync_state.json` | Harness | 只读 |
-| `session_result.json` | Agent 每次 session 覆盖写入（扁平格式） | 写入 |
-| `tasks.json` | Agent（仅 `status` 字段） | 修改 `status` |
-| `project_profile.json` | Agent（仅扫描阶段） | 扫描时写入 |
+| 文件 | 写入方 | Agent 权限 | git 状态 |
+|------|--------|-----------|---------|
+| `progress.json` | Harness | 只读 | tracked |
+| `session_result.json` | Agent 每次 session 覆盖写入（扁平格式） | 写入 | tracked |
+| `tasks.json` | Agent（仅 `status` 字段） | 修改 `status` | tracked |
+| `project_profile.json` | Agent（仅扫描阶段） | 扫描时写入 | tracked |
+| `test.env` | Agent + 用户 | 可追加写入 | .gitignore |
+| `playwright-auth.json` | 用户（`claude-coder auth`） | 只读 | .gitignore |
 
 ---
 
@@ -420,16 +469,16 @@ query({
 
 ---
 
-## 设计原则
+## 实现原则
+
+> 核心设计规则见 Section 0（primacy zone），以下为实现层面的补充原则。
 
 1. **SDK 原生集成**：通过 `query()` 调用 Claude，内联 hooks，原生 cost tracking
 2. **零硬依赖**：Claude Agent SDK 作为 peerDependency
-3. **Agent 自治**：Agent 通过 CLAUDE.md 协议自主决策，harness 只负责调度和校验
-4. **幂等设计**：所有入口可重复执行，不产生副作用
-5. **跨平台**：纯 Node.js + `child_process` 调用 git，无平台特定脚本
-6. **运行时隔离**：每个项目的 `.claude-coder/` 独立，不同项目互不干扰
-7. **Prompt 架构分离**：静态规则在 `templates/`，动态上下文在 `src/prompts.js`
-8. **文档即上下文**：文档在 harness 中分两层角色——Blueprint（`project_profile.json`，给 harness 的结构化元数据）和 Context Docs（`docs/ARCHITECTURE.md` 等，给 Agent 的人类可读文档）。Harness 通过 Hint 6 动态提醒 Agent 读取相关文档，并在 profile 有缺陷时提示补全
+3. **幂等设计**：所有入口可重复执行，不产生副作用
+4. **跨平台**：纯 Node.js + `child_process` 调用 git，无平台特定脚本
+5. **运行时隔离**：每个项目的 `.claude-coder/` 独立，不同项目互不干扰
+6. **文档即上下文**：Blueprint（`project_profile.json`）给 harness，Context Docs 给 Agent。Hint 6 动态提醒 Agent 读取相关文档
 
 ### 文档架构的学术依据
 

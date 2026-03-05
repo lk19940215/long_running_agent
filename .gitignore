@@ -11,6 +11,6 @@ node_modules/
 .claude-coder/tasks.json
 .claude-coder/progress.json
 .claude-coder/session_result.json
-.claude-coder/sync_state.json
-.claude-coder/requirements_hash.current
 .claude-coder/tests.json
+
+问题整理.md/

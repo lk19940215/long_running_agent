@@ -50,6 +50,8 @@
 | `.claude-coder/progress.json` | 跨会话记忆日志（外部循环自动维护） | 只读 |
 | `.claude-coder/session_result.json` | 本次会话的结构化输出 | 每次会话结束时覆盖写入 |
 | `.claude-coder/tests.json` | 功能验证记录（轻量） | 可新增和更新；仅当功能涉及 API 或核心逻辑时记录 |
+| `.claude-coder/test.env` | 测试凭证（API Key、测试账号等） | **可追加写入**；发现测试需要的凭证时持久化到此文件 |
+| `.claude-coder/playwright-auth.json` | 浏览器登录状态（cookies + localStorage） | 只读；由用户通过 `claude-coder auth` 预配置 |
 
 ### requirements.md 处理原则
 
@@ -231,6 +233,8 @@ pending ──→ in_progress ──→ testing ──→ done
 5. **判定结果**：通过 → `done`；失败 → `failed`（notes 记录原因）
 
 6. **记录验证命令**：如果本功能涉及 API 或核心逻辑，在 `tests.json` 中追加一条记录（含 `last_run_session` 为当前 session 编号）。纯配置 / 纯样式 / 改动 < 100 行的任务无需记录
+
+7. **凭证持久化**：测试中发现需要的凭证（API Key、测试账号密码等），追加写入 `.claude-coder/test.env`，格式为 `KEY=value`（每行一个）。后续 session 会自动感知该文件。确保 `test.env` 已在 `.gitignore` 中（不被 git 追踪）
 
 **禁止**：
 - 后端任务启动浏览器测试

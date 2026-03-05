@@ -72,9 +72,9 @@ function buildCodingPrompt(sessionNum, opts = {}) {
   }
 
   // Hint 6: Task context (harness pre-read, saves Agent 2-3 Read calls)
+  const projectRoot = getProjectRoot();
   let taskHint = '';
   try {
-    const projectRoot = getProjectRoot();
     const taskData = loadTasks();
     if (taskData) {
       const next = findNextTask(taskData);
@@ -89,18 +89,18 @@ function buildCodingPrompt(sessionNum, opts = {}) {
     }
   } catch { /* ignore */ }
 
-  // Hint 6b: Test environment variables
+  // Hint 6b: Test environment variables (readable + writable by Agent)
   let testEnvHint = '';
-  const testEnvFile = paths().testEnvFile;
-  if (testEnvFile && fs.existsSync(testEnvFile)) {
-    testEnvHint = '测试环境变量在 .claude-coder/test.env（含 API Key 等），测试前用 source .claude-coder/test.env 或 export 加载。';
+  if (p.testEnvFile && fs.existsSync(p.testEnvFile)) {
+    testEnvHint = `测试凭证文件: ${projectRoot}/.claude-coder/test.env（含 API Key、测试账号等），测试前用 source ${projectRoot}/.claude-coder/test.env 加载。发现新凭证需求时可追加写入（KEY=value 格式）。`;
+  } else {
+    testEnvHint = `如需持久化测试凭证（API Key、测试账号密码等），写入 ${projectRoot}/.claude-coder/test.env（KEY=value 格式，每行一个）。后续 session 会自动感知。`;
   }
 
   // Hint 6c: Playwright authenticated state
   let playwrightAuthHint = '';
-  const playwrightAuthFile = paths().playwrightAuth;
-  if (playwrightAuthFile && fs.existsSync(playwrightAuthFile)) {
-    playwrightAuthHint = '已检测到 Playwright 登录状态（.claude-coder/playwright-auth.json），前端/全栈测试将使用已认证的浏览器会话（含 cookies 和 localStorage）。无需手动登录。';
+  if (p.playwrightAuth && fs.existsSync(p.playwrightAuth)) {
+    playwrightAuthHint = `已检测到 Playwright 登录状态（${projectRoot}/.claude-coder/playwright-auth.json），前端/全栈测试将使用已认证的浏览器会话（含 cookies 和 localStorage）。`;
   }
 
   // Hint 7: Session memory (read flat session_result.json)

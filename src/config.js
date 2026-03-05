@@ -190,16 +190,6 @@ function syncToGlobal() {
   log('ok', `已同步配置到 ${settingsPath}`);
 }
 
-// --------------- Requirements hash ---------------
-
-function getRequirementsHash() {
-  const crypto = require('crypto');
-  const reqFile = path.join(getProjectRoot(), 'requirements.md');
-  if (!fs.existsSync(reqFile)) return '';
-  const content = fs.readFileSync(reqFile, 'utf8');
-  return crypto.createHash('sha256').update(content).digest('hex');
-}
-
 module.exports = {
   COLOR,
   log,
@@ -213,5 +203,4 @@ module.exports = {
   buildEnvVars,
   getAllowedTools,
   syncToGlobal,
-  getRequirementsHash,
 };

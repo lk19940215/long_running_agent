@@ -73,7 +73,7 @@ claude-coder run "实现用户注册和登录功能"
 
 **追加任务**：`claude-coder add "新增管理员后台"` 或 `claude-coder add -r requirements.md` — 仅追加到任务列表，下次 run 时执行。
 
-**前端测试凭证**：`claude-coder auth http://localhost:3000` — 一键导出浏览器登录态，后续 Agent 测试自动使用已认证状态。
+**自动测试 + 凭证持久化**：`claude-coder auth http://localhost:3000` — 导出浏览器登录态（cookies + localStorage），Agent 测试时自动使用。缺 API Key 时 Agent 会自行记录到 `test.env` 并继续推进，不会停工。详见 [测试凭证持久化方案](docs/PLAYWRIGHT_CREDENTIALS.md)。
 
 ## 模型支持
 
@@ -114,8 +114,8 @@ your-project/
 
 ## 文档
 
-- [技术架构](docs/ARCHITECTURE.md) — 模块职责、提示语注入架构、注意力机制、Hook 数据流、后续优化方向
-- [Playwright 凭证持久化](docs/PLAYWRIGHT_CREDENTIALS.md) — 测试 cookies 和 API Key 管理方案
+- [技术架构](docs/ARCHITECTURE.md) — 核心设计规则、模块职责、提示语注入架构、注意力机制、Hook 数据流
+- [测试凭证持久化方案](docs/PLAYWRIGHT_CREDENTIALS.md) — 自动测试的凭证管理：Playwright 登录态导出、API Key 持久化、Agent 缺凭证时的行为策略
 
 ## License
 
