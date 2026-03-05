@@ -57,6 +57,7 @@ function paths() {
     testsFile:        path.join(loopDir, 'tests.json'),
     testEnvFile:      path.join(loopDir, 'test.env'),
     playwrightAuth:   path.join(loopDir, 'playwright-auth.json'),
+    browserProfile:   path.join(loopDir, 'browser-profile'),
     mcpConfig:        path.join(getProjectRoot(), '.mcp.json'),
     claudeMd:         getTemplatePath('CLAUDE.md'),
     scanProtocol:     getTemplatePath('SCAN_PROTOCOL.md'),

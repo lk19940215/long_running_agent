@@ -97,10 +97,12 @@ function buildCodingPrompt(sessionNum, opts = {}) {
     testEnvHint = `如需持久化测试凭证（API Key、测试账号密码等），写入 ${projectRoot}/.claude-coder/test.env（KEY=value 格式，每行一个）。后续 session 会自动感知。`;
   }
 
-  // Hint 6c: Playwright authenticated state
+  // Hint 6c: Playwright persistent browser profile
   let playwrightAuthHint = '';
-  if (p.playwrightAuth && fs.existsSync(p.playwrightAuth)) {
-    playwrightAuthHint = `已检测到 Playwright 登录状态（${projectRoot}/.claude-coder/playwright-auth.json），前端/全栈测试将使用已认证的浏览器会话（含 cookies 和 localStorage）。`;
+  if (fs.existsSync(p.browserProfile)) {
+    playwrightAuthHint = `已检测到持久化浏览器配置（${projectRoot}/.claude-coder/browser-profile/），MCP 使用 --user-data-dir 模式，登录状态跨会话自动保持。首次访问需登录的页面时，用户需在浏览器窗口中手动完成登录。`;
+  } else if (fs.existsSync(p.playwrightAuth)) {
+    playwrightAuthHint = `已检测到 Playwright 登录状态快照（${projectRoot}/.claude-coder/playwright-auth.json），建议运行 claude-coder auth 升级到持久化浏览器模式以获得更好的登录保持效果。`;
   }
 
   // Hint 7: Session memory (read flat session_result.json)

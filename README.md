@@ -97,7 +97,8 @@ your-project/
     progress.json           # 会话历史 + 成本
     tests.json              # 验证记录
     test.env                # 测试凭证（API Key 等，可选）
-    playwright-auth.json    # Playwright 登录状态（可选，auth 命令生成）
+    playwright-auth.json    # 登录状态快照（备份参考，auth 命令生成）
+    browser-profile/        # 持久化浏览器 Profile（MCP 实际使用）
     .runtime/               # 临时文件
       logs/                 # 每 session 独立日志（含工具调用记录）
   requirements.md           # 需求文档（可选）

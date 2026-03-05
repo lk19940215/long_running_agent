@@ -18,7 +18,7 @@ function updateGitignore(entry) {
   log('ok', `.gitignore 已添加: ${entry}`);
 }
 
-function updateMcpConfig(authFilePath) {
+function updateMcpConfig(browserProfileDir) {
   const p = paths();
   let mcpConfig = {};
   if (fs.existsSync(p.mcpConfig)) {
@@ -31,17 +31,17 @@ function updateMcpConfig(authFilePath) {
 
   if (!mcpConfig.mcpServers) mcpConfig.mcpServers = {};
 
-  const relAuthPath = path.relative(getProjectRoot(), authFilePath);
+  const relProfileDir = path.relative(getProjectRoot(), browserProfileDir);
   mcpConfig.mcpServers.playwright = {
     command: 'npx',
     args: [
       '@playwright/mcp@latest',
-      `--storage-state=${relAuthPath}`,
+      `--user-data-dir=${relProfileDir}`,
     ],
   };
 
   fs.writeFileSync(p.mcpConfig, JSON.stringify(mcpConfig, null, 2) + '\n', 'utf8');
-  log('ok', `.mcp.json 已配置 Playwright MCP (storage-state: ${relAuthPath})`);
+  log('ok', `.mcp.json 已配置 Playwright MCP (user-data-dir: ${relProfileDir})`);
 }
 
 function enableMcpPlaywrightEnv() {
@@ -64,14 +64,17 @@ async function auth(url) {
   const p = paths();
   const targetUrl = url || 'http://localhost:3000';
 
+  if (!fs.existsSync(p.browserProfile))
+    fs.mkdirSync(p.browserProfile, { recursive: true });
+
   log('info', '启动 Playwright 浏览器，请手动登录...');
   log('info', `目标 URL: ${targetUrl}`);
-  log('info', `登录状态将保存到: ${p.playwrightAuth}`);
+  log('info', `浏览器配置将持久化到: ${p.browserProfile}`);
   console.log('');
   console.log('操作步骤:');
   console.log('  1. 浏览器将自动打开，请手动完成登录');
   console.log('  2. 登录成功后关闭浏览器窗口');
-  console.log('  3. 登录状态（cookies + localStorage）将自动保存');
+  console.log('  3. 登录状态（cookies + localStorage）将保存为快照备份');
   console.log('');
 
   try {
@@ -92,16 +95,18 @@ async function auth(url) {
     return;
   }
 
-  log('ok', '登录状态已保存');
+  log('ok', '登录状态快照已保存（备份参考）');
 
-  updateMcpConfig(p.playwrightAuth);
+  updateMcpConfig(p.browserProfile);
   updateGitignore('.claude-coder/playwright-auth.json');
+  updateGitignore('.claude-coder/browser-profile/');
   enableMcpPlaywrightEnv();
 
   console.log('');
-  log('ok', 'Playwright 凭证配置完成！');
-  log('info', '后续运行 claude-coder run 时，Agent 的前端测试将自动使用已认证状态');
-  log('info', '注意: cookies 有过期时间，需要定期重新运行 claude-coder auth 更新');
+  log('ok', '持久化浏览器配置完成！');
+  log('info', 'MCP 使用 --user-data-dir 持久化模式，登录状态跨会话保持');
+  log('info', '首次 MCP 会话时需在浏览器窗口中登录一次，之后永久保持');
+  log('info', 'cookies 自动续期，无需手动重新运行 claude-coder auth');
 }
 
 module.exports = { auth };

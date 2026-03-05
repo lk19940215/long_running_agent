@@ -31,7 +31,7 @@ Agent 在单次 session 中应最大化推进任务进度。**任何非致命问
 
 `git reset --hard` 是全量回滚，不做部分文件保护。
 
-- 凭证文件（`test.env`、`playwright-auth.json`）应通过 `.gitignore` 排除在 git 之外
+- 凭证文件（`test.env`、`playwright-auth.json`、`browser-profile/`）应通过 `.gitignore` 排除在 git 之外
 - 如果回滚发生，说明 session 确实失败，代码应全部还原
 - 不需要 backup/restore 机制 — 这是过度设计
 
@@ -51,7 +51,8 @@ Agent 在单次 session 中应最大化推进任务进度。**任何非致命问
 | 文件 | git 状态 | 说明 |
 |------|---------|------|
 | `test.env` | .gitignore | Agent 可写入发现的 API Key、测试账号 |
-| `playwright-auth.json` | .gitignore | 用户通过 `claude-coder auth` 生成 |
+| `playwright-auth.json` | .gitignore | 登录状态快照备份（`claude-coder auth` 生成） |
+| `browser-profile/` | .gitignore | 持久化浏览器 Profile（MCP 实际使用） |
 | `session_result.json` | git-tracked | Agent 每次 session 覆盖写入 |
 | `tasks.json` | git-tracked | Agent 修改 status 字段 |
 
@@ -207,7 +208,8 @@ templates/
 | `tasks.json` | 首次扫描 | 任务列表 + 状态跟踪 |
 | `progress.json` | 每次 session 结束 | 结构化会话日志 + 成本记录 |
 | `session_result.json` | 每次 session 结束 | 当前 session 结果（扁平格式，向后兼容旧 `current` 包装） |
-| `playwright-auth.json` | `claude-coder auth` | Playwright 登录状态（cookies + localStorage） |
+| `playwright-auth.json` | `claude-coder auth` | 登录状态快照（备份参考） |
+| `browser-profile/` | `claude-coder auth` | 持久化浏览器 Profile（MCP 通过 `--user-data-dir` 使用） |
 | `tests.json` | 首次测试时 | 验证记录（防止反复测试） |
 | `.runtime/` | 运行时 | 临时文件（phase、step、logs/）；工具调用记录合并到 session log |
 
@@ -265,7 +267,7 @@ flowchart TB
 | 5 | `docsHint` | profile.existing_docs 非空或 profile 有缺陷 | Step 4：读文档后再编码；profile 缺陷时提示 Agent 在 Step 6 补全 services/docs |
 | 6 | `taskHint` | tasks.json 存在且有待办任务 | Step 1：跳过读取 tasks.json，harness 已注入当前任务上下文 + 项目绝对路径 |
 | 6b | `testEnvHint` | 始终注入（内容因 test.env 是否存在而不同） | Step 5：存在时提示加载；不存在时告知可创建 |
-| 6c | `playwrightAuthHint` | .claude-coder/playwright-auth.json 存在 | Step 5：提示 Agent 前端测试可使用已认证的浏览器状态 |
+| 6c | `playwrightAuthHint` | .claude-coder/browser-profile/ 存在 | Step 5：提示 Agent MCP 使用持久化浏览器 Profile，首次需手动登录 |
 | 7 | `memoryHint` | session_result.json 存在（扁平格式） | Step 1：跳过读取 session_result.json，harness 已注入上次会话摘要 |
 | 8 | `serviceHint` | 始终注入 | Step 6：单次模式停止服务，连续模式保持服务运行 |
 | 9 | `toolGuidance` | 始终注入 | 全局：工具使用规范（Grep/Glob/Read/LS/MultiEdit/Task 替代 bash 命令），非 Claude 模型必需 |
@@ -406,7 +408,8 @@ Harness 在 `buildCodingPrompt()` 中预读 `session_result.json`，将上次会
 | `tasks.json` | Agent（仅 `status` 字段） | 修改 `status` | tracked |
 | `project_profile.json` | Agent（仅扫描阶段） | 扫描时写入 | tracked |
 | `test.env` | Agent + 用户 | 可追加写入 | .gitignore |
-| `playwright-auth.json` | 用户（`claude-coder auth`） | 只读 | .gitignore |
+| `playwright-auth.json` | 用户（`claude-coder auth`） | 快照备份 | .gitignore |
+| `browser-profile/` | 用户（`claude-coder auth`） | MCP 自动维护 | .gitignore |
 
 ---
 

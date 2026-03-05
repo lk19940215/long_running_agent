@@ -85,7 +85,8 @@ your-project/
     progress.json           # Session history + costs
     tests.json              # Verification records
     test.env                # Test credentials (API keys, optional)
-    playwright-auth.json    # Playwright login state (optional, via auth command)
+    playwright-auth.json    # Login state snapshot (backup, via auth command)
+    browser-profile/        # Persistent browser profile (used by MCP)
     .runtime/               # Temp files
       logs/                 # Per-session logs (with tool call traces)
   requirements.md           # Requirements (optional)
