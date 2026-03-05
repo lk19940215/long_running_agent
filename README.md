@@ -50,15 +50,16 @@ claude-coder run "实现用户注册和登录功能"
 |------|------|
 | `claude-coder setup` | 交互式模型配置 |
 | `claude-coder run [需求]` | 自动编码循环 |
+| `claude-coder run --max 1` | 单次执行 |
 | `claude-coder run --dry-run` | 预览模式 |
 | `claude-coder init` | 初始化项目环境 |
-| `claude-coder view [需求]` | 观测模式（交互式单次） |
 | `claude-coder add "指令"` | 追加任务 |
+| `claude-coder add -r [file]` | 从需求文件追加任务 |
 | `claude-coder validate` | 手动校验 |
 | `claude-coder status` | 查看进度和成本 |
 | `claude-coder config sync` | 同步配置到 ~/.claude/ |
 
-**选项**：`--max N` 限制 session 数（默认 50），`--pause N` 每 N 个 session 暂停（默认 5）。
+**选项**：`--max N` 限制 session 数（默认 50），`--pause N` 每 N 个 session 暂停确认（默认不暂停）。
 
 ## 使用场景
 
@@ -66,9 +67,9 @@ claude-coder run "实现用户注册和登录功能"
 
 **已有项目**：`claude-coder run "新增头像上传功能"` — 先扫描现有代码和技术栈，再增量开发。
 
-**需求文档驱动**：在项目根目录创建 `requirements.md`（可从模板复制），运行 `claude-coder run` — 修改需求后再次运行，自动同步新任务。
+**需求文档驱动**：在项目根目录创建 `requirements.md`，运行 `claude-coder run` — 需求变更后用 `claude-coder add -r` 同步新任务。
 
-**追加任务**：`claude-coder add "新增管理员后台"` — 仅追加到任务列表，下次 run 时执行。
+**追加任务**：`claude-coder add "新增管理员后台"` 或 `claude-coder add -r requirements.md` — 仅追加到任务列表，下次 run 时执行。
 
 ## 模型支持
 
@@ -88,8 +89,8 @@ your-project/
     .env                    # 模型配置
     project_profile.json    # 项目扫描结果
     tasks.json              # 任务列表 + 状态
-    session_result.json     # session 结果 + 历史
-    progress.json           # 会话日志 + 成本
+    session_result.json     # 上次 session 结果（扁平）
+    progress.json           # 会话历史 + 成本
     tests.json              # 验证记录
     .runtime/               # 临时文件
   requirements.md           # 需求文档（可选）

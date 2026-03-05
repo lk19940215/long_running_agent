@@ -212,6 +212,7 @@ async function runAddSession(instruction, opts = {}) {
   const sdk = await loadSDK();
   const config = loadConfig();
   applyEnvConfig(config);
+  const indicator = new Indicator();
 
   const systemPrompt = buildSystemPrompt(false);
   const prompt = buildAddPrompt(instruction);
@@ -220,20 +221,34 @@ async function runAddSession(instruction, opts = {}) {
   const logFile = path.join(p.logsDir, `add_tasks_${Date.now()}.log`);
   const logStream = fs.createWriteStream(logFile, { flags: 'a' });
 
+  indicator.start(0);
+  log('info', '正在追加任务...');
+
   try {
     const queryOpts = buildQueryOptions(config, opts);
     queryOpts.systemPrompt = systemPrompt;
+    queryOpts.hooks = {
+      PreToolUse: [{
+        matcher: '*',
+        hooks: [async (input) => {
+          inferPhaseStep(indicator, input.tool_name, input.tool_input);
+          return {};
+        }]
+      }]
+    };
 
     const session = sdk.query({ prompt, options: queryOpts });
 
     for await (const message of session) {
-      logMessage(message, logStream);
+      logMessage(message, logStream, indicator);
     }
 
     logStream.end();
+    indicator.stop();
     log('ok', '任务追加完成');
   } catch (err) {
     logStream.end();
+    indicator.stop();
     log('error', `任务追加失败: ${err.message}`);
   }
 }

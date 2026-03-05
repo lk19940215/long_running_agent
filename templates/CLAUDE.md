@@ -49,7 +49,6 @@
 | `.claude-coder/tasks.json` | 功能任务列表，带状态跟踪 | 只能修改 `status` 字段 |
 | `.claude-coder/progress.json` | 跨会话记忆日志（外部循环自动维护） | 只读 |
 | `.claude-coder/session_result.json` | 本次会话的结构化输出 | 每次会话结束时覆盖写入 |
-| `.claude-coder/sync_state.json` | 需求同步状态（外部循环 session 成功后自动更新） | Agent 无需读写 |
 | `.claude-coder/tests.json` | 功能验证记录（轻量） | 可新增和更新；仅当功能涉及 API 或核心逻辑时记录 |
 
 ### requirements.md 处理原则
@@ -178,10 +177,9 @@ pending ──→ in_progress ──→ testing ──→ done
 1. **检查 prompt 注入的上下文**：
    - 如果 prompt 中包含"任务上下文"（Hint 7），说明 harness 已注入当前任务信息，**跳过读取 tasks.json**，直接确认任务后进入第二步
    - 如果 prompt 中包含"上次会话"（Hint 8），说明 harness 已注入上次会话摘要，**跳过读取 session_result.json 历史**
-2. 批量读取以下文件（一次工具调用，跳过已注入的）：`.claude-coder/project_profile.json`、`.claude-coder/tasks.json`（仅当无 Hint 7 时）、`.claude-coder/session_result.json`（仅当无 Hint 8 时）
-3. 如果 `session_result.json` 不存在或 history 为空且无 Hint 8，运行 `git log --oneline -20` 补充上下文
+2. 批量读取以下文件（一次工具调用，跳过已注入的）：`.claude-coder/project_profile.json`、`.claude-coder/tasks.json`（仅当无 Hint 6 时）
+3. 如果无 Hint 7 且 `session_result.json` 不存在，运行 `git log --oneline -20` 补充上下文
 4. 如果项目根目录存在 `requirements.md`，读取用户的详细需求和偏好（技术约束、样式要求等），作为本次会话的参考依据
-5. **需求同步（条件触发）**：如果 prompt 中提示"需求已变更"，读取 `requirements.md`，对比 `tasks.json`，将新增需求追加为 `pending` 任务。未提示则跳过
 
 ### 第二步：环境与健康检查
 

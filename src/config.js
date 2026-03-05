@@ -55,8 +55,6 @@ function paths() {
     sessionResult:    path.join(loopDir, 'session_result.json'),
     profile:          path.join(loopDir, 'project_profile.json'),
     testsFile:        path.join(loopDir, 'tests.json'),
-    syncState:        path.join(loopDir, 'sync_state.json'),
-    reqHashFile:      path.join(loopDir, 'requirements_hash.current'),
     claudeMd:         getTemplatePath('CLAUDE.md'),
     scanProtocol:     getTemplatePath('SCAN_PROTOCOL.md'),
     runtime,

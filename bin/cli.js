@@ -7,7 +7,7 @@ const COMMANDS = {
   run:      { desc: '自动编码循环',             usage: 'claude-coder run [需求] [--max N] [--pause N] [--dry-run]' },
   setup:    { desc: '交互式模型配置',           usage: 'claude-coder setup' },
   init:     { desc: '初始化项目环境',           usage: 'claude-coder init' },
-  add:      { desc: '追加任务到 tasks.json',    usage: 'claude-coder add "指令"' },
+  add:      { desc: '追加任务到 tasks.json',    usage: 'claude-coder add "指令" | add -r [file]' },
   validate: { desc: '手动校验上次 session',     usage: 'claude-coder validate' },
   status:   { desc: '查看任务进度和成本',       usage: 'claude-coder status' },
   config:   { desc: '配置管理',                 usage: 'claude-coder config sync' },
@@ -23,8 +23,11 @@ function showHelp() {
   console.log('\n示例:');
   console.log('  claude-coder setup                   配置模型和 API Key');
   console.log('  claude-coder run "实现用户登录"       开始自动编码');
-  console.log('  claude-coder run --max 1             单次执行（替代旧 view 模式）');
-  console.log('  claude-coder run --max 5 --dry-run   预览模式');
+  console.log('  claude-coder run --max 1             单次执行');
+  console.log('  claude-coder run --max 5 --pause 5   每 5 个 session 暂停确认');
+  console.log('  claude-coder run --dry-run            预览模式');
+  console.log('  claude-coder add "新增搜索功能"       追加任务');
+  console.log('  claude-coder add -r                   从 requirements.md 追加任务');
   console.log('  claude-coder status                  查看进度和成本');
   console.log(`\n前置条件: npm install -g @anthropic-ai/claude-agent-sdk`);
 }
@@ -32,7 +35,7 @@ function showHelp() {
 function parseArgs(argv) {
   const args = argv.slice(2);
   const command = args[0];
-  const opts = { max: 50, pause: 5, dryRun: false };
+  const opts = { max: 50, pause: 0, dryRun: false, readFile: null };
   const positional = [];
 
   for (let i = 1; i < args.length; i++) {
@@ -46,6 +49,16 @@ function parseArgs(argv) {
       case '--dry-run':
         opts.dryRun = true;
         break;
+      case '-r': {
+        const next = args[i + 1];
+        if (next && !next.startsWith('-')) {
+          opts.readFile = next;
+          i++;
+        } else {
+          opts.readFile = 'requirements.md';
+        }
+        break;
+      }
       case '--help':
       case '-h':
         showHelp();
@@ -92,12 +105,22 @@ async function main() {
       break;
     }
     case 'add': {
-      if (!positional[0]) {
-        console.error('用法: claude-coder add "任务描述"');
+      let instruction = positional[0] || '';
+      if (opts.readFile) {
+        const reqPath = require('path').resolve(opts.readFile);
+        if (!require('fs').existsSync(reqPath)) {
+          console.error(`文件不存在: ${reqPath}`);
+          process.exit(1);
+        }
+        instruction = require('fs').readFileSync(reqPath, 'utf8');
+        console.log(`已读取需求文件: ${opts.readFile}`);
+      }
+      if (!instruction) {
+        console.error('用法: claude-coder add "任务描述"  或  claude-coder add -r [requirements.md]');
         process.exit(1);
       }
       const runner = require('../src/runner');
-      await runner.add(positional[0], opts);
+      await runner.add(instruction, opts);
       break;
     }
     case 'validate': {

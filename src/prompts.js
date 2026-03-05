@@ -1,7 +1,7 @@
 'use strict';
 
 const fs = require('fs');
-const { paths, loadConfig, getRequirementsHash } = require('./config');
+const { paths, loadConfig } = require('./config');
 const { loadTasks, findNextTask, getStats } = require('./tasks');
 
 /**
@@ -26,40 +26,24 @@ function buildCodingPrompt(sessionNum, opts = {}) {
   const config = loadConfig();
   const consecutiveFailures = opts.consecutiveFailures || 0;
 
-  // Hint 1: Requirements change detection
-  const reqHash = getRequirementsHash();
-  let reqSyncHint = '';
-  if (reqHash) {
-    fs.writeFileSync(p.reqHashFile, reqHash, 'utf8');
-    let lastHash = '';
-    if (fs.existsSync(p.syncState)) {
-      try { lastHash = JSON.parse(fs.readFileSync(p.syncState, 'utf8')).last_requirements_hash || ''; } catch { /* ignore */ }
-    }
-    if (lastHash !== reqHash) {
-      reqSyncHint = '需求已变更：第一步中请读取 requirements.md，将新增需求追加为 pending 任务到 tasks.json。';
-    }
-  } else if (fs.existsSync(p.reqHashFile)) {
-    fs.unlinkSync(p.reqHashFile);
-  }
-
-  // Hint 2: Playwright MCP availability
+  // Hint 1: Playwright MCP availability
   const mcpHint = config.mcpPlaywright
     ? '前端/全栈任务可用 Playwright MCP（browser_navigate、browser_snapshot、browser_click 等）做端到端测试。'
     : '';
 
-  // Hint 3: Retry context from previous failures
+  // Hint 2: Retry context from previous failures
   let retryContext = '';
   if (consecutiveFailures > 0 && opts.lastValidateLog) {
     retryContext = `\n注意：上次会话校验失败，原因：${opts.lastValidateLog}。请避免同样的问题。`;
   }
 
-  // Hint 4: Environment readiness
+  // Hint 3: Environment readiness
   let envHint = '';
   if (consecutiveFailures === 0 && sessionNum > 1) {
     envHint = '环境已就绪，第二步可跳过 claude-coder init，仅确认服务存活。涉及新依赖时仍需运行 claude-coder init。';
   }
 
-  // Hint 5: Existing test records
+  // Hint 4: Existing test records
   let testHint = '';
   if (fs.existsSync(p.testsFile)) {
     try {
@@ -68,7 +52,7 @@ function buildCodingPrompt(sessionNum, opts = {}) {
     } catch { /* ignore */ }
   }
 
-  // Hint 6: Project documentation awareness + profile quality check
+  // Hint 5: Project documentation awareness + profile quality check
   let docsHint = '';
   if (fs.existsSync(p.profile)) {
     try {
@@ -87,7 +71,7 @@ function buildCodingPrompt(sessionNum, opts = {}) {
     } catch { /* ignore */ }
   }
 
-  // Hint 7: Task context (harness pre-read, saves Agent 2-3 Read calls)
+  // Hint 6: Task context (harness pre-read, saves Agent 2-3 Read calls)
   let taskHint = '';
   try {
     const taskData = loadTasks();
@@ -104,26 +88,25 @@ function buildCodingPrompt(sessionNum, opts = {}) {
     }
   } catch { /* ignore */ }
 
-  // Hint 8: Session memory (last session summary, recency zone for attention)
+  // Hint 7: Session memory (read flat session_result.json)
   let memoryHint = '';
   if (fs.existsSync(p.sessionResult)) {
     try {
       const sr = JSON.parse(fs.readFileSync(p.sessionResult, 'utf8'));
-      const last = sr.current || (sr.history?.length ? sr.history[sr.history.length - 1] : null);
-      if (last?.task_id) {
-        memoryHint = `上次会话: ${last.task_id} → ${last.status_after || last.session_result}` +
-          (last.notes ? `, 要点: ${last.notes.slice(0, 100)}` : '') + '。';
+      if (sr?.task_id) {
+        memoryHint = `上次会话: ${sr.task_id} → ${sr.status_after || sr.session_result}` +
+          (sr.notes ? `, 要点: ${sr.notes.slice(0, 100)}` : '') + '。';
       }
     } catch { /* ignore */ }
   }
 
-  // Hint 9: Service management (continuous vs single-shot mode)
+  // Hint 8: Service management (continuous vs single-shot mode)
   const maxSessions = opts.maxSessions || 50;
   const serviceHint = maxSessions === 1
     ? '单次模式：收尾时停止所有后台服务。'
     : '连续模式：收尾时不要停止后台服务，保持服务运行以便下个 session 继续使用。';
 
-  // Hint 10: Tool usage guidance (critical for non-Claude models)
+  // Hint 9: Tool usage guidance (critical for non-Claude models)
   const toolGuidance = [
     '可用工具与使用规范（严格遵守）：',
     '- 搜索文件名: Glob（如 **/*.ts），禁止 bash find',
@@ -139,7 +122,6 @@ function buildCodingPrompt(sessionNum, opts = {}) {
   return [
     `Session ${sessionNum}。执行 6 步流程。`,
     '效率要求：先规划后编码，完成全部编码后再统一测试，禁止编码-测试反复跳转。后端任务用 curl 验证，不启动浏览器。',
-    reqSyncHint,
     mcpHint,
     testHint,
     docsHint,

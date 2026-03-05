@@ -20,37 +20,35 @@ function validateSessionResult() {
     return { valid: false, fatal: true, reason: `JSON 解析失败: ${err.message}` };
   }
 
-  const sr = data.current || data;
-
   const required = ['session_result', 'status_after'];
-  const missing = required.filter(k => !(k in sr));
+  const missing = required.filter(k => !(k in data));
   if (missing.length > 0) {
     log('error', `session_result.json 缺少字段: ${missing.join(', ')}`);
     return { valid: false, fatal: true, reason: `缺少字段: ${missing.join(', ')}` };
   }
 
-  if (!['success', 'failed'].includes(sr.session_result)) {
-    log('error', `session_result 必须是 success 或 failed，实际是: ${sr.session_result}`);
-    return { valid: false, fatal: true, reason: `无效 session_result: ${sr.session_result}` };
+  if (!['success', 'failed'].includes(data.session_result)) {
+    log('error', `session_result 必须是 success 或 failed，实际是: ${data.session_result}`);
+    return { valid: false, fatal: true, reason: `无效 session_result: ${data.session_result}` };
   }
 
   const validStatuses = ['pending', 'in_progress', 'testing', 'done', 'failed'];
-  if (!validStatuses.includes(sr.status_after)) {
-    log('error', `status_after 不合法: ${sr.status_after}`);
-    return { valid: false, fatal: true, reason: `无效 status_after: ${sr.status_after}` };
+  if (!validStatuses.includes(data.status_after)) {
+    log('error', `status_after 不合法: ${data.status_after}`);
+    return { valid: false, fatal: true, reason: `无效 status_after: ${data.status_after}` };
   }
 
-  if (!sr.task_id) {
+  if (!data.task_id) {
     log('warn', 'session_result.json 缺少 task_id (建议包含)');
   }
 
-  if (sr.session_result === 'success') {
+  if (data.session_result === 'success') {
     log('ok', 'session_result.json 合法 (success)');
   } else {
     log('warn', 'session_result.json 合法，但 Agent 报告失败 (failed)');
   }
 
-  return { valid: true, fatal: false, data: sr };
+  return { valid: true, fatal: false, data };
 }
 
 function checkGitProgress(headBefore) {
@@ -87,13 +85,12 @@ function checkTestCoverage() {
 
   try {
     const sr = JSON.parse(fs.readFileSync(p.sessionResult, 'utf8'));
-    const current = sr.current || sr;
     const tests = JSON.parse(fs.readFileSync(p.testsFile, 'utf8'));
 
-    const taskId = current.task_id || '';
+    const taskId = sr.task_id || '';
     const testCases = tests.test_cases || [];
 
-    if (current.status_after === 'done' && current.tests_passed) {
+    if (sr.status_after === 'done' && sr.tests_passed) {
       const taskTests = testCases.filter(t => t.feature_id === taskId);
       if (taskTests.length > 0) {
         const failed = taskTests.filter(t => t.last_result === 'fail');

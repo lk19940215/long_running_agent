@@ -59,6 +59,12 @@ class Indicator {
   }
 
   getStatusLine() {
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mi = String(now.getMinutes()).padStart(2, '0');
+    const sc = String(now.getSeconds()).padStart(2, '0');
+    const clock = `${hh}:${mi}:${sc}`;
+
     const elapsed = Math.floor((Date.now() - this.startTime) / 1000);
     const mm = String(Math.floor(elapsed / 60)).padStart(2, '0');
     const ss = String(elapsed % 60).padStart(2, '0');
@@ -68,7 +74,7 @@ class Indicator {
       ? `${COLOR.yellow}思考中${COLOR.reset}`
       : `${COLOR.green}编码中${COLOR.reset}`;
 
-    let line = `${spinner} [Session ${this.sessionNum}] ${phaseLabel} ${mm}:${ss}`;
+    let line = `${spinner} [Session ${this.sessionNum}] ${clock} ${phaseLabel} ${mm}:${ss}`;
     if (this.step) line += ` | ${this.step}`;
     return line;
   }

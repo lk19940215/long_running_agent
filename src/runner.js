@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
 const { execSync } = require('child_process');
-const { paths, log, COLOR, loadConfig, ensureLoopDir, getProjectRoot, getRequirementsHash } = require('./config');
+const { paths, log, COLOR, loadConfig, ensureLoopDir, getProjectRoot } = require('./config');
 const { loadTasks, saveTasks, getFeatures, getStats, findNextTask } = require('./tasks');
 const { validate } = require('./validator');
 const { scan } = require('./scanner');
@@ -52,17 +52,44 @@ function allTasksDone() {
   return features.every(f => f.status === 'done');
 }
 
+function killServicesByProfile() {
+  const p = paths();
+  if (!fs.existsSync(p.profile)) return;
+  try {
+    const profile = JSON.parse(fs.readFileSync(p.profile, 'utf8'));
+    const services = profile.services || [];
+    const ports = services.map(s => s.port).filter(Boolean);
+    if (ports.length === 0) return;
+
+    const isWin = process.platform === 'win32';
+    for (const port of ports) {
+      try {
+        if (isWin) {
+          const out = execSync(`netstat -ano | findstr :${port} | findstr LISTENING`, { encoding: 'utf8', stdio: 'pipe' }).trim();
+          const pids = [...new Set(out.split('\n').map(l => l.trim().split(/\s+/).pop()).filter(Boolean))];
+          for (const pid of pids) { try { execSync(`taskkill /F /PID ${pid}`, { stdio: 'pipe' }); } catch { /* ignore */ } }
+        } else {
+          execSync(`lsof -ti :${port} | xargs kill -9 2>/dev/null`, { stdio: 'pipe' });
+        }
+      } catch { /* no process on port */ }
+    }
+    log('info', `已停止端口 ${ports.join(', ')} 上的服务`);
+  } catch { /* ignore profile read errors */ }
+}
+
 function rollback(headBefore, reason) {
   if (!headBefore || headBefore === 'none') return;
+
+  killServicesByProfile();
+
   log('warn', `回滚到 ${headBefore} ...`);
   try {
-    execSync(`git reset --hard ${headBefore}`, { cwd: getProjectRoot(), stdio: 'inherit' });
+    execSync(`git reset --hard ${headBefore}`, { cwd: getProjectRoot(), stdio: 'pipe' });
     log('ok', '回滚完成');
   } catch (err) {
     log('error', `回滚失败: ${err.message}`);
   }
 
-  // Record failure in progress.json
   appendProgress({
     type: 'rollback',
     timestamp: new Date().toISOString(),
@@ -108,36 +135,6 @@ function appendProgress(entry) {
   if (!Array.isArray(progress.sessions)) progress.sessions = [];
   progress.sessions.push(entry);
   fs.writeFileSync(p.progressFile, JSON.stringify(progress, null, 2) + '\n', 'utf8');
-}
-
-function updateSessionHistory(sessionData, sessionNum) {
-  const p = paths();
-  let sr = { current: null, history: [] };
-  if (fs.existsSync(p.sessionResult)) {
-    try {
-      const text = fs.readFileSync(p.sessionResult, 'utf8');
-      sr = JSON.parse(text);
-    } catch { /* reset */ }
-    if (!sr.history && sr.session_result) {
-      sr = { current: sr, history: [] };
-    }
-  }
-
-  // Move current to history
-  if (sr.current) {
-    sr.history.push({
-      session: sessionNum - 1,
-      timestamp: new Date().toISOString(),
-      ...sr.current,
-    });
-    sr.current = null;
-  }
-
-  if (sessionData) {
-    sr.current = sessionData;
-  }
-
-  fs.writeFileSync(p.sessionResult, JSON.stringify(sr, null, 2) + '\n', 'utf8');
 }
 
 function printStats() {
@@ -288,19 +285,6 @@ async function run(requirement, opts = {}) {
       tryPush();
       consecutiveFailures = 0;
 
-      // Update session history
-      updateSessionHistory(validateResult.sessionData, session);
-
-      // Update sync_state.json if requirements exist
-      const reqHash = getRequirementsHash();
-      if (reqHash) {
-        fs.writeFileSync(p.syncState, JSON.stringify({
-          last_requirements_hash: reqHash,
-          last_synced_at: new Date().toISOString(),
-        }, null, 2) + '\n', 'utf8');
-      }
-
-      // Append to progress.json
       appendProgress({
         session,
         timestamp: new Date().toISOString(),
@@ -308,6 +292,7 @@ async function run(requirement, opts = {}) {
         cost: sessionResult.cost,
         taskId: validateResult.sessionData?.task_id || null,
         statusAfter: validateResult.sessionData?.status_after || null,
+        notes: validateResult.sessionData?.notes || null,
       });
 
     } else {
@@ -325,7 +310,7 @@ async function run(requirement, opts = {}) {
     }
 
     // Periodic pause
-    if (session % pauseEvery === 0) {
+    if (pauseEvery > 0 && session % pauseEvery === 0) {
       console.log('');
       printStats();
       const shouldContinue = await promptContinue();
@@ -335,6 +320,9 @@ async function run(requirement, opts = {}) {
       }
     }
   }
+
+  // Cleanup: stop services after loop ends
+  killServicesByProfile();
 
   // Final report
   console.log('');
@@ -350,6 +338,11 @@ async function add(instruction, opts = {}) {
   const p = paths();
   const projectRoot = getProjectRoot();
   ensureLoopDir();
+
+  const config = loadConfig();
+  if (config.provider !== 'claude' && config.baseUrl) {
+    log('ok', `模型配置已加载: ${config.provider}${config.model ? ` (${config.model})` : ''}`);
+  }
 
   if (!fs.existsSync(p.profile) || !fs.existsSync(p.tasksFile)) {
     log('error', 'add 需要先完成初始化（至少运行一次 claude-coder run）');

@@ -54,11 +54,12 @@ Each session, the agent autonomously follows 6 steps: restore context → env ch
 | `claude-coder run --dry-run` | Preview mode |
 | `claude-coder init` | Initialize project environment |
 | `claude-coder add "instruction"` | Append tasks |
+| `claude-coder add -r [file]` | Append tasks from requirements file |
 | `claude-coder validate` | Manually validate last session |
 | `claude-coder status` | View progress and costs |
 | `claude-coder config sync` | Sync config to ~/.claude/ |
 
-**Options**: `--max N` limit sessions (default 50), `--pause N` pause every N sessions (default 5).
+**Options**: `--max N` limit sessions (default 50), `--pause N` pause every N sessions (default: no pause).
 
 ## Model Support
 
@@ -78,8 +79,8 @@ your-project/
     .env                    # Model config
     project_profile.json    # Project scan results
     tasks.json              # Task list + status
-    session_result.json     # Session results + history
-    progress.json           # Session log + costs
+    session_result.json     # Last session result (flat)
+    progress.json           # Session history + costs
     tests.json              # Verification records
     .runtime/               # Temp files
   requirements.md           # Requirements (optional)
