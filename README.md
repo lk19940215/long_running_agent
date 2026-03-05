@@ -53,9 +53,10 @@ claude-coder run "实现用户注册和登录功能"
 | `claude-coder run --max 1` | 单次执行 |
 | `claude-coder run --dry-run` | 预览模式 |
 | `claude-coder init` | 初始化项目环境 |
-| `claude-coder add "指令"` | 追加任务（默认用 opus 级模型推理） |
+| `claude-coder add "指令"` | 追加任务 |
 | `claude-coder add -r [file]` | 从需求文件追加任务 |
 | `claude-coder add "..." --model M` | 指定模型追加任务 |
+| `claude-coder auth [url]` | 导出 Playwright 登录状态 |
 | `claude-coder validate` | 手动校验 |
 | `claude-coder status` | 查看进度和成本 |
 | `claude-coder config sync` | 同步配置到 ~/.claude/ |
@@ -71,6 +72,8 @@ claude-coder run "实现用户注册和登录功能"
 **需求文档驱动**：在项目根目录创建 `requirements.md`，运行 `claude-coder run` — 需求变更后用 `claude-coder add -r` 同步新任务。
 
 **追加任务**：`claude-coder add "新增管理员后台"` 或 `claude-coder add -r requirements.md` — 仅追加到任务列表，下次 run 时执行。
+
+**前端测试凭证**：`claude-coder auth http://localhost:3000` — 一键导出浏览器登录态，后续 Agent 测试自动使用已认证状态。
 
 ## 模型支持
 
@@ -94,6 +97,7 @@ your-project/
     progress.json           # 会话历史 + 成本
     tests.json              # 验证记录
     test.env                # 测试凭证（API Key 等，可选）
+    playwright-auth.json    # Playwright 登录状态（可选，auth 命令生成）
     .runtime/               # 临时文件（含日志）
   requirements.md           # 需求文档（可选）
 ```

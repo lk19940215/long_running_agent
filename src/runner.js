@@ -306,7 +306,11 @@ async function run(requirement, opts = {}) {
     const validateResult = await validate(headBefore);
 
     if (!validateResult.fatal) {
-      log('ok', `Session ${session} 校验通过`);
+      if (validateResult.hasWarnings) {
+        log('warn', `Session ${session} 校验通过 (有自动修复或警告)`);
+      } else {
+        log('ok', `Session ${session} 校验通过`);
+      }
       tryPush();
       consecutiveFailures = 0;
 
@@ -369,8 +373,8 @@ async function add(instruction, opts = {}) {
   if (!opts.model) {
     if (config.defaultOpus) {
       opts.model = config.defaultOpus;
-    } else if (config.provider === 'claude' || !config.baseUrl) {
-      opts.model = 'claude-sonnet-4-20250514';
+    } else if (config.model) {
+      opts.model = config.model;
     }
   }
 

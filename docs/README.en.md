@@ -53,9 +53,10 @@ Each session, the agent autonomously follows 6 steps: restore context → env ch
 | `claude-coder run --max 1` | Single session (replaces old view mode) |
 | `claude-coder run --dry-run` | Preview mode |
 | `claude-coder init` | Initialize project environment |
-| `claude-coder add "instruction"` | Append tasks (defaults to opus-class model) |
+| `claude-coder add "instruction"` | Append tasks |
 | `claude-coder add -r [file]` | Append tasks from requirements file |
 | `claude-coder add "..." --model M` | Append tasks with specific model |
+| `claude-coder auth [url]` | Export Playwright login state |
 | `claude-coder validate` | Manually validate last session |
 | `claude-coder status` | View progress and costs |
 | `claude-coder config sync` | Sync config to ~/.claude/ |
@@ -84,6 +85,7 @@ your-project/
     progress.json           # Session history + costs
     tests.json              # Verification records
     test.env                # Test credentials (API keys, optional)
+    playwright-auth.json    # Playwright login state (optional, via auth command)
     .runtime/               # Temp files (logs)
   requirements.md           # Requirements (optional)
 ```

@@ -96,6 +96,13 @@ function buildCodingPrompt(sessionNum, opts = {}) {
     testEnvHint = '测试环境变量在 .claude-coder/test.env（含 API Key 等），测试前用 source .claude-coder/test.env 或 export 加载。';
   }
 
+  // Hint 6c: Playwright authenticated state
+  let playwrightAuthHint = '';
+  const playwrightAuthFile = paths().playwrightAuth;
+  if (playwrightAuthFile && fs.existsSync(playwrightAuthFile)) {
+    playwrightAuthHint = '已检测到 Playwright 登录状态（.claude-coder/playwright-auth.json），前端/全栈测试将使用已认证的浏览器会话（含 cookies 和 localStorage）。无需手动登录。';
+  }
+
   // Hint 7: Session memory (read flat session_result.json)
   let memoryHint = '';
   if (fs.existsSync(p.sessionResult)) {
@@ -136,6 +143,7 @@ function buildCodingPrompt(sessionNum, opts = {}) {
     envHint,
     taskHint,
     testEnvHint,
+    playwrightAuthHint,
     memoryHint,
     serviceHint,
     toolGuidance,

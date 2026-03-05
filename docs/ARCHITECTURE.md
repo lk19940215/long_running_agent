@@ -42,7 +42,7 @@ flowchart TB
 
     query -->|Agent 工具调用| Files
     validate -->|读取| runtime
-    validate -->|"pass → 下一 session<br/>fail → rollback"| coding
+    validate -->|"pass → 下一 session<br/>fatal → rollback<br/>recoverable + commit → warn"| coding
 ```
 
 **核心特征：**
@@ -80,7 +80,7 @@ flowchart LR
     pause_check -->|继续| session
     done_check -->|是| finish([完成])
 
-    val -->|fail| rollback["git reset --hard"]
+    val -->|fatal| rollback["git reset --hard"]
     rollback --> retry_check{连续失败<br/>≥3次?}
     retry_check -->|否| session
     retry_check -->|是| mark_failed["标记 task failed"]
@@ -100,8 +100,9 @@ src/
   prompts.js        提示语构建：系统 prompt 组合 + 条件 hint + 任务分解指导
   init.js           环境初始化：读取 profile 执行依赖安装、服务启动、健康检查
   scanner.js        初始化扫描：调用 runScanSession + 重试
-  validator.js      校验引擎：session_result 结构校验 + git 检查 + 测试覆盖
+  validator.js      校验引擎：分层校验（fatal/recoverable/pass）+ git 检查 + 测试覆盖
   tasks.js          任务管理：CRUD + 状态机 + 进度展示
+  auth.js           Playwright 凭证：导出登录状态 + MCP 配置 + gitignore
   indicator.js      进度指示：终端 spinner + phase/step 文件写入
   setup.js          交互式配置：模型选择、API Key、MCP 工具
 templates/
@@ -125,8 +126,9 @@ templates/
 | `src/prompts.js` | 提示语构建（系统 prompt + 条件 hint + 任务分解指导） |
 | `src/init.js` | 环境初始化（依赖安装、服务启动） |
 | `src/scanner.js` | 项目初始化扫描 |
-| `src/validator.js` | 校验引擎 |
+| `src/validator.js` | 校验引擎（分层校验） |
 | `src/tasks.js` | 任务 CRUD + 状态机 |
+| `src/auth.js` | Playwright 凭证持久化 |
 | `src/indicator.js` | 终端进度指示器 |
 | `src/setup.js` | 交互式配置向导 |
 | `templates/CLAUDE.md` | Agent 协议 |
@@ -140,7 +142,8 @@ templates/
 | `project_profile.json` | 首次扫描 | 项目元数据 |
 | `tasks.json` | 首次扫描 | 任务列表 + 状态跟踪 |
 | `progress.json` | 每次 session 结束 | 结构化会话日志 + 成本记录 |
-| `session_result.json` | 每次 session 结束 | 当前 + 历史 session 结果 |
+| `session_result.json` | 每次 session 结束 | 当前 session 结果（扁平格式，向后兼容旧 `current` 包装） |
+| `playwright-auth.json` | `claude-coder auth` | Playwright 登录状态（cookies + localStorage） |
 | `tests.json` | 首次测试时 | 验证记录（防止反复测试） |
 | `.runtime/` | 运行时 | 临时文件（phase、step、activity.log、logs/） |
 
@@ -183,11 +186,11 @@ flowchart TB
 
 | Session 类型 | systemPrompt | user prompt | 触发条件 |
 |---|---|---|---|
-| **编码** | CLAUDE.md | `buildCodingPrompt()` + 10 个条件 hint | 主循环每次迭代 |
+| **编码** | CLAUDE.md | `buildCodingPrompt()` + 11 个条件 hint | 主循环每次迭代 |
 | **扫描** | CLAUDE.md + SCAN_PROTOCOL.md | `buildScanPrompt()` + 任务分解指导 + profile 质量要求 | 首次运行 |
 | **追加** | CLAUDE.md | `buildAddPrompt()` + 任务分解指导 | `claude-coder add` |
 
-### 编码 Session 的 10 个条件 Hint
+### 编码 Session 的 11 个条件 Hint
 
 | # | Hint | 触发条件 | 影响 |
 |---|---|---|---|
@@ -198,6 +201,7 @@ flowchart TB
 | 5 | `docsHint` | profile.existing_docs 非空或 profile 有缺陷 | Step 4：读文档后再编码；profile 缺陷时提示 Agent 在 Step 6 补全 services/docs |
 | 6 | `taskHint` | tasks.json 存在且有待办任务 | Step 1：跳过读取 tasks.json，harness 已注入当前任务上下文 + 项目绝对路径 |
 | 6b | `testEnvHint` | .claude-coder/test.env 存在 | Step 5：提示 Agent 在测试前加载测试环境变量 |
+| 6c | `playwrightAuthHint` | .claude-coder/playwright-auth.json 存在 | Step 5：提示 Agent 前端测试可使用已认证的浏览器状态 |
 | 7 | `memoryHint` | session_result.json 存在（扁平格式） | Step 1：跳过读取 session_result.json，harness 已注入上次会话摘要 |
 | 8 | `serviceHint` | 始终注入 | Step 6：单次模式停止服务，连续模式保持服务运行 |
 | 9 | `toolGuidance` | 始终注入 | 全局：工具使用规范（Grep/Glob/Read/LS/MultiEdit/Task 替代 bash 命令），非 Claude 模型必需 |
@@ -322,7 +326,7 @@ PreToolUse hook 中追踪每个文件的编辑次数。当同一文件被 Write/
 |------|--------|-----------|
 | `progress.json` | Harness | 只读 |
 | `sync_state.json` | Harness | 只读 |
-| `session_result.json` | Agent 写 `current`，Harness 归档到 `history` | 写 `current` |
+| `session_result.json` | Agent 每次 session 覆盖写入（扁平格式） | 写入 |
 | `tasks.json` | Agent（仅 `status` 字段） | 修改 `status` |
 | `project_profile.json` | Agent（仅扫描阶段） | 扫描时写入 |
 

@@ -8,6 +8,7 @@ const COMMANDS = {
   setup:    { desc: '交互式模型配置',           usage: 'claude-coder setup' },
   init:     { desc: '初始化项目环境',           usage: 'claude-coder init' },
   add:      { desc: '追加任务到 tasks.json',    usage: 'claude-coder add "指令" [--model M] | add -r [file]' },
+  auth:     { desc: '导出 Playwright 登录状态', usage: 'claude-coder auth [url]' },
   validate: { desc: '手动校验上次 session',     usage: 'claude-coder validate' },
   status:   { desc: '查看任务进度和成本',       usage: 'claude-coder status' },
   config:   { desc: '配置管理',                 usage: 'claude-coder config sync' },
@@ -29,6 +30,8 @@ function showHelp() {
   console.log('  claude-coder add "新增搜索功能"       追加任务');
   console.log('  claude-coder add -r                   从 requirements.md 追加任务');
   console.log('  claude-coder add "..." --model opus-4 指定模型追加任务');
+  console.log('  claude-coder auth                    导出 Playwright 登录状态');
+  console.log('  claude-coder auth http://localhost:8080  指定登录 URL');
   console.log('  claude-coder status                  查看进度和成本');
   console.log(`\n前置条件: npm install -g @anthropic-ai/claude-agent-sdk`);
 }
@@ -125,6 +128,11 @@ async function main() {
       }
       const runner = require('../src/runner');
       await runner.add(instruction, opts);
+      break;
+    }
+    case 'auth': {
+      const { auth } = require('../src/auth');
+      await auth(positional[0] || null);
       break;
     }
     case 'validate': {
