@@ -2,7 +2,7 @@
 
 const { COLOR } = require('./config');
 
-const SPINNERS = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+const SPINNERS = ['⠋', '⠙', '⠸', '⠴', '⠦', '⠇'];
 
 class Indicator {
   constructor() {
@@ -22,7 +22,7 @@ class Indicator {
     this.sessionNum = sessionNum;
     this.startTime = Date.now();
     if (stallTimeoutMin > 0) this.stallTimeoutMin = stallTimeoutMin;
-    this.timer = setInterval(() => this._render(), 500);
+    this.timer = setInterval(() => this._render(), 1000);
   }
 
   stop() {

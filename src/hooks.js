@@ -74,7 +74,16 @@ function createSessionHooks(indicator, logStream, options = {}) {
 
         return {};
       }]
-    }]
+    }],
+    PostToolUse: [{
+      matcher: '*',
+      hooks: [async () => {
+        indicator.updatePhase('thinking');
+        indicator.updateStep('');
+        indicator.toolTarget = '';
+        return {};
+      }]
+    }],
   };
 
   return {
