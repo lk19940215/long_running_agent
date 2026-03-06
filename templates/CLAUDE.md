@@ -51,8 +51,7 @@
 | `.claude-coder/session_result.json` | 本次会话的结构化输出 | 每次会话结束时覆盖写入 |
 | `.claude-coder/tests.json` | 功能验证记录（轻量） | 可新增和更新；仅当功能涉及 API 或核心逻辑时记录 |
 | `.claude-coder/test.env` | 测试凭证（API Key、测试账号等） | **可追加写入**；发现测试需要的凭证时持久化到此文件 |
-| `.claude-coder/playwright-auth.json` | 登录状态快照（备份参考） | 只读；由 `claude-coder auth` 生成 |
-| `.claude-coder/browser-profile/` | 持久化浏览器 Profile | MCP 自动维护；首次需手动登录，之后永久保持 |
+| `.claude-coder/playwright-auth.json` | 浏览器登录状态（cookies + localStorage） | 只读；由 `claude-coder auth` 生成，MCP 每次会话自动加载 |
 
 ### requirements.md 处理原则
 
@@ -98,12 +97,9 @@
 ```json
 {
   "session_result": "success | failed",
-  "task_id": "feat-xxx",
   "status_before": "pending | failed",
   "status_after": "done | failed | in_progress | testing",
-  "git_commit": "abc1234 或 null",
-  "tests_passed": true | false,
-  "notes": "本次会话的简要说明"
+  "notes": "本次做了什么 + 遇到的问题 + 给下一个会话的提醒"
 }
 ```
 
@@ -138,38 +134,17 @@
 
 ## 任务状态机（严格遵守）
 
-每个任务在 `tasks.json` 中有一个 `status` 字段，合法状态和迁移规则如下：
+每个任务在 `tasks.json` 中有一个 `status` 字段，合法迁移路径如下：
 
-```
-pending ──→ in_progress ──→ testing ──→ done
-                              │
-                              ▼
-                           failed ──→ in_progress（重试）
-```
-
-### 状态说明
-
-| 状态 | 含义 | 何时设置 |
+| 当前状态 | 可迁移至 | 触发条件 |
 |---|---|---|
-| `pending` | 未开始 | 初始状态 |
-| `in_progress` | 正在实现 | 你开始编码时 |
-| `testing` | 代码已写完，正在测试 | 代码完成、开始验证时 |
-| `done` | 测试通过，功能完成 | 端到端测试通过后 |
-| `failed` | 测试失败或实现有问题 | 测试未通过时 |
+| `pending` | `in_progress` | 开始编码 |
+| `in_progress` | `testing` | 代码写完，开始验证 |
+| `testing` | `done` | 所有测试通过 |
+| `testing` | `failed` | 测试未通过 |
+| `failed` | `in_progress` | 重试修复 |
 
-### 迁移规则（铁律）
-
-- `pending` → `in_progress`：开始工作
-- `in_progress` → `testing`：代码写完，开始验证
-- `testing` → `done`：所有测试通过
-- `testing` → `failed`：测试未通过
-- `failed` → `in_progress`：重试修复
-
-**禁止的迁移**：
-- `pending` → `done`（不允许跳步）
-- `pending` → `testing`（必须先写代码）
-- `in_progress` → `done`（必须先测试）
-- 任何状态 → `pending`（不允许回退到未开始）
+**禁止**：跳步（如 `pending` → `done`）、回退到 `pending`、未测试直接 `done`
 
 ---
 
@@ -248,18 +223,15 @@ pending ──→ in_progress ──→ testing ──→ done
 1. **后台服务管理**：根据 prompt 提示决定——单次模式（`--max 1`）时停止所有后台服务（`lsof -ti :端口 | xargs kill`）；连续模式时保持服务运行，下个 session 继续使用
 2. **按需更新文档和 profile**：
    - **README / 用户文档**：仅当对外行为变化（新增功能、API 变更、使用方式变化）时更新
-   - **架构 / API 文档**：如果本次新增了模块、改变了模块职责或新增了 API 端点，更新 `existing_docs` 中对应的架构或 API 文档。同时更新 `project_profile.json` 的 `existing_docs` 列表（若新增了文档文件）
+   - **项目指令文件**：如果本次新增了模块、改变了模块职责或新增了 API 端点，更新 `.claude/CLAUDE.md`。同时确保 `project_profile.json` 的 `existing_docs` 列表包含此文件
    - **profile 补全**：如果 prompt 中提示 `project_profile.json` 有缺陷（如 services 为空、existing_docs 为空），在此步骤补全。Harness 依赖 profile 做环境初始化和上下文注入
 3. **Git 提交**：`git add -A && git commit -m "feat(task-id): 功能描述"`
 4. **写入 session_result.json**（notes 要充分记录上下文供下次恢复）：
    ```json
    {
      "session_result": "success 或 failed",
-     "task_id": "当前任务 ID",
      "status_before": "任务开始时的状态",
      "status_after": "任务结束时的状态",
-     "git_commit": "本次提交的 hash",
-     "tests_passed": true 或 false,
      "notes": "本次做了什么 + 遇到的问题 + 给下一个会话的提醒"
    }
    ```

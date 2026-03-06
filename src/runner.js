@@ -286,7 +286,7 @@ async function run(requirement, opts = {}) {
     }
 
     log('info', '开始 harness 校验 ...');
-    const validateResult = await validate(headBefore);
+    const validateResult = await validate(headBefore, taskId);
 
     if (!validateResult.fatal) {
       if (validateResult.hasWarnings) {
@@ -302,7 +302,7 @@ async function run(requirement, opts = {}) {
         timestamp: new Date().toISOString(),
         result: 'success',
         cost: sessionResult.cost,
-        taskId: validateResult.sessionData?.task_id || taskId,
+        taskId,
         statusAfter: validateResult.sessionData?.status_after || null,
         notes: validateResult.sessionData?.notes || null,
       });
@@ -375,8 +375,20 @@ async function add(instruction, opts = {}) {
     process.exit(1);
   }
 
+  deployTestRule(p);
+
   await runAddSession(instruction, { projectRoot, ...opts });
   printStats();
+}
+
+function deployTestRule(p) {
+  const dest = path.join(p.loopDir, 'test_rule.md');
+  if (fs.existsSync(dest)) return;
+  if (!fs.existsSync(p.testRuleTemplate)) return;
+  try {
+    fs.copyFileSync(p.testRuleTemplate, dest);
+    log('ok', '已部署测试指导规则 → .claude-coder/test_rule.md');
+  } catch { /* ignore */ }
 }
 
 module.exports = { run, add };

@@ -1,6 +1,7 @@
 'use strict';
 
 const fs = require('fs');
+const path = require('path');
 const { paths, loadConfig, getProjectRoot } = require('./config');
 const { loadTasks, findNextTask, getStats } = require('./tasks');
 
@@ -97,12 +98,10 @@ function buildCodingPrompt(sessionNum, opts = {}) {
     testEnvHint = `如需持久化测试凭证（API Key、测试账号密码等），写入 ${projectRoot}/.claude-coder/test.env（KEY=value 格式，每行一个）。后续 session 会自动感知。`;
   }
 
-  // Hint 6c: Playwright persistent browser profile
+  // Hint 6c: Playwright auth state
   let playwrightAuthHint = '';
-  if (fs.existsSync(p.browserProfile)) {
-    playwrightAuthHint = `已检测到持久化浏览器配置（${projectRoot}/.claude-coder/browser-profile/），MCP 使用 --user-data-dir 模式，登录状态跨会话自动保持。首次访问需登录的页面时，用户需在浏览器窗口中手动完成登录。`;
-  } else if (fs.existsSync(p.playwrightAuth)) {
-    playwrightAuthHint = `已检测到 Playwright 登录状态快照（${projectRoot}/.claude-coder/playwright-auth.json），建议运行 claude-coder auth 升级到持久化浏览器模式以获得更好的登录保持效果。`;
+  if (fs.existsSync(p.playwrightAuth)) {
+    playwrightAuthHint = `已检测到 Playwright 登录状态（${projectRoot}/.claude-coder/playwright-auth.json），MCP 使用 --isolated --storage-state 模式，每次会话自动加载 localStorage 和 cookies。`;
   }
 
   // Hint 7: Session memory (read flat session_result.json)
@@ -110,9 +109,9 @@ function buildCodingPrompt(sessionNum, opts = {}) {
   if (fs.existsSync(p.sessionResult)) {
     try {
       const sr = JSON.parse(fs.readFileSync(p.sessionResult, 'utf8'));
-      if (sr?.task_id) {
-        memoryHint = `上次会话: ${sr.task_id} → ${sr.status_after || sr.session_result}` +
-          (sr.notes ? `, 要点: ${sr.notes.slice(0, 100)}` : '') + '。';
+      if (sr?.session_result) {
+        memoryHint = `上次会话: ${sr.session_result}（${sr.status_before || '?'} → ${sr.status_after || '?'}）` +
+          (sr.notes ? `, 要点: ${sr.notes.slice(0, 150)}` : '') + '。';
       }
     } catch { /* ignore */ }
   }
@@ -200,7 +199,7 @@ function buildScanPrompt(projectType, requirement) {
     'profile 质量要求（必须遵守，harness 会校验）：',
     '- services 数组必须包含所有可启动服务（command、port、health_check），不得为空',
     '- existing_docs 必须列出所有实际存在的文档路径',
-    '- 前后端分离项目必须生成 docs/ARCHITECTURE.md（模块职责、数据流、API 路由），并加入 existing_docs',
+    '- 检查 .claude/CLAUDE.md 是否存在，若无则生成（WHAT/WHY/HOW 格式：技术栈、关键决策、开发命令、关键路径、编码规则），并加入 existing_docs',
     '- scan_files_checked 必须列出所有实际扫描过的文件',
     '',
     '步骤 3：根据以下指导分解任务到 tasks.json（格式见 CLAUDE.md）：',
@@ -265,6 +264,21 @@ function buildAddPrompt(instruction) {
     }
   } catch { /* ignore */ }
 
+  // --- Conditional: Playwright test rule hint ---
+  let testRuleHint = '';
+  const testRulePath = path.join(p.loopDir, 'test_rule.md');
+  const hasMcp = fs.existsSync(p.mcpConfig);
+  if (fs.existsSync(testRulePath) && hasMcp) {
+    testRuleHint = [
+      '【Playwright 测试规则】项目已配置 Playwright MCP（.mcp.json），' +
+      '`.claude-coder/test_rule.md` 中包含通用测试指导规则（Smart Snapshot、Token 预算控制、三步测试方法论、等待策略等）。',
+      '当任务涉及端到端测试时：',
+      '  - 在 steps 中第一步加入「阅读 .claude-coder/test_rule.md 了解测试规范和成本控制」',
+      '  - 测试步骤按 test_rule.md 中的 tasks.json 模板格式编写（含环境检查、优先级标注、预算控制）',
+      '  - 设定合理的 test_tier（unit/smoke/regression/full_e2e）',
+    ].join('\n');
+  }
+
   return [
     // --- Primacy zone: role + identity ---
     '你是资深需求分析师，擅长将模糊需求分解为可执行的原子任务。',
@@ -287,12 +301,13 @@ function buildAddPrompt(instruction) {
     '5. 分解任务：每个任务对应一个独立可测试的功能单元，description 简明（40字内），steps 具体可操作',
     '6. 追加到 tasks.json，id 和 priority 从已有最大值递增，status: pending',
     '7. git add -A && git commit -m "chore: add new tasks"',
-    '8. 写入 session_result.json（格式：{ "session_result": "success", "task_id": "add-tasks", "status_before": "N/A", "status_after": "N/A", "git_commit": "hash", "tests_passed": false, "notes": "追加了 N 个任务：简述" }）',
+    '8. 写入 session_result.json（格式：{ "session_result": "success", "status_before": "N/A", "status_after": "N/A", "notes": "追加了 N 个任务：简述" }）',
     '',
 
     // --- Quality constraints ---
     taskGuide,
     '',
+    testRuleHint,
     '不修改已有任务，不实现代码。',
     '',
 

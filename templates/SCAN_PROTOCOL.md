@@ -20,8 +20,8 @@
 
 **文档标准（按优先级）**：
 1. **README.md**（必须有）：项目简介、技术栈、目录结构、如何运行。若缺失或过于简略，先补充
-2. **架构文档**（推荐有）：如果 `docs/` 中没有架构概述，生成一份简要的架构文档（如 `docs/ARCHITECTURE.md`），包含：模块职责、核心数据流、关键 API 路由。格式用结构化标题，方便 AI 快速检索
-3. **API 文档**：如果项目有 API 且无文档，在 docs/ 或 README 中补充主要端点列表
+2. **`.claude/CLAUDE.md`**（推荐有）：检查 `.claude/` 目录下是否已有 `CLAUDE.md`。若无，生成一份项目指令文件，采用 WHAT/WHY/HOW 格式：WHAT（项目是什么、技术栈）、WHY（关键技术决策）、HOW（开发命令、测试命令、关键路径表、编码规则）。此文件会被 Claude Code 自动加载为项目上下文
+3. **API 文档**：如果项目有 API 且无文档，在 `.claude/CLAUDE.md` 的 HOW 部分或 README 中补充主要端点列表
 
 按顺序检查以下文件，**存在则读取**，不存在则跳过：
 
@@ -42,7 +42,7 @@
 2. 根据需求（`requirements.md` 或 harness 传入的需求文本），设计技术架构
 3. 创建项目目录结构和基础文件（入口文件、配置文件、依赖文件等）
 4. 生成 `README.md`（项目用途、技术栈、如何运行）
-5. 如果项目包含 2 个以上模块或前后端分离，生成简要架构文档 `docs/ARCHITECTURE.md`（模块职责、数据流、API 路由）
+5. 如果 `.claude/CLAUDE.md` 不存在，生成项目指令文件（WHAT/WHY/HOW 格式），包含模块职责、数据流、API 路由、开发和测试命令
 6. 初始化包管理（`npm init` / `pip freeze` 等）
 7. 完成后，执行**步骤 2A 的扫描流程**生成 `project_profile.json`
 
@@ -100,7 +100,7 @@
     "python_env": "conda:env_name | venv | system",
     "node_version": "20 | 18 | none"
   },
-  "existing_docs": ["README.md", "docs/api.md"],
+  "existing_docs": ["README.md", ".claude/CLAUDE.md"],
   "has_tests": false,
   "has_docker": false,
   "mcp_tools": {

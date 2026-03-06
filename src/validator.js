@@ -43,10 +43,6 @@ function validateSessionResult() {
     return { valid: false, fatal: true, recoverable: false, reason: `无效 status_after: ${data.status_after}` };
   }
 
-  if (!data.task_id) {
-    log('warn', 'session_result.json 缺少 task_id (建议包含)');
-  }
-
   if (data.session_result === 'success') {
     log('ok', 'session_result.json 合法 (success)');
   } else {
@@ -83,7 +79,7 @@ function checkGitProgress(headBefore) {
   return { hasCommit: true, warning: false };
 }
 
-function checkTestCoverage() {
+function checkTestCoverage(taskId) {
   const p = paths();
 
   if (!fs.existsSync(p.testsFile) || !fs.existsSync(p.sessionResult)) return;
@@ -91,11 +87,9 @@ function checkTestCoverage() {
   try {
     const sr = JSON.parse(fs.readFileSync(p.sessionResult, 'utf8'));
     const tests = JSON.parse(fs.readFileSync(p.testsFile, 'utf8'));
-
-    const taskId = sr.task_id || '';
     const testCases = tests.test_cases || [];
 
-    if (sr.status_after === 'done' && sr.tests_passed) {
+    if (sr.status_after === 'done' && taskId) {
       const taskTests = testCases.filter(t => t.feature_id === taskId);
       if (taskTests.length > 0) {
         const failed = taskTests.filter(t => t.last_result === 'fail');
@@ -109,7 +103,7 @@ function checkTestCoverage() {
   } catch { /* ignore */ }
 }
 
-async function validate(headBefore) {
+async function validate(headBefore, taskId) {
   log('info', '========== 开始校验 ==========');
 
   let srResult = validateSessionResult();
@@ -123,7 +117,7 @@ async function validate(headBefore) {
     srResult.fatal = true;
   }
 
-  checkTestCoverage();
+  checkTestCoverage(taskId);
 
   const fatal = srResult.fatal;
   const hasWarnings = gitResult.warning || srResult.recoverable;

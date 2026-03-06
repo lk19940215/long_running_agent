@@ -3,7 +3,7 @@
 const { inferPhaseStep } = require('./indicator');
 const { log } = require('./config');
 
-const EDIT_THRESHOLD = 5;
+const DEFAULT_EDIT_THRESHOLD = 30;
 
 function logToolCall(logStream, input) {
   if (!logStream) return;
@@ -31,6 +31,7 @@ function createSessionHooks(indicator, logStream, options = {}) {
     enableStallDetection = false,
     stallTimeoutMs = 1800000,
     enableEditGuard = false,
+    editThreshold = DEFAULT_EDIT_THRESHOLD,
   } = options;
 
   const editCounts = {};
@@ -62,7 +63,7 @@ function createSessionHooks(indicator, logStream, options = {}) {
           const target = input.tool_input?.file_path || input.tool_input?.path || '';
           if (['Write', 'Edit', 'MultiEdit'].includes(input.tool_name) && target) {
             editCounts[target] = (editCounts[target] || 0) + 1;
-            if (editCounts[target] > EDIT_THRESHOLD) {
+            if (editCounts[target] > editThreshold) {
               return {
                 decision: 'block',
                 message: `已对 ${target} 编辑 ${editCounts[target]} 次，疑似死循环。请重新审视方案后再继续。`,

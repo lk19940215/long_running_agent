@@ -57,13 +57,11 @@ function paths() {
     testsFile:        path.join(loopDir, 'tests.json'),
     testEnvFile:      path.join(loopDir, 'test.env'),
     playwrightAuth:   path.join(loopDir, 'playwright-auth.json'),
-    browserProfile:   path.join(loopDir, 'browser-profile'),
     mcpConfig:        path.join(getProjectRoot(), '.mcp.json'),
     claudeMd:         getTemplatePath('CLAUDE.md'),
     scanProtocol:     getTemplatePath('SCAN_PROTOCOL.md'),
+    testRuleTemplate: getTemplatePath('test_rule.md'),
     runtime,
-    phaseFile:        path.join(runtime, 'phase'),
-    stepFile:         path.join(runtime, 'step'),
     logsDir:          path.join(runtime, 'logs'),
   };
 }
@@ -108,6 +106,7 @@ function loadConfig() {
     defaultHaiku: env.ANTHROPIC_DEFAULT_HAIKU_MODEL || '',
     thinkingBudget: env.ANTHROPIC_THINKING_BUDGET || '',
     stallTimeout: parseInt(env.SESSION_STALL_TIMEOUT, 10) || 1800,
+    editThreshold: parseInt(env.EDIT_THRESHOLD, 10) || 15,
     raw: env,
   };
 

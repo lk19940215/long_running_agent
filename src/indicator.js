@@ -1,7 +1,6 @@
 'use strict';
 
-const fs = require('fs');
-const { paths, COLOR } = require('./config');
+const { COLOR } = require('./config');
 
 const SPINNERS = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
 
@@ -16,14 +15,11 @@ class Indicator {
     this.lastToolTime = Date.now();
     this.sessionNum = 0;
     this.startTime = Date.now();
-    this._lastContentKey = '';
-    this._lastRenderTime = 0;
   }
 
   start(sessionNum) {
     this.sessionNum = sessionNum;
     this.startTime = Date.now();
-    this._lastRenderTime = Date.now();
     this.timer = setInterval(() => this._render(), 500);
   }
 
@@ -37,24 +33,14 @@ class Indicator {
 
   updatePhase(phase) {
     this.phase = phase;
-    this._writePhaseFile();
   }
 
   updateStep(step) {
     this.step = step;
-    this._writeStepFile();
   }
 
   appendActivity(toolName, summary) {
     this.lastActivity = `${toolName}: ${summary}`;
-  }
-
-  _writePhaseFile() {
-    try { fs.writeFileSync(paths().phaseFile, this.phase, 'utf8'); } catch { /* ignore */ }
-  }
-
-  _writeStepFile() {
-    try { fs.writeFileSync(paths().stepFile, this.step, 'utf8'); } catch { /* ignore */ }
   }
 
   getStatusLine() {
@@ -82,28 +68,23 @@ class Indicator {
     }
     if (this.step) {
       line += ` | ${this.step}`;
-      if (this.toolTarget) line += `: ${this.toolTarget}`;
+      if (this.toolTarget) {
+        const cols = process.stderr.columns || 80;
+        const usedWidth = line.replace(/\x1b\[[^m]*m/g, '').length;
+        const availWidth = Math.max(15, cols - usedWidth - 4);
+        const target = this.toolTarget.length > availWidth
+          ? '…' + this.toolTarget.slice(-(availWidth - 1))
+          : this.toolTarget;
+        line += `: ${target}`;
+      }
     }
     return line;
   }
 
   _render() {
     this.spinnerIndex++;
-    const contentKey = `${this.phase}|${this.step}|${this.toolTarget}`;
-    const now = Date.now();
-    const contentChanged = contentKey !== this._lastContentKey;
-
-    if (!contentChanged && now - this._lastRenderTime < 3000) {
-      return;
-    }
-    this._lastContentKey = contentKey;
-    this._lastRenderTime = now;
-
     const line = this.getStatusLine();
-    const maxWidth = process.stderr.columns || 80;
-    const truncated = line.length > maxWidth + 20 ? line.slice(0, maxWidth + 20) : line;
-
-    process.stderr.write(`\r\x1b[K${truncated}`);
+    process.stderr.write(`\r\x1b[K${line}`);
   }
 }
 
@@ -112,7 +93,7 @@ function extractFileTarget(toolInput) {
     ? (toolInput.file_path || toolInput.path || '')
     : '';
   if (!raw) return '';
-  return raw.split('/').slice(-2).join('/').slice(0, 40);
+  return raw.split('/').slice(-2).join('/');
 }
 
 function extractBashLabel(cmd) {

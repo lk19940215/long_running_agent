@@ -132,6 +132,7 @@ async function runCodingSession(sessionNum, opts = {}) {
     enableStallDetection: true,
     stallTimeoutMs,
     enableEditGuard: true,
+    editThreshold: config.editThreshold,
   });
 
   indicator.start(sessionNum);
