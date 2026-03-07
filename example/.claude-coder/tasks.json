@@ -1,0 +1,35 @@
+{
+  "project": "todo-api",
+  "created_at": "2026-03-07",
+  "features": [
+    {
+      "id": "feat-001",
+      "category": "infra",
+      "priority": 1,
+      "description": "验证项目可启动且健康检查通过",
+      "steps": [
+        "【规则】阅读 .claude/CLAUDE.md 了解项目结构",
+        "【环境】npm install 确保依赖已安装",
+        "【启动】npm start 启动服务",
+        "【验证】curl -s http://localhost:3000/health | grep -q '\"status\":\"ok\"' && echo 'pass'"
+      ],
+      "status": "done",
+      "depends_on": []
+    },
+    {
+      "id": "feat-002",
+      "category": "backend",
+      "priority": 2,
+      "description": "验证 TODO API 全部 CRUD 接口",
+      "steps": [
+        "【规则】阅读 .claude/CLAUDE.md 确认 API 路由规范",
+        "【P0】curl -X POST http://localhost:3000/api/todos -H 'Content-Type: application/json' -d '{\"title\":\"Test\"}' → 201",
+        "【P0】curl -s http://localhost:3000/api/todos | grep -q 'Test' && echo 'GET pass'",
+        "【P0】curl -X PUT http://localhost:3000/api/todos/1 -H 'Content-Type: application/json' -d '{\"completed\":true}' → 200",
+        "【P0】curl -X DELETE http://localhost:3000/api/todos/1 -w '%{http_code}' -o /dev/null | grep -q '204' && echo 'DELETE pass'"
+      ],
+      "status": "pending",
+      "depends_on": ["feat-001"]
+    }
+  ]
+}
