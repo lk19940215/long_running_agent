@@ -80,6 +80,8 @@ rm -rf /tmp/test-project
 ### 5. 发布
 
 ```bash
+npm login --registry https://registry.npmjs.org/
+
 # 首次发布
 npm publish
 
