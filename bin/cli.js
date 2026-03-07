@@ -4,10 +4,10 @@
 const pkg = require('../package.json');
 
 const COMMANDS = {
-  run:      { desc: '自动编码循环',             usage: 'claude-coder run [需求] [--max N] [--pause N] [--dry-run]' },
+  run:      { desc: '自动编码循环',             usage: 'claude-coder run [--max N] [--pause N] [--dry-run]' },
   setup:    { desc: '交互式模型配置',           usage: 'claude-coder setup' },
   init:     { desc: '初始化项目环境',           usage: 'claude-coder init' },
-  add:      { desc: '追加任务到 tasks.json',    usage: 'claude-coder add "指令" [--model M] | add -r [file]' },
+  add:      { desc: '追加任务并可选自动执行',   usage: 'claude-coder add "指令" [--model M] | add -r [file]' },
   auth:     { desc: '导出 Playwright 登录状态', usage: 'claude-coder auth [url]' },
   validate: { desc: '手动校验上次 session',     usage: 'claude-coder validate' },
   status:   { desc: '查看任务进度和成本',       usage: 'claude-coder status' },
@@ -22,11 +22,11 @@ function showHelp() {
   }
   console.log('\n示例:');
   console.log('  claude-coder setup                   配置模型和 API Key');
-  console.log('  claude-coder run "实现用户登录"       开始自动编码');
+  console.log('  claude-coder add "实现用户登录"       添加任务（询问是否自动执行）');
+  console.log('  claude-coder run                     执行所有待处理任务');
   console.log('  claude-coder run --max 1             单次执行');
   console.log('  claude-coder run --max 5 --pause 5   每 5 个 session 暂停确认');
   console.log('  claude-coder run --dry-run            预览模式');
-  console.log('  claude-coder add "新增搜索功能"       追加任务');
   console.log('  claude-coder add -r                   从 requirements.md 追加任务');
   console.log('  claude-coder add "..." --model opus-4 指定模型追加任务');
   console.log('  claude-coder auth                    导出 Playwright 登录状态');
@@ -97,7 +97,7 @@ async function main() {
   switch (command) {
     case 'run': {
       const runner = require('../src/runner');
-      await runner.run(positional[0] || null, opts);
+      await runner.run(opts);
       break;
     }
     case 'setup': {

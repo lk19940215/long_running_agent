@@ -67,35 +67,39 @@ function createSessionHooks(indicator, logStream, options = {}) {
   if (enableStallDetection) {
     stallChecker = setInterval(() => {
       const now = Date.now();
-      const idleMs = now - indicator.lastToolTime;
+      const idleMs = now - indicator.lastActivityTime; // 使用活动时间而非工具调用时间
 
+      // 优先检测 completion 超时（session_result 写入后的缩短超时）
       if (completionDetectedAt > 0) {
         const sinceCompletion = now - completionDetectedAt;
         if (sinceCompletion > completionTimeoutMs && !stallDetected) {
           stallDetected = true;
-          const secSince = Math.floor(sinceCompletion / 1000);
-          log('warn', `session_result 已写入 ${secSince} 秒前，模型未自行终止，自动中断`);
+          const shortMin = Math.ceil(completionTimeoutMs / 60000);
+          const actualMin = Math.floor(sinceCompletion / 60000);
+          log('warn', `\nsession_result 已写入 ${actualMin} 分钟，超过 ${shortMin} 分钟上限，自动中断`);
           if (logStream) {
-            logStream.write(`[${new Date().toISOString()}] COMPLETION_TIMEOUT: session_result 写入后 ${secSince}s 无终止，自动中断\n`);
+            logStream.write(`\n[${new Date().toISOString()}] STALL: session_result 写入后 ${actualMin} 分钟（上限 ${shortMin} 分钟），自动中断\n`);
           }
           if (abortController) {
             abortController.abort();
-            log('warn', '已发送中断信号（完成检测）');
+            log('warn', '\n已发送中断信号');
           }
-          return;
         }
+        // 已检测到 completion，不再执行 stall 检测，等待 completion 超时
+        return;
       }
 
+      // 正常 stall 检测（仅在未检测到 completion 时执行）
       if (idleMs > stallTimeoutMs && !stallDetected) {
         stallDetected = true;
         const idleMin = Math.floor(idleMs / 60000);
-        log('warn', `无新工具调用超过 ${idleMin} 分钟，自动中断 session`);
+        log('warn', `\n无响应超过 ${idleMin} 分钟，自动中断 session`);
         if (logStream) {
-          logStream.write(`[${new Date().toISOString()}] STALL: 无工具调用 ${idleMin} 分钟，自动中断\n`);
+          logStream.write(`\n[${new Date().toISOString()}] STALL: 无响应 ${idleMin} 分钟，自动中断\n`);
         }
         if (abortController) {
           abortController.abort();
-          log('warn', '已发送中断信号');
+          log('warn', '\n已发送中断信号');
         }
       }
     }, 30000);
@@ -138,9 +142,11 @@ function createSessionHooks(indicator, logStream, options = {}) {
           if (isSessionResultWrite(input.tool_name, input.tool_input)) {
             completionDetectedAt = Date.now();
             const shortMin = Math.ceil(completionTimeoutMs / 60000);
+            indicator.setCompletionDetected(shortMin);
+            log('info', '');
             log('info', `检测到 session_result 写入，${shortMin} 分钟内模型未终止将自动中断`);
             if (logStream) {
-              logStream.write(`[${new Date().toISOString()}] COMPLETION_DETECTED: session_result.json written, ${shortMin}min grace period\n`);
+              logStream.write(`\n[${new Date().toISOString()}] COMPLETION_DETECTED: session_result.json written, ${shortMin}min grace period\n`);
             }
           }
         }

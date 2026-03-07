@@ -57,14 +57,17 @@ class Indicator {
     this.timer = null;
     this.lastActivity = '';
     this.lastToolTime = Date.now();
+    this.lastActivityTime = Date.now(); // 最后活动时间（包括文字输出）
     this.sessionNum = 0;
     this.startTime = Date.now();
     this.stallTimeoutMin = 30;
+    this.completionTimeoutMin = null; // session_result 写入后的缩短超时
   }
 
   start(sessionNum, stallTimeoutMin) {
     this.sessionNum = sessionNum;
     this.startTime = Date.now();
+    this.lastActivityTime = Date.now();
     if (stallTimeoutMin > 0) this.stallTimeoutMin = stallTimeoutMin;
     this.timer = setInterval(() => this._render(), 1000);
   }
@@ -89,6 +92,14 @@ class Indicator {
     this.lastActivity = `${toolName}: ${summary}`;
   }
 
+  setCompletionDetected(timeoutMin) {
+    this.completionTimeoutMin = timeoutMin;
+  }
+
+  updateActivity() {
+    this.lastActivityTime = Date.now();
+  }
+
   getStatusLine() {
     const now = new Date();
     const hh = String(now.getHours()).padStart(2, '0');
@@ -105,12 +116,16 @@ class Indicator {
       ? `${COLOR.yellow}思考中${COLOR.reset}`
       : `${COLOR.green}编码中${COLOR.reset}`;
 
-    const idleMs = Date.now() - this.lastToolTime;
+    const idleMs = Date.now() - this.lastActivityTime;
     const idleMin = Math.floor(idleMs / 60000);
 
     let line = `${spinner} [Session ${this.sessionNum}] ${clock} ${phaseLabel} ${mm}:${ss}`;
     if (idleMin >= 2) {
-      line += ` | ${COLOR.red}${idleMin}分无工具调用（等待模型响应, ${this.stallTimeoutMin}分钟超时自动中断）${COLOR.reset}`;
+      if (this.completionTimeoutMin) {
+        line += ` | ${COLOR.red}${idleMin}分无响应（session_result 已写入, ${this.completionTimeoutMin}分钟超时自动中断）${COLOR.reset}`;
+      } else {
+        line += ` | ${COLOR.red}${idleMin}分无响应（等待模型响应, ${this.stallTimeoutMin}分钟超时自动中断）${COLOR.reset}`;
+      }
     }
     if (this.step) {
       line += ` | ${this.step}`;
@@ -172,6 +187,7 @@ function inferPhaseStep(indicator, toolName, toolInput) {
   const name = (toolName || '').toLowerCase();
 
   indicator.lastToolTime = Date.now();
+  indicator.lastActivityTime = Date.now();
 
   if (name === 'write' || name === 'edit' || name === 'multiedit' || name === 'str_replace_editor' || name === 'strreplace') {
     indicator.updatePhase('coding');

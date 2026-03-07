@@ -88,6 +88,8 @@ function logMessage(message, logStream, indicator) {
   if (message.type === 'assistant' && message.message?.content) {
     for (const block of message.message.content) {
       if (block.type === 'text' && block.text) {
+        // 模型有文字输出，更新活动时间
+        if (indicator) indicator.updateActivity();
         if (indicator) {
           process.stderr.write('\r\x1b[K');
           const contentKey = `${indicator.phase}|${indicator.step}|${indicator.toolTarget}`;

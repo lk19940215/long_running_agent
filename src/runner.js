@@ -148,7 +148,7 @@ async function promptContinue() {
   });
 }
 
-async function run(requirement, opts = {}) {
+async function run(opts = {}) {
   const p = paths();
   const projectRoot = getProjectRoot();
   ensureLoopDir();
@@ -168,12 +168,6 @@ async function run(requirement, opts = {}) {
     log('ok', `模型配置已加载: ${config.provider}${config.model ? ` (${config.model})` : ''}`);
   }
 
-  const reqFile = path.join(projectRoot, 'requirements.md');
-  if (fs.existsSync(reqFile) && !requirement) {
-    requirement = fs.readFileSync(reqFile, 'utf8');
-    log('ok', '已读取需求文件: requirements.md');
-  }
-
   try {
     execSync('git rev-parse --is-inside-work-tree', { cwd: projectRoot, stdio: 'ignore' });
   } catch {
@@ -185,66 +179,18 @@ async function run(requirement, opts = {}) {
     });
   }
 
-  // --- Phase 1: 项目扫描（生成 profile） ---
+  // 检查前置条件
   if (!fs.existsSync(p.profile)) {
-    if (!requirement) {
-      log('error', '首次运行需要提供需求描述');
-      console.log('');
-      console.log('用法（二选一）:');
-      console.log('  方式 1: 在项目根目录创建 requirements.md');
-      console.log('          claude-coder run');
-      console.log('');
-      console.log('  方式 2: 直接传入一句话需求');
-      console.log('          claude-coder run "你的需求描述"');
-      process.exit(1);
-    }
-
-    if (dryRun) {
-      log('info', '[DRY-RUN] 将执行初始化扫描（跳过）');
-      const reqPreview = (requirement || '').slice(0, 100);
-      log('info', `[DRY-RUN] 需求: ${reqPreview}${reqPreview.length >= 100 ? '...' : ''}`);
-      return;
-    }
-
-    await loadSDK();
-    const scanResult = await scan(requirement, { projectRoot });
-    if (!scanResult.success) {
-      console.log('');
-      console.log(`${COLOR.yellow}═══════════════════════════════════════════════${COLOR.reset}`);
-      console.log(`${COLOR.yellow}  若出现 "Credit balance is too low"，请运行:${COLOR.reset}`);
-      console.log(`  ${COLOR.green}claude-coder setup${COLOR.reset}`);
-      console.log(`${COLOR.yellow}═══════════════════════════════════════════════${COLOR.reset}`);
-      process.exit(1);
-    }
-  }
-
-  // --- Phase 2: 任务分解（scan 后衔接 add） ---
-  if (!fs.existsSync(p.tasksFile)) {
-    if (requirement) {
-      console.log('');
-      log('ok', '项目扫描完成，是否根据需求分解任务？');
-      const shouldAdd = await promptContinue();
-      if (shouldAdd) {
-        if (!dryRun) await loadSDK();
-        deployTestRule(p);
-        log('info', '正在分解任务...');
-        await runAddSession(requirement, { projectRoot });
-      } else {
-        log('info', '跳过任务分解。后续可通过 claude-coder add 手动添加任务。');
-      }
-    } else {
-      log('warn', 'tasks.json 不存在且无需求描述，请运行 claude-coder add 添加任务');
-    }
-  }
-
-  if (!fs.existsSync(p.tasksFile)) {
-    log('error', 'tasks.json 不存在，无法进入编码循环。请先运行 claude-coder add 添加任务。');
+    log('error', 'profile.json 不存在，请先运行 claude-coder add 添加任务');
     process.exit(1);
   }
 
-  if (fs.existsSync(p.profile) && fs.existsSync(p.tasksFile)) {
-    printStats();
+  if (!fs.existsSync(p.tasksFile)) {
+    log('error', 'tasks.json 不存在，请先运行 claude-coder add 添加任务');
+    process.exit(1);
   }
+
+  printStats();
 
   if (!dryRun) await loadSDK();
   log('info', `开始编码循环 (最多 ${maxSessions} 个会话) ...`);
@@ -377,6 +323,17 @@ async function run(requirement, opts = {}) {
   printStats();
 }
 
+async function promptAutoRun() {
+  if (!process.stdin.isTTY) return false;
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  return new Promise(resolve => {
+    rl.question('任务分解完成后是否自动开始执行？(y/n) ', answer => {
+      rl.close();
+      resolve(/^[Yy]/.test(answer.trim()));
+    });
+  });
+}
+
 async function add(instruction, opts = {}) {
   await loadSDK();
   const p = paths();
@@ -396,15 +353,34 @@ async function add(instruction, opts = {}) {
   const displayModel = opts.model || config.model || '(default)';
   log('ok', `模型配置已加载: ${config.provider || 'claude'} (add 使用: ${displayModel})`);
 
+  // 如果 profile 不存在，先执行项目扫描
   if (!fs.existsSync(p.profile)) {
-    log('error', 'add 需要先完成项目扫描（至少运行一次 claude-coder run）');
-    process.exit(1);
+    log('info', '首次使用，正在执行项目扫描...');
+    const scanResult = await scan(instruction, { projectRoot });
+    if (!scanResult.success) {
+      console.log('');
+      console.log(`${COLOR.yellow}═══════════════════════════════════════════════${COLOR.reset}`);
+      console.log(`${COLOR.yellow}  若出现 "Credit balance is too low"，请运行:${COLOR.reset}`);
+      console.log(`  ${COLOR.green}claude-coder setup${COLOR.reset}`);
+      console.log(`${COLOR.yellow}═══════════════════════════════════════════════${COLOR.reset}`);
+      process.exit(1);
+    }
   }
+
+  // 询问用户是否在完成后自动运行
+  const shouldAutoRun = await promptAutoRun();
 
   deployTestRule(p);
 
   await runAddSession(instruction, { projectRoot, ...opts });
   printStats();
+
+  // 如果用户选择自动运行，则调用 run()
+  if (shouldAutoRun) {
+    console.log('');
+    log('info', '开始自动执行任务...');
+    await run(opts);
+  }
 }
 
 function deployTestRule(p) {
