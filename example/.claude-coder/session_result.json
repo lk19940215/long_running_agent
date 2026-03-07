@@ -2,5 +2,5 @@
   "session_result": "success",
   "status_before": "pending",
   "status_after": "done",
-  "notes": "Session 1 完成 feat-001：验证项目可启动且健康检查通过。\n\n工作内容：\n1. 读取 requirements.md、package.json、server.js 了解项目结构\n2. 执行 npm install 安装依赖\n3. 启动服务并验证健康检查 /health 返回 {\"status\":\"ok\"}\n4. 验证 API 路由 /api/todos 正常工作\n5. 更新 tasks.json 状态为 done\n\n问题：\n- 首次启动时旧进程未正确终止，导致健康检查返回旧代码的响应\n- 已使用 PowerShell 强制终止旧进程并重启服务解决\n\n下一个会话提醒：\n- 服务已在后台运行（端口 3000），进程 ID 可通过 netstat -ano | findstr :3000 查找\n- feat-002（CRUD 接口验证）依赖已完成，可以开始执行\n- 测试凭证文件 .claude-coder/test.env 尚未创建（本次不需要）"
+  "notes": "Session 2 完成 feat-002：验证 TODO API 全部 CRUD 接口。\n\n验证结果：\n- POST /api/todos → 201, 返回 {\"id\":1,\"title\":\"Test Task\",\"completed\":false,\"createdAt\":\"...\"}\n- GET /api/todos → 200, 返回包含 TODO 的数组\n- PUT /api/todos/1 → 200, completed 更新为 true\n- DELETE /api/todos/1 → 204 No Content\n\n新增文件：\n- .claude-coder/tests.json: 记录 4 个验证命令，last_result 均为 pass\n\n状态：feat-001 done, feat-002 done\n\n下一个会话提醒：\n- 所有任务已完成（2/2 done, 0 failed）\n- 服务仍在后台运行（端口 3000）\n- 测试凭证文件 .claude-coder/test.env 尚未创建（本次不需要）"
 }
