@@ -22,10 +22,18 @@ async function loadSDK() {
       return import(resolved);
     },
     () => {
+      const { createRequire } = require('module');
+      const resolved = createRequire(path.join(process.cwd(), 'noop.js')).resolve(pkgName);
+      return import(resolved);
+    },
+    () => {
       const { execSync } = require('child_process');
-      const prefix = execSync('npm prefix -g', { encoding: 'utf8' }).trim();
-      const sdkPath = path.join(prefix, 'lib', 'node_modules', pkgName, 'sdk.mjs');
-      return import(sdkPath);
+      const globalRoot = execSync('npm root -g', { encoding: 'utf8' }).trim();
+      const sdkDir = path.join(globalRoot, pkgName);
+      const pkgJson = JSON.parse(fs.readFileSync(path.join(sdkDir, 'package.json'), 'utf8'));
+      const entry = pkgJson.exports?.['.'] || pkgJson.main || 'index.js';
+      const entryFile = typeof entry === 'object' ? (entry.import || entry.default || entry.node) : entry;
+      return import(path.join(sdkDir, entryFile));
     },
   ];
 
@@ -128,9 +136,11 @@ async function runCodingSession(sessionNum, opts = {}) {
   writeSessionSeparator(logStream, sessionNum, `coding task=${taskId}`);
 
   const stallTimeoutMs = config.stallTimeout * 1000;
+  const abortController = new AbortController();
   const { hooks, cleanup, isStalled } = createSessionHooks(indicator, logStream, {
     enableStallDetection: true,
     stallTimeoutMs,
+    abortController,
     enableEditGuard: true,
     editThreshold: config.editThreshold,
   });
@@ -142,6 +152,7 @@ async function runCodingSession(sessionNum, opts = {}) {
     const queryOpts = buildQueryOptions(config, opts);
     queryOpts.systemPrompt = systemPrompt;
     queryOpts.hooks = hooks;
+    queryOpts.abortController = abortController;
 
     const session = sdk.query({ prompt, options: queryOpts });
 
@@ -199,9 +210,11 @@ async function runScanSession(requirement, opts = {}) {
   writeSessionSeparator(logStream, 0, `scan (${projectType})`);
 
   const stallTimeoutMs = config.stallTimeout * 1000;
+  const abortController = new AbortController();
   const { hooks, cleanup, isStalled } = createSessionHooks(indicator, logStream, {
     enableStallDetection: true,
     stallTimeoutMs,
+    abortController,
   });
 
   indicator.start(0, Math.floor(stallTimeoutMs / 60000));
@@ -211,6 +224,7 @@ async function runScanSession(requirement, opts = {}) {
     const queryOpts = buildQueryOptions(config, opts);
     queryOpts.systemPrompt = systemPrompt;
     queryOpts.hooks = hooks;
+    queryOpts.abortController = abortController;
 
     const session = sdk.query({ prompt, options: queryOpts });
 
@@ -260,9 +274,11 @@ async function runAddSession(instruction, opts = {}) {
   writeSessionSeparator(logStream, 0, 'add tasks');
 
   const stallTimeoutMs = config.stallTimeout * 1000;
+  const abortController = new AbortController();
   const { hooks, cleanup, isStalled } = createSessionHooks(indicator, logStream, {
     enableStallDetection: true,
     stallTimeoutMs,
+    abortController,
   });
 
   indicator.start(0, Math.floor(stallTimeoutMs / 60000));
@@ -272,6 +288,7 @@ async function runAddSession(instruction, opts = {}) {
     const queryOpts = buildQueryOptions(config, opts);
     queryOpts.systemPrompt = systemPrompt;
     queryOpts.hooks = hooks;
+    queryOpts.abortController = abortController;
 
     const session = sdk.query({ prompt, options: queryOpts });
 

@@ -4,6 +4,50 @@ const { COLOR } = require('./config');
 
 const SPINNERS = ['⠋', '⠙', '⠸', '⠴', '⠦', '⠇'];
 
+/**
+ * 中间截断字符串，保留首尾
+ */
+function truncateMiddle(str, maxLen) {
+  if (str.length <= maxLen) return str;
+  const startLen = Math.ceil((maxLen - 1) / 2);
+  const endLen = Math.floor((maxLen - 1) / 2);
+  return str.slice(0, startLen) + '…' + str.slice(-endLen);
+}
+
+/**
+ * 路径感知截断：优先保留文件名，截断目录中间
+ */
+function truncatePath(path, maxLen) {
+  if (path.length <= maxLen) return path;
+
+  const lastSlash = path.lastIndexOf('/');
+  if (lastSlash === -1) {
+    // 无路径分隔符，普通中间截断
+    return truncateMiddle(path, maxLen);
+  }
+
+  const fileName = path.slice(lastSlash + 1);
+  const dirPath = path.slice(0, lastSlash);
+
+  // 文件名本身超长，截断文件名
+  if (fileName.length >= maxLen - 2) {
+    return truncateMiddle(path, maxLen);
+  }
+
+  // 保留文件名，截断目录
+  const availableForDir = maxLen - fileName.length - 2; // -2 for '…/'
+  if (availableForDir <= 0) {
+    return '…/' + fileName.slice(0, maxLen - 2);
+  }
+
+  // 目录两端保留
+  const dirStart = Math.ceil(availableForDir / 2);
+  const dirEnd = Math.floor(availableForDir / 2);
+  const truncatedDir = dirPath.slice(0, dirStart) + '…' + (dirEnd > 0 ? dirPath.slice(-dirEnd) : '');
+
+  return truncatedDir + '/' + fileName;
+}
+
 class Indicator {
   constructor() {
     this.phase = 'thinking';
@@ -71,12 +115,11 @@ class Indicator {
     if (this.step) {
       line += ` | ${this.step}`;
       if (this.toolTarget) {
-        const cols = process.stderr.columns || 80;
+        // 动态获取终端宽度，默认 120 适配现代终端
+        const cols = process.stderr.columns || 120;
         const usedWidth = line.replace(/\x1b\[[^m]*m/g, '').length;
-        const availWidth = Math.max(15, cols - usedWidth - 4);
-        const target = this.toolTarget.length > availWidth
-          ? '…' + this.toolTarget.slice(-(availWidth - 1))
-          : this.toolTarget;
+        const availWidth = Math.max(20, cols - usedWidth - 4);
+        const target = truncatePath(this.toolTarget, availWidth);
         line += `: ${target}`;
       }
     }
@@ -105,10 +148,24 @@ function extractBashLabel(cmd) {
   return '执行命令';
 }
 
+/**
+ * 提取 Bash 命令的主体部分（移除管道、重定向等）
+ * 正确处理引号内的内容，不会错误分割引号内的分隔符
+ */
 function extractBashTarget(cmd) {
+  // 移除开头的 cd xxx && 部分
   let clean = cmd.replace(/^(?:cd\s+\S+\s*&&\s*)+/g, '').trim();
-  clean = clean.split(/\s*(?:\|{1,2}|;|&&|2>&1|>\s*\/dev\/null)\s*/)[0].trim();
-  return clean;
+
+  // 临时替换引号内的分隔符为占位符
+  const unescape = (s) => s.replace(/\x00/g, ';');
+  clean = clean.replace(/"[^"]*"/g, m => m.replace(/[;|&]/g, '\x00'));
+  clean = clean.replace(/'[^']*'/g, m => m.replace(/[;|&]/g, '\x00'));
+
+  // 分割并取第一部分
+  clean = clean.split(/\s*(?:\|\|?|;|&&|2>&1|2>\/dev\/null|>\s*\/dev\/null)\s*/)[0];
+
+  // 还原占位符
+  return unescape(clean).trim();
 }
 
 function inferPhaseStep(indicator, toolName, toolInput) {

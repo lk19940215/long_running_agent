@@ -46,15 +46,10 @@
 6. 初始化包管理（`npm init` / `pip freeze` 等）
 7. 完成后，执行**步骤 2A 的扫描流程**生成 `project_profile.json`
 
-## 步骤 3：生成 tasks.json
+## 步骤 3：收尾
 
-根据用户需求和 user prompt 中的「任务分解指导」，将功能分解为任务。
-格式参见 CLAUDE.md 中的 tasks.json 章节。
-
-## 步骤 4：收尾
-
-1. 写入 `.claude-coder/session_result.json`（notes 中记录初始化摘要）
-3. `git add -A && git commit -m "init: 项目扫描 + 任务分解"`
+1. 写入 `.claude-coder/session_result.json`（notes 中记录扫描摘要：项目类型、技术栈、服务列表）
+2. `git add -A && git commit -m "init: 项目扫描"`
 
 ---
 

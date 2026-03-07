@@ -11,7 +11,6 @@ const COMMANDS = {
   auth:     { desc: '导出 Playwright 登录状态', usage: 'claude-coder auth [url]' },
   validate: { desc: '手动校验上次 session',     usage: 'claude-coder validate' },
   status:   { desc: '查看任务进度和成本',       usage: 'claude-coder status' },
-  config:   { desc: '配置管理',                 usage: 'claude-coder config sync | config mcp <mode>' },
 };
 
 function showHelp() {
@@ -32,7 +31,6 @@ function showHelp() {
   console.log('  claude-coder add "..." --model opus-4 指定模型追加任务');
   console.log('  claude-coder auth                    导出 Playwright 登录状态');
   console.log('  claude-coder auth http://localhost:8080  指定登录 URL');
-  console.log('  claude-coder config mcp persistent   快速切换 Playwright 模式');
   console.log('  claude-coder status                  查看进度和成本');
   console.log(`\n前置条件: npm install -g @anthropic-ai/claude-agent-sdk`);
 }
@@ -147,40 +145,6 @@ async function main() {
     case 'status': {
       const tasks = require('../src/tasks');
       tasks.showStatus();
-      break;
-    }
-    case 'config': {
-      const config = require('../src/config');
-      if (positional[0] === 'sync') {
-        config.syncToGlobal();
-      } else if (positional[0] === 'mcp') {
-        const validModes = ['persistent', 'isolated', 'extension'];
-        const mode = positional[1];
-        if (!mode || !validModes.includes(mode)) {
-          console.error(`用法: claude-coder config mcp <${validModes.join('|')}>`);
-          process.exit(1);
-        }
-        const ok = config.updateEnvVar('MCP_PLAYWRIGHT_MODE', mode);
-        if (!ok) {
-          console.error('未找到配置文件，请先运行 claude-coder setup');
-          process.exit(1);
-        }
-        config.updateEnvVar('MCP_PLAYWRIGHT', 'true');
-        const { updateMcpConfig } = require('../src/auth');
-        updateMcpConfig(config.paths(), mode);
-        const { log } = config;
-        log('ok', `Playwright 模式已切换为: ${mode}`);
-        if (mode === 'persistent') {
-          log('info', '运行 claude-coder auth <URL> 完成首次登录');
-        } else if (mode === 'isolated') {
-          log('info', '运行 claude-coder auth <URL> 录制登录状态');
-        } else {
-          log('info', '确保已安装 Playwright MCP Bridge 扩展并启动浏览器');
-        }
-      } else {
-        console.error('用法: claude-coder config sync | config mcp <mode>');
-        process.exit(1);
-      }
       break;
     }
     default:

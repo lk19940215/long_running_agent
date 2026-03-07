@@ -59,8 +59,6 @@ Each session, the agent autonomously follows 6 steps: restore context → env ch
 | `claude-coder auth [url]` | Export Playwright login state |
 | `claude-coder validate` | Manually validate last session |
 | `claude-coder status` | View progress and costs |
-| `claude-coder config sync` | Sync config to ~/.claude/ |
-| `claude-coder config mcp <mode>` | Switch Playwright mode (persistent/isolated/extension) |
 
 **Options**: `--max N` limit sessions (default 50), `--pause N` pause every N sessions (default: no pause).
 

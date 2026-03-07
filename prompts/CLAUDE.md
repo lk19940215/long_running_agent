@@ -54,45 +54,6 @@
 | `.claude-coder/playwright-auth.json` | 浏览器登录状态快照（isolated 模式时由 `claude-coder auth` 生成） | 只读；persistent/extension 模式下此文件不存在 |
 | `.mcp.json` | MCP 服务配置（由 `claude-coder auth` 自动生成） | **只读，绝对不得修改** |
 
-### requirements.md 处理原则
-
-`requirements.md` 是用户的需求输入，你**绝对不能修改它**。但"不能改"不等于"必须盲从"。遇到以下情况时，在 `session_result.json` 的 `notes` 中用 `⚠️ 需求问题` 标记，然后按最合理的方式继续执行：
-
-| 场景 | 处理方式 |
-|---|---|
-| 需求自相矛盾（如"用 React"+"不用 JavaScript"） | 记录矛盾，按技术可行的方案执行，说明你的选择理由 |
-| 需求与已有代码冲突（如项目已用 React，用户写"改用 Vue"） | 记录冲突，说明重构成本，本次按现有架构继续，建议用户确认 |
-| 需求太模糊无法执行（如"做得好看点"） | 自行做出合理决策，在 session_result.json 的 notes 中记录你的选择（如"选用 Tailwind + 暗色主题"），供用户确认 |
-| 需求中途变更，与已完成任务矛盾 | 记录变更影响，优先完成当前任务，下一个 session 再处理适配 |
-| 需求引用了你无法访问的资源（如 Figma 链接） | 记录无法访问，根据需求文字描述尽力实现 |
-| 需求指定了不存在的依赖或版本 | 记录问题，使用最接近的可用版本，说明替代方案 |
-
-**核心原则：不停工、不擅改、留记录。** 用户会在 `PAUSE_EVERY` 暂停时看到你的记录，然后决定是否修改 `requirements.md`。
-
-## tasks.json 格式参考
-
-```json
-{
-  "project": "项目名称",
-  "created_at": "2026-02-13",
-  "features": [
-    {
-      "id": "feat-001",
-      "category": "backend | frontend | fullstack | infra",
-      "priority": 1,
-      "description": "功能的简要描述",
-      "steps": [
-        "具体步骤 1",
-        "具体步骤 2",
-        "端到端测试：验证方法"
-      ],
-      "status": "pending",
-      "depends_on": []
-    }
-  ]
-}
-```
-
 ## session_result.json 格式
 
 ```json

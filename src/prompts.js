@@ -5,9 +5,40 @@ const path = require('path');
 const { paths, loadConfig, getProjectRoot } = require('./config');
 const { loadTasks, findNextTask, getStats } = require('./tasks');
 
+// --------------- Template Engine ---------------
+
 /**
- * Build system prompt by combining template files.
- * @param {boolean} includeScanProtocol - Whether to append SCAN_PROTOCOL.md
+ * Replace {{key}} placeholders with values from vars object.
+ * - Uses Object.prototype.hasOwnProperty.call to prevent prototype pollution
+ * - Coerces values to string via String() for type safety
+ * - Collapses 3+ consecutive newlines (from empty variables) into double newline
+ * - Only matches \w+ inside {{ }}, so JSON braces and %{...} are safe
+ */
+function renderTemplate(template, vars = {}) {
+  return template
+    .replace(/\{\{(\w+)\}\}/g, (_, key) =>
+      Object.prototype.hasOwnProperty.call(vars, key) ? String(vars[key]) : ''
+    )
+    .replace(/^\s+$/gm, '')     // remove lines that became whitespace-only after replacement
+    .replace(/\n{3,}/g, '\n\n') // collapse 3+ consecutive newlines into double
+    .trim();
+}
+
+/**
+ * Read a prompt template file and render it with variables.
+ * Falls back to empty string if file doesn't exist.
+ */
+function loadAndRender(filepath, vars = {}) {
+  if (!fs.existsSync(filepath)) return '';
+  const template = fs.readFileSync(filepath, 'utf8');
+  return renderTemplate(template, vars);
+}
+
+// --------------- System Prompt ---------------
+
+/**
+ * Build system prompt by combining prompt files.
+ * CLAUDE.md and SCAN_PROTOCOL.md are read as-is (no variable injection).
  */
 function buildSystemPrompt(includeScanProtocol = false) {
   const p = paths();
@@ -18,14 +49,17 @@ function buildSystemPrompt(includeScanProtocol = false) {
   return prompt;
 }
 
+// --------------- Coding Session ---------------
+
 /**
  * Build user prompt for coding sessions.
- * Includes conditional hints based on session state.
+ * Computes conditional hints, then injects them into coding_user.md template.
  */
 function buildCodingPrompt(sessionNum, opts = {}) {
   const p = paths();
   const config = loadConfig();
   const consecutiveFailures = opts.consecutiveFailures || 0;
+  const projectRoot = getProjectRoot();
 
   // Hint 1: Playwright MCP availability
   const mcpHint = config.mcpPlaywright
@@ -73,7 +107,6 @@ function buildCodingPrompt(sessionNum, opts = {}) {
   }
 
   // Hint 6: Task context (harness pre-read, saves Agent 2-3 Read calls)
-  const projectRoot = getProjectRoot();
   let taskHint = '';
   try {
     const taskData = loadTasks();
@@ -135,97 +168,43 @@ function buildCodingPrompt(sessionNum, opts = {}) {
     ? '单次模式：收尾时停止所有后台服务。'
     : '连续模式：收尾时不要停止后台服务，保持服务运行以便下个 session 继续使用。';
 
-  // Hint 9: Tool usage guidance (critical for non-Claude models)
-  const toolGuidance = [
-    '可用工具与使用规范（严格遵守）：',
-    '- 搜索文件名: Glob（如 **/*.ts），禁止 bash find',
-    '- 搜索文件内容: Grep（正则，基于 ripgrep），禁止 bash grep',
-    '- 读文件: Read（支持批量多文件同时读取），禁止 bash cat/head/tail',
-    '- 列目录: LS，禁止 bash ls',
-    '- 编辑文件: 同一文件多处修改用 MultiEdit（一次原子调用），单处用 Edit',
-    '- 复杂搜索: Task（启动子 Agent 并行搜索，不消耗主 context），适合开放式探索',
-    '- 查文档/API: WebSearch + WebFetch',
-    '- 效率: 多个 Read/Glob/Grep 尽量合并为一次批量调用，减少工具轮次',
-  ].join('\n');
-
-  return [
-    `Session ${sessionNum}。执行 6 步流程。`,
-    '效率要求：先规划后编码，完成全部编码后再统一测试，禁止编码-测试反复跳转。后端任务用 curl 验证，不启动浏览器。',
+  return loadAndRender(p.codingUser, {
+    sessionNum,
     mcpHint,
+    retryContext,
+    envHint,
     testHint,
     docsHint,
-    envHint,
     taskHint,
     testEnvHint,
     playwrightAuthHint,
     memoryHint,
     serviceHint,
-    toolGuidance,
-    `完成后写入 session_result.json。${retryContext}`,
-  ].filter(Boolean).join('\n');
+  });
 }
 
-/**
- * Build task decomposition guide for scan and add sessions.
- * Placed in user prompt (recency zone) for maximum attention.
- */
-function buildTaskGuide(projectType) {
-  const lines = [
-    '任务分解指导（严格遵守）：',
-    '1. 粒度：每个任务是独立可测试的功能单元，1-3 session 可完成，不超 500 行新增',
-    '2. steps 具体可验证：最后一步必须是 curl/grep 等验证命令',
-    '3. depends_on 形成 DAG（有向无环图），不得循环依赖',
-    '4. 单任务 steps 不超过 5 步，超过则拆分为多个任务',
-    '5. category 准确：backend | frontend | fullstack | infra',
-    '6. 第一个任务从第一个有业务逻辑的功能开始，不重复脚手架内容',
-    '',
-    '验证命令模板：',
-    '  API: curl -s -o /dev/null -w "%{http_code}" http://localhost:PORT/path → 200',
-    '  文件: grep -q "关键内容" path/to/file && echo "pass"',
-    '  构建: npm run build 2>&1 | tail -1 → 无 error',
-    '',
-    '反面案例（禁止出现）：',
-    '  X "实现用户功能" → 太模糊，应拆为具体接口',
-    '  X "编写测试" → 无具体内容，测试应内嵌在 steps 末尾',
-    '  X steps 只有 "实现xxx" 没有验证步骤',
-  ];
-
-  if (projectType === 'new') {
-    lines.push('', '新项目注意：infra 任务合并为尽量少的条目，不拆碎');
-  }
-  return lines.join('\n');
-}
+// --------------- Scan Session ---------------
 
 /**
  * Build user prompt for scan sessions.
+ * Scan only generates profile — task decomposition is handled by add session.
  */
 function buildScanPrompt(projectType, requirement) {
-  const taskGuide = buildTaskGuide(projectType);
-  return [
-    '你是项目初始化 Agent，同时也是资深的需求分析师。',
-    '',
-    `项目类型: ${projectType}`,
-    `用户需求: ${requirement || '(无指定需求)'}`,
-    '',
-    '步骤 1-2：按「项目扫描协议」扫描项目、生成 project_profile.json。',
-    '',
-    'profile 质量要求（必须遵守，harness 会校验）：',
-    '- services 数组必须包含所有可启动服务（command、port、health_check），不得为空',
-    '- existing_docs 必须列出所有实际存在的文档路径',
-    '- 检查 .claude/CLAUDE.md 是否存在，若无则生成（WHAT/WHY/HOW 格式：技术栈、关键决策、开发命令、关键路径、编码规则），并加入 existing_docs',
-    '- scan_files_checked 必须列出所有实际扫描过的文件',
-    '',
-    '步骤 3：根据以下指导分解任务到 tasks.json（格式见 CLAUDE.md）：',
-    '',
-    taskGuide,
-    '',
-    '步骤 4：写入 session_result.json 并 git commit。',
-  ].join('\n');
+  const p = paths();
+  const requirementLine = requirement
+    ? `用户需求概述: ${requirement.slice(0, 500)}`
+    : '';
+
+  return loadAndRender(p.scanUser, {
+    projectType,
+    requirement: requirementLine,
+  });
 }
+
+// --------------- Add Session ---------------
 
 /**
  * Build lightweight system prompt for add sessions.
- * Add sessions only decompose requirements — no coding workflow needed.
  * CLAUDE.md is NOT injected to avoid role conflict and save ~2000 tokens.
  */
 function buildAddSystemPrompt() {
@@ -234,14 +213,19 @@ function buildAddSystemPrompt() {
 
 /**
  * Build user prompt for add sessions.
- * Structure: Role (primacy) → Context → CoT → TaskGuide → Instruction (recency)
+ * Structure: Role (primacy) → Dynamic context → ADD_GUIDE.md (reference) → Instruction (recency)
  */
 function buildAddPrompt(instruction) {
   const p = paths();
   const projectRoot = getProjectRoot();
-  const taskGuide = buildTaskGuide();
 
-  // --- Context injection: pre-read project state ---
+  // --- Load ADD_GUIDE.md reference document ---
+  let addGuide = '';
+  if (fs.existsSync(p.addGuide)) {
+    addGuide = fs.readFileSync(p.addGuide, 'utf8');
+  }
+
+  // --- Context injection: project tech stack ---
   let profileContext = '';
   if (fs.existsSync(p.profile)) {
     try {
@@ -255,6 +239,7 @@ function buildAddPrompt(instruction) {
     } catch { /* ignore */ }
   }
 
+  // --- Context injection: existing tasks summary ---
   let taskContext = '';
   let recentExamples = '';
   try {
@@ -282,57 +267,28 @@ function buildAddPrompt(instruction) {
   const testRulePath = path.join(p.loopDir, 'test_rule.md');
   const hasMcp = fs.existsSync(p.mcpConfig);
   if (fs.existsSync(testRulePath) && hasMcp) {
-    testRuleHint = [
-      '【Playwright 测试规则】项目已配置 Playwright MCP（.mcp.json），' +
-      '`.claude-coder/test_rule.md` 中包含通用测试指导规则（Smart Snapshot、Token 预算控制、三步测试方法论、等待策略等）。',
-      '当任务涉及端到端测试时：',
-      '  - 在 steps 中第一步加入「阅读 .claude-coder/test_rule.md 了解测试规范和成本控制」',
-      '  - 测试步骤按 test_rule.md 中的 tasks.json 模板格式编写（含环境检查、优先级标注、预算控制）',
-      '  - 设定合理的 test_tier（unit/smoke/regression/full_e2e）',
-    ].join('\n');
+    testRuleHint = '【Playwright 测试规则】项目已配置 Playwright MCP（.mcp.json），' +
+      '`.claude-coder/test_rule.md` 包含测试规范（Smart Snapshot、等待策略、步骤模板等）。端到端测试任务请参考 test_rule.md。';
   }
 
-  return [
-    // --- Primacy zone: role + identity ---
-    '你是资深需求分析师，擅长将模糊需求分解为可执行的原子任务。',
-    '这是任务追加 session，不是编码 session。你只分解任务，不实现代码。',
-    '',
-
-    // --- Context layer ---
+  return loadAndRender(p.addUser, {
     profileContext,
     taskContext,
     recentExamples,
-    `项目绝对路径: ${projectRoot}`,
-    '',
-
-    // --- CoT: explicit thinking steps ---
-    '执行步骤（按顺序，不可跳过）：',
-    '1. 读取 .claude-coder/tasks.json 和 .claude-coder/project_profile.json，全面了解项目现状',
-    '2. 分析用户指令：识别核心功能点，判断是单任务还是需要拆分为多任务',
-    '3. 检查重复：对比已有任务，避免功能重叠',
-    '4. 确定依赖：新任务的 depends_on 引用已有或新增任务的 id，形成 DAG',
-    '5. 分解任务：每个任务对应一个独立可测试的功能单元，description 简明（40字内），steps 具体可操作',
-    '6. 追加到 tasks.json，id 和 priority 从已有最大值递增，status: pending',
-    '7. git add -A && git commit -m "chore: add new tasks"',
-    '8. 写入 session_result.json（格式：{ "session_result": "success", "status_before": "N/A", "status_after": "N/A", "notes": "追加了 N 个任务：简述" }）',
-    '',
-
-    // --- Quality constraints ---
-    taskGuide,
-    '',
+    projectRoot,
+    addGuide,
     testRuleHint,
-    '不修改已有任务，不实现代码。',
-    '',
-
-    // --- Recency zone: user instruction (highest attention) ---
-    `用户指令：${instruction}`,
-  ].filter(Boolean).join('\n');
+    instruction,
+  });
 }
 
+// --------------- Exports ---------------
+
 module.exports = {
+  renderTemplate,
+  loadAndRender,
   buildSystemPrompt,
   buildCodingPrompt,
-  buildTaskGuide,
   buildScanPrompt,
   buildAddSystemPrompt,
   buildAddPrompt,

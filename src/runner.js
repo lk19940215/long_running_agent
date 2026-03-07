@@ -185,7 +185,8 @@ async function run(requirement, opts = {}) {
     });
   }
 
-  if (!fs.existsSync(p.profile) || !fs.existsSync(p.tasksFile)) {
+  // --- Phase 1: 项目扫描（生成 profile） ---
+  if (!fs.existsSync(p.profile)) {
     if (!requirement) {
       log('error', '首次运行需要提供需求描述');
       console.log('');
@@ -215,8 +216,33 @@ async function run(requirement, opts = {}) {
       console.log(`${COLOR.yellow}═══════════════════════════════════════════════${COLOR.reset}`);
       process.exit(1);
     }
-  } else {
-    log('ok', '检测到已有 project_profile.json + tasks.json，跳过初始化');
+  }
+
+  // --- Phase 2: 任务分解（scan 后衔接 add） ---
+  if (!fs.existsSync(p.tasksFile)) {
+    if (requirement) {
+      console.log('');
+      log('ok', '项目扫描完成，是否根据需求分解任务？');
+      const shouldAdd = await promptContinue();
+      if (shouldAdd) {
+        if (!dryRun) await loadSDK();
+        deployTestRule(p);
+        log('info', '正在分解任务...');
+        await runAddSession(requirement, { projectRoot });
+      } else {
+        log('info', '跳过任务分解。后续可通过 claude-coder add 手动添加任务。');
+      }
+    } else {
+      log('warn', 'tasks.json 不存在且无需求描述，请运行 claude-coder add 添加任务');
+    }
+  }
+
+  if (!fs.existsSync(p.tasksFile)) {
+    log('error', 'tasks.json 不存在，无法进入编码循环。请先运行 claude-coder add 添加任务。');
+    process.exit(1);
+  }
+
+  if (fs.existsSync(p.profile) && fs.existsSync(p.tasksFile)) {
     printStats();
   }
 
@@ -370,8 +396,8 @@ async function add(instruction, opts = {}) {
   const displayModel = opts.model || config.model || '(default)';
   log('ok', `模型配置已加载: ${config.provider || 'claude'} (add 使用: ${displayModel})`);
 
-  if (!fs.existsSync(p.profile) || !fs.existsSync(p.tasksFile)) {
-    log('error', 'add 需要先完成初始化（至少运行一次 claude-coder run）');
+  if (!fs.existsSync(p.profile)) {
+    log('error', 'add 需要先完成项目扫描（至少运行一次 claude-coder run）');
     process.exit(1);
   }
 

@@ -41,12 +41,12 @@ async function scan(requirement, opts = {}) {
 
     const result = await runScanSession(requirement, opts);
 
-    if (fs.existsSync(p.profile) && fs.existsSync(p.tasksFile)) {
+    if (fs.existsSync(p.profile)) {
       const profileCheck = validateProfile();
       if (!profileCheck.valid) {
         log('warn', `profile 质量问题: ${profileCheck.issues.join('; ')}`);
       }
-      log('ok', '初始化完成');
+      log('ok', '项目扫描完成');
       return { success: true, cost: result.cost };
     }
 

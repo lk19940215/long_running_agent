@@ -2,7 +2,6 @@
 
 const fs = require('fs');
 const path = require('path');
-const os = require('os');
 
 const COLOR = {
   red: '\x1b[0;31m',
@@ -44,6 +43,10 @@ function getTemplatePath(name) {
   return path.join(__dirname, '..', 'templates', name);
 }
 
+function getPromptPath(name) {
+  return path.join(__dirname, '..', 'prompts', name);
+}
+
 function paths() {
   const loopDir = getLoopDir();
   const runtime = path.join(loopDir, '.runtime');
@@ -59,8 +62,12 @@ function paths() {
     playwrightAuth:   path.join(loopDir, 'playwright-auth.json'),
     browserProfile:   path.join(runtime, 'browser-profile'),
     mcpConfig:        path.join(getProjectRoot(), '.mcp.json'),
-    claudeMd:         getTemplatePath('CLAUDE.md'),
-    scanProtocol:     getTemplatePath('SCAN_PROTOCOL.md'),
+    claudeMd:         getPromptPath('CLAUDE.md'),
+    scanProtocol:     getPromptPath('SCAN_PROTOCOL.md'),
+    addGuide:         getPromptPath('ADD_GUIDE.md'),
+    codingUser:       getPromptPath('coding_user.md'),
+    scanUser:         getPromptPath('scan_user.md'),
+    addUser:          getPromptPath('add_user.md'),
     testRuleTemplate: getTemplatePath('test_rule.md'),
     runtime,
     logsDir:          path.join(runtime, 'logs'),
@@ -160,37 +167,6 @@ function getAllowedTools(config) {
   return tools;
 }
 
-// --------------- Sync to global claude settings ---------------
-
-function syncToGlobal() {
-  const config = loadConfig();
-  const settingsPath = path.join(os.homedir(), '.claude', 'settings.json');
-  const settingsDir = path.dirname(settingsPath);
-
-  if (!fs.existsSync(settingsDir)) fs.mkdirSync(settingsDir, { recursive: true });
-
-  let settings = {};
-  if (fs.existsSync(settingsPath)) {
-    try { settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8')); } catch { /* ignore */ }
-  }
-
-  for (const key of ['apiKey', 'anthropicBaseUrl', 'defaultSonnetModel', 'defaultOpusModel', 'defaultHaikuModel', 'model']) {
-    delete settings[key];
-  }
-
-  if (!settings.env || typeof settings.env !== 'object') settings.env = {};
-
-  const envVars = buildEnvVars(config);
-  for (const [key, value] of Object.entries(envVars)) {
-    if (key.startsWith('ANTHROPIC_') || key.endsWith('_TIMEOUT_MS') || key === 'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC') {
-      settings.env[key] = value;
-    }
-  }
-
-  fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf8');
-  log('ok', `已同步配置到 ${settingsPath}`);
-}
-
 function updateEnvVar(key, value) {
   const p = paths();
   if (!fs.existsSync(p.envFile)) return false;
@@ -213,11 +189,11 @@ module.exports = {
   getLoopDir,
   ensureLoopDir,
   getTemplatePath,
+  getPromptPath,
   paths,
   parseEnvFile,
   loadConfig,
   buildEnvVars,
   getAllowedTools,
-  syncToGlobal,
   updateEnvVar,
 };

@@ -33,9 +33,9 @@ npm pack --dry-run
 # 应包含：
 #   bin/cli.js
 #   src/*.js (10 个模块)
-#   templates/CLAUDE.md
-#   templates/SCAN_PROTOCOL.md
-#   templates/requirements.example.md
+#   prompts/CLAUDE.md, SCAN_PROTOCOL.md, ADD_GUIDE.md
+#   prompts/coding_user.md, scan_user.md, add_user.md
+#   templates/test_rule.md, requirements.example.md
 #   docs/ARCHITECTURE.md
 #   docs/README.en.md
 #   package.json
@@ -129,9 +129,17 @@ claude-coder/
     tasks.js            # 任务管理
     indicator.js        # 进度指示
     setup.js            # 交互式配置
-  templates/
+    auth.js             # Playwright 凭证
+    hooks.js            # Hook 工厂
+  prompts/
     CLAUDE.md           # Agent 协议
     SCAN_PROTOCOL.md    # 扫描协议
+    ADD_GUIDE.md        # 任务分解指南
+    coding_user.md      # 编码 prompt 模板
+    scan_user.md        # 扫描 prompt 模板
+    add_user.md         # ADD prompt 模板
+  templates/
+    test_rule.md        # Playwright 测试规则
     requirements.example.md
   docs/
     ARCHITECTURE.md     # 架构文档

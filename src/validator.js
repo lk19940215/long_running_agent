@@ -7,12 +7,23 @@ const { loadTasks, getFeatures } = require('./tasks');
 
 function tryExtractFromBroken(text) {
   const result = {};
+
+  // session_result: 只能是 success 或 failed
   const srMatch = text.match(/"session_result"\s*:\s*"(success|failed)"/);
   if (srMatch) result.session_result = srMatch[1];
-  const saMatch = text.match(/"status_after"\s*:\s*"(\w+)"/);
+
+  // status_after: 可能是 pending/in_progress/testing/done/failed 或 N/A
+  const saMatch = text.match(/"status_after"\s*:\s*"([^"]+)"/);
   if (saMatch) result.status_after = saMatch[1];
-  const sbMatch = text.match(/"status_before"\s*:\s*"(\w+)"/);
+
+  // status_before: 同上
+  const sbMatch = text.match(/"status_before"\s*:\s*"([^"]+)"/);
   if (sbMatch) result.status_before = sbMatch[1];
+
+  // notes: 可选字段，字符串类型
+  const notesMatch = text.match(/"notes"\s*:\s*"([^"]*)"/);
+  if (notesMatch) result.notes = notesMatch[1];
+
   return Object.keys(result).length > 0 ? result : null;
 }
 

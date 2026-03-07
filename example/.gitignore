@@ -1,0 +1,4 @@
+
+# Claude Coder（含 API Key 和临时文件）
+.claude-coder/.env
+.claude-coder/.runtime/

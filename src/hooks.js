@@ -23,6 +23,7 @@ function logToolCall(logStream, input) {
  * @param {object} [options]
  * @param {boolean} [options.enableStallDetection=false]
  * @param {number}  [options.stallTimeoutMs=1800000]
+ * @param {AbortController} [options.abortController] - 用于中断 SDK query
  * @param {boolean} [options.enableEditGuard=false]
  * @returns {{ hooks: object, cleanup: () => void, isStalled: () => boolean }}
  */
@@ -30,6 +31,7 @@ function createSessionHooks(indicator, logStream, options = {}) {
   const {
     enableStallDetection = false,
     stallTimeoutMs = 1800000,
+    abortController = null,
     enableEditGuard = false,
     editThreshold = DEFAULT_EDIT_THRESHOLD,
   } = options;
@@ -48,6 +50,11 @@ function createSessionHooks(indicator, logStream, options = {}) {
         if (logStream) {
           logStream.write(`[${new Date().toISOString()}] STALL: 无工具调用 ${idleMin} 分钟，自动中断\n`);
         }
+        // 触发 AbortController 中断 SDK query
+        if (abortController) {
+          abortController.abort();
+          log('warn', '已发送中断信号');
+        }
       }
     }, 30000);
   }
@@ -65,8 +72,11 @@ function createSessionHooks(indicator, logStream, options = {}) {
             editCounts[target] = (editCounts[target] || 0) + 1;
             if (editCounts[target] > editThreshold) {
               return {
-                decision: 'block',
-                message: `已对 ${target} 编辑 ${editCounts[target]} 次，疑似死循环。请重新审视方案后再继续。`,
+                hookSpecificOutput: {
+                  hookEventName: 'PreToolUse',
+                  permissionDecision: 'deny',
+                  permissionDecisionReason: `已对 ${target} 编辑 ${editCounts[target]} 次，疑似死循环。请重新审视方案后再继续。`,
+                },
               };
             }
           }

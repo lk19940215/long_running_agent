@@ -126,14 +126,20 @@ flowchart LR
     mode -->|"add 指令"| add["runAddSession()"]
     add --> exit_add([exit 0])
 
-    mode -->|run| check{profile<br/>存在?}
+    mode -->|run| checkProfile{profile<br/>存在?}
 
-    check -->|否| req["读取<br/>requirements.md"]
+    checkProfile -->|否| req["读取<br/>requirements.md"]
     req --> scan["scanner.scan()"]
-    scan --> profile_out["生成<br/>profile + tasks.json"]
-    profile_out --> loop
+    scan --> profile_out["生成<br/>profile"]
+    profile_out --> checkTasks{tasks.json<br/>存在?}
 
-    check -->|是| loop
+    checkProfile -->|是| checkTasks
+    checkTasks -->|否| confirm["用户确认:<br/>是否分解任务?"]
+    confirm -->|是| addSession["runAddSession()<br/>分解任务"]
+    addSession --> loop
+    confirm -->|否| exitNoTask([提示手动 add])
+
+    checkTasks -->|是| loop
 
     loop["编码循环"] --> session["runCodingSession(N)"]
     session --> val["validator.validate()"]
@@ -157,22 +163,28 @@ flowchart LR
 ```
 bin/cli.js          CLI 入口：参数解析、命令路由
 src/
-  config.js         配置管理：.env 加载、模型映射、环境变量构建、全局同步
+  config.js         配置管理：.env 加载、模型映射、环境变量构建
   runner.js         主循环：scan → session → validate → retry/rollback
   session.js        SDK 交互：query() 调用、SDK 加载、日志流
   hooks.js          Hook 工厂：停顿检测 + 编辑死循环防护（可复用于所有 session 类型）
-  prompts.js        提示语构建：系统 prompt 组合 + 条件 hint + 任务分解指导
+  prompts.js        提示语构建：renderTemplate 模板引擎 + 系统 prompt 组合 + 条件 hint
   init.js           环境初始化：读取 profile 执行依赖安装、服务启动、健康检查
-  scanner.js        初始化扫描：调用 runScanSession + 重试
+  scanner.js        项目扫描：调用 runScanSession 生成 profile（不分解任务）+ 重试
   validator.js      校验引擎：分层校验（fatal/recoverable/pass）+ git 检查 + 测试覆盖
   tasks.js          任务管理：CRUD + 状态机 + 进度展示
   auth.js           Playwright 凭证：导出登录状态 + MCP 配置 + gitignore
   indicator.js      进度指示：终端 spinner + 工具目标显示 + 停顿警告 + phase/step 文件写入
   setup.js          交互式配置：模型选择、API Key、MCP 工具
-templates/
-  CLAUDE.md         Agent 协议（注入为 systemPrompt）
-  SCAN_PROTOCOL.md  首次扫描协议（与 CLAUDE.md 拼接注入）
-  requirements.example.md  需求文件模板
+prompts/                         Prompt 模板目录（注入 SDK 的提示语）
+  CLAUDE.md                      Agent 协议（注入为 systemPrompt）
+  SCAN_PROTOCOL.md               首次扫描协议（与 CLAUDE.md 拼接注入）
+  ADD_GUIDE.md                   任务分解指南（ADD session 参考文档）
+  coding_user.md                 编码 session 用户 prompt 模板（{{variable}} 注入）
+  scan_user.md                   扫描 session 用户 prompt 模板
+  add_user.md                    ADD session 用户 prompt 模板
+templates/                       参考文档与部署文件
+  test_rule.md                   Playwright 测试规则（部署到用户项目）
+  requirements.example.md        需求文件模板
 ```
 
 ---
@@ -184,20 +196,25 @@ templates/
 | 文件 | 用途 |
 |------|------|
 | `bin/cli.js` | CLI 入口 |
-| `src/config.js` | .env 加载、模型映射 |
+| `src/config.js` | .env 加载、模型映射、环境变量构建 |
 | `src/runner.js` | Harness 主循环 |
 | `src/session.js` | SDK query() 封装 + 日志流 |
 | `src/hooks.js` | Hook 工厂（停顿检测 + 编辑防护，可复用于所有 session 类型） |
-| `src/prompts.js` | 提示语构建（系统 prompt + 条件 hint + 任务分解指导） |
+| `src/prompts.js` | 提示语构建（renderTemplate 模板引擎 + 条件 hint） |
 | `src/init.js` | 环境初始化（依赖安装、服务启动） |
-| `src/scanner.js` | 项目初始化扫描 |
+| `src/scanner.js` | 项目扫描（仅 profile，不分解任务） |
 | `src/validator.js` | 校验引擎（分层校验） |
 | `src/tasks.js` | 任务 CRUD + 状态机 |
 | `src/auth.js` | Playwright 凭证持久化 |
 | `src/indicator.js` | 终端进度指示器 |
 | `src/setup.js` | 交互式配置向导 |
-| `templates/CLAUDE.md` | Agent 协议 |
-| `templates/SCAN_PROTOCOL.md` | 首次扫描协议 |
+| `prompts/CLAUDE.md` | Agent 协议（系统 prompt） |
+| `prompts/SCAN_PROTOCOL.md` | 首次扫描协议 |
+| `prompts/coding_user.md` | 编码 session 用户 prompt 模板 |
+| `prompts/scan_user.md` | 扫描 session 用户 prompt 模板 |
+| `prompts/add_user.md` | ADD session 用户 prompt 模板 |
+| `prompts/ADD_GUIDE.md` | 任务分解参考指南 |
+| `templates/test_rule.md` | Playwright 测试规则（部署到项目） |
 
 ### 用户项目运行时数据（.claude-coder/）
 
@@ -221,16 +238,19 @@ templates/
 
 ```mermaid
 flowchart TB
-    subgraph Templates["templates/ (静态模板)"]
-        claude_md["CLAUDE.md<br/>Agent 协议 ~255 行"]
-        scan_md["SCAN_PROTOCOL.md<br/>扫描协议 ~133 行"]
+    subgraph PromptFiles["prompts/ (模板文件)"]
+        claude_md["CLAUDE.md<br/>Agent 协议"]
+        scan_md["SCAN_PROTOCOL.md<br/>扫描协议"]
+        coding_tpl["coding_user.md<br/>编码 prompt 模板"]
+        scan_tpl["scan_user.md<br/>扫描 prompt 模板"]
+        add_tpl["add_user.md<br/>ADD prompt 模板"]
+        add_guide["ADD_GUIDE.md<br/>任务分解指南"]
     end
 
-    subgraph Prompts["src/prompts.js (动态构建)"]
-        sys_p["buildSystemPrompt()<br/>组合系统提示"]
-        coding_p["buildCodingPrompt()<br/>编码 session prompt"]
-        task_g["buildTaskGuide()<br/>任务分解指导"]
-        scan_p["buildScanPrompt()<br/>扫描 session prompt"]
+    subgraph Prompts["src/prompts.js (renderTemplate 引擎)"]
+        sys_p["buildSystemPrompt()"]
+        coding_p["buildCodingPrompt()"]
+        scan_p["buildScanPrompt()"]
         add_p["buildAddPrompt()"]
     end
 
@@ -240,10 +260,12 @@ flowchart TB
 
     claude_md --> sys_p
     scan_md --> sys_p
+    coding_tpl -->|"renderTemplate({{hints}})"| coding_p
+    scan_tpl -->|"renderTemplate({{vars}})"| scan_p
+    add_tpl -->|"renderTemplate({{vars}})"| add_p
+    add_guide --> add_p
     sys_p --> query
     coding_p --> query
-    task_g --> scan_p
-    task_g --> add_p
     scan_p --> query
     add_p --> query
 ```
@@ -253,8 +275,8 @@ flowchart TB
 | Session 类型 | systemPrompt | user prompt | 触发条件 |
 |---|---|---|---|
 | **编码** | CLAUDE.md | `buildCodingPrompt()` + 11 个条件 hint | 主循环每次迭代 |
-| **扫描** | CLAUDE.md + SCAN_PROTOCOL.md | `buildScanPrompt()` + 任务分解指导 + profile 质量要求 | 首次运行 |
-| **追加** | 精简角色提示（不注入 CLAUDE.md） | `buildAddPrompt()` + 任务分解指导 + session_result 格式 | `claude-coder add` |
+| **扫描** | CLAUDE.md + SCAN_PROTOCOL.md | `buildScanPrompt()` + profile 质量要求（不分解任务） | 首次运行 |
+| **追加** | 精简角色提示（不注入 CLAUDE.md） | `buildAddPrompt()` + ADD_GUIDE.md + session_result 格式 | `claude-coder add` 或 scan 后自动衔接 |
 
 ### 编码 Session 的 11 个条件 Hint
 
@@ -295,7 +317,7 @@ CLAUDE.md 的内容按 LLM 注意力 U 型曲线排列：
 | **任务分解指导在 user prompt** | 从系统 prompt 中部（低注意力）迁移到 user prompt（recency zone），提升遵循率 |
 | **docsHint 动态注入** | 当 profile.existing_docs 非空时，在 user prompt 提醒 Agent 读文档再编码。CLAUDE.md Step 4 有静态指令，docsHint 在 recency zone 强化 |
 | **tests.json 保留 last_run_session** | Agent 判断是否需要重新验证的依据（代码可能在中间 session 被修改） |
-| **prompts.js 集中管理** | 所有 prompt 文本一处可见，与 session.js 的 SDK 交互职责分离 |
+| **prompts/ 模板分离** | 静态提示语文本抽离到 prompts/ 目录的 .md 模板文件，prompts.js 仅负责计算动态变量并通过 renderTemplate 注入，实现"文本 vs 逻辑"分离 |
 
 ### 学术依据
 
@@ -304,7 +326,7 @@ CLAUDE.md 的内容按 LLM 注意力 U 型曲线排列：
 | U 型注意力布局 | Anthropic Context Engineering |
 | DAG 依赖约束 | ACONIC (2025, arXiv 2510.07772) |
 | 反面案例排除 | SCoT (2023) + Expert Context Framework |
-| scan/add 复用 taskGuide | User Story Decomposition (SSRN 2025) |
+| scan/add 模板复用 | User Story Decomposition (SSRN 2025) |
 
 ---
 

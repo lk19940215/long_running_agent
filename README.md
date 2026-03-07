@@ -59,8 +59,6 @@ claude-coder run "实现用户注册和登录功能"
 | `claude-coder auth [url]` | 导出 Playwright 登录状态 |
 | `claude-coder validate` | 手动校验 |
 | `claude-coder status` | 查看进度和成本 |
-| `claude-coder config sync` | 同步配置到 ~/.claude/ |
-| `claude-coder config mcp <mode>` | 快速切换 Playwright 模式 |
 
 **选项**：`--max N` 限制 session 数（默认 50），`--pause N` 每 N 个 session 暂停确认（默认不暂停）。
 

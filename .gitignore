@@ -13,4 +13,10 @@ node_modules/
 .claude-coder/session_result.json
 .claude-coder/tests.json
 
-问题整理.md/
+.claude/
+.playwright-mcp/
+
+# Example 测试目录运行时产物
+example/.claude-coder/
+example/.mcp.json
+example/.claude/
