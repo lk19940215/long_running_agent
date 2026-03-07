@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "test_cases": [
+    {
+      "id": "test-feat002-post",
+      "feature_id": "feat-002",
+      "verify": "curl -s -w '%{http_code}' -X POST http://localhost:3000/api/todos -H 'Content-Type: application/json' -d '{\"title\":\"Test\"}'",
+      "expected": "HTTP 201, 返回包含 id, title, completed, createdAt 的对象",
+      "last_result": "pass",
+      "last_run_session": 2
+    },
+    {
+      "id": "test-feat002-get",
+      "feature_id": "feat-002",
+      "verify": "curl -s http://localhost:3000/api/todos",
+      "expected": "HTTP 200, 返回 TODO 数组",
+      "last_result": "pass",
+      "last_run_session": 2
+    },
+    {
+      "id": "test-feat002-put",
+      "feature_id": "feat-002",
+      "verify": "curl -s -w '%{http_code}' -X PUT http://localhost:3000/api/todos/1 -H 'Content-Type: application/json' -d '{\"completed\":true}'",
+      "expected": "HTTP 200, 返回更新后的 TODO 对象",
+      "last_result": "pass",
+      "last_run_session": 2
+    },
+    {
+      "id": "test-feat002-delete",
+      "feature_id": "feat-002",
+      "verify": "curl -s -w '%{http_code}' -X DELETE http://localhost:3000/api/todos/1",
+      "expected": "HTTP 204 No Content",
+      "last_result": "pass",
+      "last_run_session": 2
+    }
+  ]
+}

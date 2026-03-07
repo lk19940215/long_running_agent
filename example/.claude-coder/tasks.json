@@ -28,7 +28,7 @@
         "【P0】curl -X PUT http://localhost:3000/api/todos/1 -H 'Content-Type: application/json' -d '{\"completed\":true}' → 200",
         "【P0】curl -X DELETE http://localhost:3000/api/todos/1 -w '%{http_code}' -o /dev/null | grep -q '204' && echo 'DELETE pass'"
       ],
-      "status": "pending",
+      "status": "done",
       "depends_on": ["feat-001"]
     }
   ]
