@@ -56,6 +56,14 @@
       "expected": "TypeScript 编译通过，无类型错误",
       "last_result": "pass",
       "last_run_session": 4
+    },
+    {
+      "id": "test-feat008-frontend",
+      "feature_id": "feat-008",
+      "verify": "curl -s http://localhost:5173 | grep -q 'SegmentedControl\\|输入任务标题' && echo 'pass'",
+      "expected": "页面包含 TodoForm 表单和 SegmentedControl 过滤组件",
+      "last_result": "pass",
+      "last_run_session": 5
     }
   ]
 }

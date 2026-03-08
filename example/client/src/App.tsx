@@ -4,16 +4,16 @@ import {
   Paper,
   Title,
   Text,
-  Button,
   Group,
   Badge,
   Divider,
   Center,
-  rem,
 } from '@mantine/core'
-import { IconPlus, IconList } from '@tabler/icons-react'
+import { IconList } from '@tabler/icons-react'
 import { useTodoStore } from './store/todoStore'
 import { TodoList } from './components/TodoList'
+import { TodoForm } from './components/TodoForm'
+import { FilterBar } from './components/FilterBar'
 
 function App() {
   const { todos, filter, loading, error, fetchTodos, addTodo, toggleTodo, deleteTodo, setFilter } = useTodoStore()
@@ -71,54 +71,15 @@ function App() {
         </Group>
       </Paper>
 
-      {/* 添加任务按钮 */}
-      <Group mb="lg">
-        <Button
-          leftSection={<IconPlus style={{ width: rem(18), height: rem(18) }} />}
-          color="blue"
-          fullWidth
-          onClick={() => {
-            const title = prompt('请输入任务标题:')
-            if (title && title.trim()) {
-              addTodo(title.trim())
-            }
-          }}
-          loading={loading}
-        >
-          添加新任务
-        </Button>
-      </Group>
+      {/* 添加任务表单 */}
+      <TodoForm onAdd={addTodo} loading={loading} />
 
-      {/* 过滤按钮 */}
-      <Group mb="lg" gap="xs">
-        <Button
-          variant={filter === 'all' ? 'filled' : 'outline'}
-          color="blue"
-          size="sm"
-          onClick={() => setFilter('all')}
-          flex={1}
-        >
-          全部
-        </Button>
-        <Button
-          variant={filter === 'active' ? 'filled' : 'outline'}
-          color="blue"
-          size="sm"
-          onClick={() => setFilter('active')}
-          flex={1}
-        >
-          待办
-        </Button>
-        <Button
-          variant={filter === 'completed' ? 'filled' : 'outline'}
-          color="blue"
-          size="sm"
-          onClick={() => setFilter('completed')}
-          flex={1}
-        >
-          已完成
-        </Button>
-      </Group>
+      <Divider my="lg" />
+
+      {/* 过滤栏 */}
+      <FilterBar filter={filter} onFilterChange={setFilter} />
+
+      <Divider my="lg" />
 
       {/* 任务列表组件 */}
       <TodoList
