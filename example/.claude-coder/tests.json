@@ -40,6 +40,14 @@
       "expected": "HTTP 200, 返回包含 message: 'Welcome to TODO API' 和 endpoints 对象的 JSON",
       "last_result": "pass",
       "last_run_session": 1
+    },
+    {
+      "id": "test-feat006-frontend",
+      "feature_id": "feat-006",
+      "verify": "curl -s http://localhost:5173 | grep -q 'TODO 待办事项' && echo 'pass'",
+      "expected": "HTTP 200, 页面正常加载，包含 TODO 标题和交互元素",
+      "last_result": "pass",
+      "last_run_session": 3
     }
   ]
 }

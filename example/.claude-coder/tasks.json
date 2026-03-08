@@ -90,7 +90,7 @@
         "创建 API 服务层（getTodos, createTodo, updateTodo, deleteTodo）",
         "【验证】浏览器控制台测试 store actions 无错误"
       ],
-      "status": "pending",
+      "status": "done",
       "depends_on": [
         "feat-004"
       ]
