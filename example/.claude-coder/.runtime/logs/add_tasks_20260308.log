@@ -14,3 +14,314 @@
 [TOOL_USE] Read: {"file_path":"E:\\Code\\claude-coder\\example\\server.js"}
 [2026-03-08T11:45:01.519Z] Read: E:\Code\claude-coder\example\package.json
 [2026-03-08T11:45:01.519Z] Read: E:\Code\claude-coder\example\server.js
+现在我了解了项目现状：
+
+**项目现状分析：**
+- 后端：纯 JavaScript + Express，已完成核心 API（3 个任务，全部 done）
+- 前端：当前为 `none`，没有任何前端代码
+- 用户需求：添加基于 React 18 + TypeScript + Vite 的前端，展示 Todo 列表
+
+**需求分析：**
+用户给出了完整的技术栈要求（React 18 + TypeScript + Vite + Mantine v7 + Tailwind CSS + Zustand + Axios + React Router v6 + Tabler Icons），这是一个**全新的前端项目**，需要从零搭建。
+
+**核心功能点（TODO List 应用典型需求）：**
+1. 主页：展示 Todo 列表（待办/已完成分组）
+2. 创建新 Todo（输入框 + 添加按钮）
+3. 切换完成状态（勾选框）
+4. 删除 Todo（删除按钮）
+5. 编辑 Todo 标题（可选，用户未明确要求）
+6. 筛选/排序功能（全部/待办/已完成）
+7. 美观的 UI 效果（动画、交互反馈）
+
+**任务拆分策略：**
+这是一个从零开始的前端项目，需要按搭建顺序拆分为多个原子任务：
+1. 基础设施：初始化 Vite + React + TS 项目，安装依赖
+2. 路由配置：添加 React Router，配置基本路由
+3. 状态管理：添加 Zustand store，连接后端 API
+4. UI 组件：使用 Mantine + Tailwind 构建核心组件
+5. 页面集成：整合组件，完成主页面
+6. 端到端测试：使用 Playwright MCP 验证完整流程
+
+让我开始分解任务：
+
+## 任务分解
+
+### feat-004: 初始化前端项目并安装依赖
+**分类**: infra  
+**依赖**: []  
+**优先级**: 4  
+**步骤**:
+1. 使用 Vite 创建 React + TypeScript 项目（前端目录为 `frontend/`）
+2. 安装核心依赖：react-router-dom, axios, zustand
+3. 安装 UI 依赖：@mantine/core, @mantine/hooks, @tabler/icons-react, tailwindcss
+4. 配置环境变量：API 地址为 http://localhost:3000
+5. 【验证】cd frontend && npm run dev 启动无报错
+
+### feat-005: 配置 Tailwind CSS 和项目基础样式
+**分类**: frontend  
+**依赖**: [feat-004]  
+**优先级**: 5  
+**步骤**:
+1. 初始化 Tailwind CSS，配置 tailwind.config.js
+2. 创建全局样式文件，设置基础布局（flexbox grid）
+3. 配置 Mantine 主题（颜色、字体、圆角等）
+4. 【验证】查看页面背景色和字体已应用自定义样式
+
+### feat-006: 实现 API 客户端和状态管理
+**分类**: frontend  
+**依赖**: [feat-004]  
+**优先级**: 6  
+**步骤**:
+1. 创建 axios 实例，配置基础 URL 和拦截器
+2. 实现 Zustand Store（todos 状态、fetchTodos、addTodo、toggleTodo、deleteTodo）
+3. 创建 API 服务层（getTodos, createTodo, updateTodo, deleteTodo）
+4. 【验证】浏览器控制台测试 store actions 无报错
+
+### feat-007: 构建 Todo 列表核心组件
+**分类**: frontend  
+**依赖**: [feat-005, feat-006]  
+**优先级**: 7  
+**步骤**:
+1. 创建 TodoItem 组件（标题、勾选框、删除按钮，使用 Mantine UI）
+2. 创建 TodoList 组件（渲染列表，支持空状态）
+3. 添加视觉反馈（hover 效果、删除动画）
+4. 【验证】手动添加测试数据，组件正常渲染
+
+### feat-008: 实现 Todo 创建表单和过滤功能
+**分类**: frontend  
+**依赖**: [feat-007]  
+**优先级**: 8  
+**步骤**:
+1. 创建 TodoForm 组件（输入框 + 添加按钮，支持 Enter 键）
+2. 添加表单验证（标题非空）
+3. 实现过滤按钮组（全部/待办/已完成），使用 Mantine SegmentedControl
+4. 【验证】输入框提交可触发添加操作
+
+### feat-009: 配置路由并集成到主页面
+**分类**: frontend  
+**依赖**: [feat-004, feat-008]  
+**优先级**: 9  
+**步骤**:
+1. 创建 App 路由配置（根路由渲染 Todo 主页面）
+2. 整合 TodoList、TodoForm、过滤组件到主页面
+3. 添加页面标题和统计信息（总任务数、已完成数）
+4. 【验证】访问 http://localhost:5173/ 可看到完整页面
+
+### feat-010: 端到端测试 - 完整用户流程
+**分类**: frontend  
+**依赖**: [feat-009]  
+**优先级**: 10  
+**步骤**:
+1. 【规则】阅读 .claude-coder/test_rule.md 了解 Playwright MCP 规范
+2. 【P0】启动前后端服务，使用 Playwright 访问页面
+3. 【P0】输入新 Todo 标题，点击添加，验证列表更新
+4. 【P1】勾选任务完成，验证状态变化和样式更新
+5. 【P1】点击删除按钮，验证任务从列表移除
+
+现在我将这些任务追加到 tasks.json：
+
+```json
+{
+  "id": "feat-004",
+  "category": "infra",
+  "priority": 4,
+  "description": "初始化前端项目并安装全部依赖",
+  "steps": [
+    "使用 Vite 创建 React + TypeScript 项目（目录: frontend/）",
+    "安装核心依赖：react-router-dom, axios, zustand",
+    "安装 UI 依赖：@mantine/core@7, @mantine/hooks@7, @tabler/icons-react, tailwindcss",
+    "配置环境变量 VITE_API_URL=http://localhost:3000",
+    "【验证】cd frontend && npm run dev 无报错"
+  ],
+  "status": "pending",
+  "depends_on": []
+}
+```
+
+```json
+{
+  "id": "feat-005",
+  "category": "frontend",
+  "priority": 5,
+  "description": "配置 Tailwind CSS 和 Mantine 主题样式",
+  "steps": [
+    "初始化 Tailwind CSS，配置 tailwind.config.js",
+    "创建全局样式文件，设置基础布局和颜色方案",
+    "配置 Mantine 主题（primaryColor, fontFamily, radius）",
+    "【验证】页面应用了自定义背景色和字体"
+  ],
+  "status": "pending",
+  "depends_on": ["feat-004"]
+}
+```
+
+```json
+{
+  "id": "feat-006",
+  "category": "frontend",
+  "priority": 6,
+  "description": "实现 API 客户端和 Zustand 状态管理",
+  "steps": [
+    "创建 axios 实例，配置基础 URL 和错误处理",
+    "实现 Zustand Store（todos, fetchTodos, addTodo, toggleTodo, deleteTodo）",
+    "创建 API 服务层（getTodos, createTodo, updateTodo, deleteTodo）",
+    "【验证】浏览器控制台测试 store actions 无错误"
+  ],
+  "status": "pending",
+  "depends_on": ["feat-004"]
+}
+```
+
+```json
+{
+  "id": "feat-007",
+  "category": "frontend",
+  "priority": 7,
+  "description": "构建 Todo 列表和单个任务组件",
+  "steps": [
+    "创建 TodoItem 组件（标题、勾选框、删除按钮，使用 Mantine UI）",
+    "创建 TodoList 组件（渲染列表，支持空状态提示）",
+    "添加交互反馈（hover 效果、删除淡出动画）",
+    "【验证】手动添加测试数据，组件正常渲染列表"
+  ],
+  "status": "pending",
+  "depends_on": ["feat-005", "feat-006"]
+}
+```
+
+```json
+{
+  "id": "feat-008",
+  "category": "frontend",
+  "priority": 8,
+  "description": "实现 Todo 创建表单和过滤功能",
+  "steps": [
+    "创建 TodoForm 组件（输入框 + 添加按钮，支持 Enter 键提交）",
+    "添加表单验证（标题非空）和加载状态",
+    "实现过滤按钮组（全部/待办/已完成），使用 Mantine SegmentedControl",
+    "【验证】输入框提交可触发添加操作，过滤可切换列表"
+  ],
+  "status": "pending",
+  "depends_on": ["feat-007"]
+}
+```
+
+```json
+{
+  "id": "feat-009",
+  "category": "frontend",
+  "priority": 9,
+  "description": "配置路由并集成完整主页面",
+  "steps": [
+    "创建 App 路由配置（根路由渲染 Todo 主页面）",
+    "整合 TodoList、TodoForm、过滤组件到主页面",
+    "添加页面标题、统计信息（总任务数、已完成数）",
+    "【验证】访问 http://localhost:5173/ 可看到完整可交互页面"
+  ],
+  "status": "pending",
+  "depends_on": ["feat-004", "feat-008"]
+}
+```
+
+```json
+{
+  "id": "feat-010",
+  "category": "frontend",
+  "priority": 10,
+  "description": "端到端测试完整用户流程",
+  "steps": [
+    "【规则】阅读 .claude-coder/test_rule.md 了解 Playwright MCP 规范",
+    "【P0】启动前后端服务，使用 Playwright 访问 http://localhost:5173",
+    "【P0】输入新 Todo 标题并添加，验证列表更新且调用 API",
+    "【P1】勾选任务完成，验证状态变化和样式更新",
+    "【P1】点击删除按钮，验证任务从列表移除且调用 API"
+  ],
+  "status": "pending",
+  "depends_on": ["feat-009"]
+}
+```
+
+**依赖关系图（DAG）：**
+```
+feat-004 (infra: 初始化项目)
+    ├─→ feat-005 (frontend: 样式) ──→ feat-007 (frontend: 组件)
+    ├─→ feat-006 (frontend: 状态) ──┘
+    │                                └─→ feat-008 (frontend: 表单+过滤)
+    │                                             └─→ feat-009 (frontend: 集成)
+    └───────────────────────────────────────────────→ feat-009 (frontend: 集成)
+                                                          └─→ feat-010 (frontend: E2E 测试)
+```
+
+**检查重复：**
+- 与已有任务无重叠（已有全是后端任务）
+- 新任务均为前端相关，类别正确
+
+**粒度检查：**
+- 每个任务 4 步，符合 ≤5 步规则
+- 每个任务独立可测试
+- 预估代码量：每个任务 100-300 行，符合 ≤500 行规则
+
+现在追加到 tasks.json：
+</think>
+
+[TOOL_USE] Read: {"file_path":"E:\\Code\\claude-coder\\example\\.claude-coder\\tasks.json"}
+[2026-03-08T11:46:04.866Z] Read: E:\Code\claude-coder\example\.claude-coder\tasks.json
+[TOOL_USE] Edit: {"replace_all":false,"file_path":"E:\\Code\\claude-coder\\example\\.claude-coder\\tasks.json","old_string":"  ]\n}","new_string":"    },\n    {\n      \"id\": \"feat-004\",\n      \"category\": \"infra\",\n      \"priority\": 4,\n      \"description\": \"初始化前端项目并安装全部依赖\",\n      \"steps\": [\n      
+[2026-03-08T11:46:35.437Z] Edit: E:\Code\claude-coder\example\.claude-coder\tasks.json
+[TOOL_USE] Bash: {"command":"cd \"E:\\Code\\claude-coder\\example\" && git add -A && git commit -m \"chore: add frontend tasks for Todo web app\" --quiet 2>&1 || git status","description":"Add and commit new frontend tasks to git"}
+[2026-03-08T11:46:42.254Z] Bash: cd "E:\Code\claude-coder\example" && git add -A && git commit -m "chore: add frontend tasks for Todo web app" --quiet 2>&1 || git status
+[TOOL_USE] Write: {"file_path":"E:\\Code\\claude-coder\\example\\.claude-coder\\session_result.json","content":"{\n  \"session_result\": \"success\",\n  \"status_before\": \"3 tasks (3 done, 0 pending)\",\n  \"status_after\": \"10 tasks (3 done, 7 pending)\",\n  \"notes\": \"追加了 7 个任务：前端项目从零搭建（feat-004 至 feat-010）。包含
+[TOOL_USE] Read: {"file_path":"E:\\Code\\claude-coder\\example\\.claude-coder\\session_result.json"}
+[2026-03-08T11:46:59.141Z] Read: E:\Code\claude-coder\example\.claude-coder\session_result.json
+[TOOL_USE] Write: {"file_path":"E:\\Code\\claude-coder\\example\\.claude-coder\\session_result.json","content":"{\n  \"session_result\": \"success\",\n  \"status_before\": \"3 tasks (3 done, 0 pending)\",\n  \"status_after\": \"10 tasks (3 done, 7 pending)\",\n  \"notes\": \"追加了 7 个任务：前端项目从零搭建（feat-004 至 feat-010）。包含
+[2026-03-08T11:47:05.844Z] Write: E:\Code\claude-coder\example\.claude-coder\session_result.json
+
+[2026-03-08T11:47:05.848Z] COMPLETION_DETECTED: session_result.json written, 5min grace period
+## 任务分解完成 ✅
+
+我已成功将用户模糊的前端需求拆分为 **7 个结构化、可执行的原子任务**（feat-004 至 feat-010）。
+
+### 📋 任务概览
+
+| 任务 | 类别 | 描述 | 优先级 | 依赖 |
+|------|------|------|--------|------|
+| **feat-004** | infra | 初始化前端项目并安装全部依赖 | 4 | - |
+| **feat-005** | frontend | 配置 Tailwind CSS 和 Mantine 样式 | 5 | feat-004 |
+| **feat-006** | frontend | 实现 API 客户端和 Zustand 状态管理 | 6 | feat-004 |
+| **feat-007** | frontend | 构建 Todo 列表和单个任务组件 | 7 | feat-005, feat-006 |
+| **feat-008** | frontend | 实现创建表单和过滤功能 | 8 | feat-007 |
+| **feat-009** | frontend | 配置路由并集成完整主页面 | 9 | feat-004, feat-008 |
+| **feat-010** | frontend | 端到端测试完整用户流程 | 10 | feat-009 |
+
+### 🔗 依赖关系图（DAG）
+
+```
+feat-004 (infra: 初始化项目)
+    ├─→ feat-005 (frontend: 样式) ──→ feat-007 (frontend: 组件)
+    ├─→ feat-006 (frontend: 状态) ──┘
+    │                                └─→ feat-008 (frontend: 表单+过滤)
+    │                                             └─→ feat-009 (frontend: 集成)
+    └───────────────────────────────────────────────→ feat-009 (frontend: 集成)
+                                                          └─→ feat-010 (frontend: E2E 测试)
+```
+
+### ✨ 核心功能覆盖
+
+每个任务都包含**可验证的测试步骤**：
+
+1. **基础搭建** → 启动无报错验证
+2. **样式配置** → 页面视觉反馈验证
+3. **状态管理** → 控制台 actions 测试
+4. **组件开发** → 手动测试数据渲染
+5. **表单过滤** → 交互功能验证
+6. **页面集成** → 访问页面完整性验证
+7. **E2E 测试** → 使用 Playwright MCP 验证完整用户流程
+
+### 📝 说明
+
+- **用户需求未明确编辑功能**：当前任务按基础版实现（创建、完成、删除、过滤），若需编辑功能可后续追加
+- **技术栈完全匹配**：React 18 + TypeScript + Vite + Mantine v7 + Tailwind CSS + Zustand + Axios + React Router v6 + Tabler Icons
+- **UI 美观保障**：通过 Mantine v7 组件库和 Tailwind CSS 确保现代化美观效果
+- **端到端测试**：feat-010 使用项目已配置的 Playwright MCP 进行自动化测试
+
+所有任务已追加到 `tasks.json` 并提交到 Git。🎉
