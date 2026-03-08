@@ -74,7 +74,7 @@
         "配置 Mantine 主题（primaryColor, fontFamily, radius）",
         "【验证】页面应用了自定义背景色和字体"
       ],
-      "status": "pending",
+      "status": "done",
       "depends_on": [
         "feat-004"
       ]
