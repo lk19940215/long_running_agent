@@ -3,7 +3,7 @@
 const fs = require('fs');
 const { execSync } = require('child_process');
 const { paths, log, getProjectRoot } = require('../common/config');
-const { readJson } = require('../common/utils');
+const { readJson, getGitHead } = require('../common/utils');
 const { TASK_STATUSES } = require('../common/constants');
 const { loadTasks, getFeatures } = require('../common/tasks');
 
@@ -93,12 +93,7 @@ function checkGitProgress(headBefore) {
   }
 
   const projectRoot = getProjectRoot();
-  let headAfter;
-  try {
-    headAfter = execSync('git rev-parse HEAD', { cwd: projectRoot, encoding: 'utf8' }).trim();
-  } catch {
-    headAfter = 'none';
-  }
+  const headAfter = getGitHead(projectRoot);
 
   if (headBefore === headAfter) {
     log('warn', '本次会话没有新的 git 提交');
@@ -119,22 +114,21 @@ function checkTestCoverage(taskId, statusAfter) {
   if (!fs.existsSync(p.testsFile)) return;
   if (statusAfter !== 'done' || !taskId) return;
 
-  try {
-    const tests = JSON.parse(fs.readFileSync(p.testsFile, 'utf8'));
-    const testCases = tests.test_cases || [];
-    const taskTests = testCases.filter(t => t.feature_id === taskId);
-    if (taskTests.length > 0) {
-      const failed = taskTests.filter(t => t.last_result === 'fail');
-      if (failed.length > 0) {
-        log('warn', `tests.json 中有失败的验证记录: ${failed.map(t => t.id).join(', ')}`);
-      } else {
-        log('ok', `${taskTests.length} 条验证记录覆盖任务 ${taskId}`);
-      }
+  const tests = readJson(p.testsFile, null);
+  if (!tests) return;
+  const testCases = tests.test_cases || [];
+  const taskTests = testCases.filter(t => t.feature_id === taskId);
+  if (taskTests.length > 0) {
+    const failed = taskTests.filter(t => t.last_result === 'fail');
+    if (failed.length > 0) {
+      log('warn', `tests.json 中有失败的验证记录: ${failed.map(t => t.id).join(', ')}`);
+    } else {
+      log('ok', `${taskTests.length} 条验证记录覆盖任务 ${taskId}`);
     }
-  } catch { /* ignore */ }
+  }
 }
 
-async function validate(headBefore, taskId) {
+function validate(headBefore, taskId) {
   log('info', '========== 开始校验 ==========');
 
   const srResult = validateSessionResult();

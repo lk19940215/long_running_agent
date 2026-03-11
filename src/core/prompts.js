@@ -2,6 +2,7 @@
 
 const fs = require('fs');
 const { paths, loadConfig, getProjectRoot } = require('../common/config');
+const { readJson } = require('../common/utils');
 const { loadTasks, findNextTask, getStats } = require('../common/tasks');
 
 // --------------- Template Engine ---------------
@@ -80,17 +81,18 @@ function buildCodingPrompt(sessionNum, opts = {}) {
   // Hint 4: Existing test records
   let testHint = '';
   if (fs.existsSync(p.testsFile)) {
-    try {
-      const count = (JSON.parse(fs.readFileSync(p.testsFile, 'utf8')).test_cases || []).length;
+    const testsData = readJson(p.testsFile, null);
+    if (testsData) {
+      const count = (testsData.test_cases || []).length;
       if (count > 0) testHint = `tests.json 已有 ${count} 条验证记录，Step 5 时先查已有记录避免重复验证。`;
-    } catch { /* ignore */ }
+    }
   }
 
   // Hint 5: Project documentation awareness + profile quality check
   let docsHint = '';
   if (fs.existsSync(p.profile)) {
-    try {
-      const profile = JSON.parse(fs.readFileSync(p.profile, 'utf8'));
+    const profile = readJson(p.profile, null);
+    if (profile) {
       const docs = profile.existing_docs || [];
       if (docs.length > 0) {
         docsHint = `项目文档: ${docs.join(', ')}。Step 4 编码前先读与任务相关的文档，了解接口约定和编码规范。完成后若新增了模块或 API，更新对应文档。`;
@@ -102,7 +104,7 @@ function buildCodingPrompt(sessionNum, opts = {}) {
       if (!docs.length) {
         docsHint += ' 注意：project_profile.json 的 existing_docs 为空，请在 Step 6 收尾时补全文档列表。';
       }
-    } catch { /* ignore */ }
+    }
   }
 
   // Hint 6: Task context (harness pre-read, saves Agent 2-3 Read calls)
@@ -152,13 +154,11 @@ function buildCodingPrompt(sessionNum, opts = {}) {
   // Hint 7: Session memory (read flat session_result.json)
   let memoryHint = '';
   if (fs.existsSync(p.sessionResult)) {
-    try {
-      const sr = JSON.parse(fs.readFileSync(p.sessionResult, 'utf8'));
-      if (sr?.session_result) {
-        memoryHint = `上次会话: ${sr.session_result}（${sr.status_before || '?'} → ${sr.status_after || '?'}）` +
-          (sr.notes ? `, 要点: ${sr.notes.slice(0, 150)}` : '') + '。';
-      }
-    } catch { /* ignore */ }
+    const sr = readJson(p.sessionResult, null);
+    if (sr?.session_result) {
+      memoryHint = `上次会话: ${sr.session_result}（${sr.status_before || '?'} → ${sr.status_after || '?'}）` +
+        (sr.notes ? `, 要点: ${sr.notes.slice(0, 150)}` : '') + '。';
+    }
   }
 
   // Hint 8: Service management (continuous vs single-shot mode)
@@ -228,15 +228,15 @@ function buildPlanPrompt(planPath) {
   // --- Context injection: project tech stack ---
   let profileContext = '';
   if (fs.existsSync(p.profile)) {
-    try {
-      const profile = JSON.parse(fs.readFileSync(p.profile, 'utf8'));
+    const profile = readJson(p.profile, null);
+    if (profile) {
       const stack = profile.tech_stack || {};
       const parts = [];
       if (stack.backend?.framework) parts.push(`后端: ${stack.backend.framework}`);
       if (stack.frontend?.framework) parts.push(`前端: ${stack.frontend.framework}`);
       if (stack.backend?.language) parts.push(`语言: ${stack.backend.language}`);
       if (parts.length) profileContext = `项目技术栈: ${parts.join(', ')}`;
-    } catch { /* ignore */ }
+    }
   }
 
   // --- Context injection: existing tasks summary ---
@@ -257,7 +257,7 @@ function buildPlanPrompt(planPath) {
       const recent = features.slice(-3);
       if (recent.length) {
         recentExamples = '已有任务格式参考（保持一致性）：\n' +
-          recent.map(f => `  ${f.id}: "${f.description}" (category=${f.category}, steps=${f.steps.length}步, depends_on=[${f.depends_on.join(',')}])`).join('\n');
+          recent.map(f => `  ${f.id}: "${f.description}" (category=${f.category}, steps=${(f.steps || []).length}步, depends_on=[${(f.depends_on || []).join(',')}])`).join('\n');
       }
     }
   } catch { /* ignore */ }

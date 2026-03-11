@@ -100,6 +100,13 @@ function getStats(data) {
   };
 }
 
+function printStats() {
+  const data = loadTasks();
+  if (!data) return;
+  const stats = getStats(data);
+  log('info', `进度: ${stats.done}/${stats.total} done, ${stats.in_progress} in_progress, ${stats.testing} testing, ${stats.failed} failed, ${stats.pending} pending`);
+}
+
 function showStatus() {
   const p = paths();
   const data = loadTasks();
@@ -127,15 +134,13 @@ function showStatus() {
   }
 
   // Cost summary from progress.json (harness records SDK cost per session)
-  if (fs.existsSync(p.progressFile)) {
-    try {
-      const progress = JSON.parse(fs.readFileSync(p.progressFile, 'utf8'));
-      const sessions = (progress.sessions || []).filter(s => typeof s.cost === 'number');
-      if (sessions.length > 0) {
-        const totalCost = sessions.reduce((sum, s) => sum + s.cost, 0);
-        console.log(`\n  ${COLOR.blue}💰 累计成本${COLOR.reset}: $${totalCost.toFixed(4)} (${sessions.length} sessions)`);
-      }
-    } catch { /* ignore parse errors */ }
+  const progress = readJson(p.progressFile, null);
+  if (progress) {
+    const sessions = (progress.sessions || []).filter(s => typeof s.cost === 'number');
+    if (sessions.length > 0) {
+      const totalCost = sessions.reduce((sum, s) => sum + s.cost, 0);
+      console.log(`\n  ${COLOR.blue}💰 累计成本${COLOR.reset}: $${totalCost.toFixed(4)} (${sessions.length} sessions)`);
+    }
   }
 
   // Task list
@@ -160,5 +165,6 @@ module.exports = {
   forceStatus,
   addTask,
   getStats,
+  printStats,
   showStatus,
 };

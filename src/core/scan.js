@@ -2,11 +2,11 @@
 
 const fs = require('fs');
 const { paths, log, ensureLoopDir } = require('../common/config');
+const { readJson } = require('../common/utils');
 const { runSession } = require('./base');
-const { buildQueryOptions } = require('./utils');
+const { buildQueryOptions, hasCodeFiles } = require('./query');
 const { buildSystemPrompt, buildScanPrompt } = require('./prompts');
 const { extractResult } = require('../common/logging');
-const { hasCodeFiles } = require('./utils');
 const { RETRY } = require('../common/constants');
 
 /**
@@ -16,7 +16,8 @@ function validateProfile() {
   const p = paths();
   if (!fs.existsSync(p.profile)) return { valid: false, issues: ['profile 不存在'] };
 
-  const profile = JSON.parse(fs.readFileSync(p.profile, 'utf8'));
+  const profile = readJson(p.profile, null);
+  if (!profile) return { valid: false, issues: ['profile 解析失败'] };
   const issues = [];
 
   if (!profile.tech_stack?.backend?.framework && !profile.tech_stack?.frontend?.framework) {

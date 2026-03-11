@@ -24,18 +24,6 @@ function test(name, fn) {
   }
 }
 
-async function asyncTest(name, fn) {
-  try {
-    await fn();
-    console.log(`  ✓ ${name}`);
-    testsPassed++;
-  } catch (err) {
-    console.log(`  ✗ ${name}`);
-    console.log(`    ${err.message}`);
-    testsFailed++;
-  }
-}
-
 function cleanup() {
   // 清理测试目录
   if (fs.existsSync(TEST_DIR)) {
@@ -46,31 +34,6 @@ function cleanup() {
   if (fs.existsSync(claudeDir)) {
     fs.rmSync(claudeDir, { recursive: true, force: true });
   }
-}
-
-function setupTestProject() {
-  cleanup();
-  fs.mkdirSync(TEST_DIR, { recursive: true });
-
-  // 创建基础项目文件
-  fs.writeFileSync(path.join(TEST_DIR, 'package.json'), JSON.stringify({
-    name: 'test-project',
-    version: '1.0.0',
-  }, null, 2));
-
-  fs.writeFileSync(path.join(TEST_DIR, 'README.md'), '# Test Project\n\nA test project for claude-coder.');
-
-  // 创建简单的源文件
-  fs.mkdirSync(path.join(TEST_DIR, 'src'), { recursive: true });
-  fs.writeFileSync(path.join(TEST_DIR, 'src', 'index.js'), `
-module.exports = {
-  hello: () => 'Hello, World!'
-};
-`);
-
-  // 初始化 git
-  execSync('git init', { cwd: TEST_DIR, stdio: 'pipe' });
-  execSync('git add -A && git commit -m "init"', { cwd: TEST_DIR, stdio: 'pipe' });
 }
 
 // ============ 测试套件 ============

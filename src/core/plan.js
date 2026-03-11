@@ -5,11 +5,11 @@ const path = require('path');
 const os = require('os');
 const readline = require('readline');
 const { runSession } = require('./base');
-const { buildQueryOptions } = require('./utils');
+const { buildQueryOptions } = require('./query');
 const { buildPlanSystemPrompt, buildPlanPrompt } = require('./prompts');
 const { paths, log, loadConfig, getProjectRoot, ensureLoopDir } = require('../common/config');
 const { extractResultText } = require('../common/logging');
-const { loadTasks, getStats } = require('../common/tasks');
+const { printStats } = require('../common/tasks');
 
 const EXIT_TIMEOUT_MS = 30000;
 
@@ -61,10 +61,10 @@ async function _executePlanGen(sdk, ctx, userInput, opts = {}) {
     permissionMode: 'plan',
     disallowedTools: ['askUserQuestion'],
     cwd: opts.projectRoot || process.cwd(),
+    hooks: ctx.hooks,
   };
   if (opts.model) queryOpts.model = opts.model;
 
-  // ExitPlanMode 超时检测
   let exitPlanModeDetected = false;
   let exitPlanModeTime = null;
 
@@ -72,6 +72,11 @@ async function _executePlanGen(sdk, ctx, userInput, opts = {}) {
   const session = sdk.query({ prompt, options: queryOpts });
 
   for await (const msg of session) {
+    if (ctx._isStalled && ctx._isStalled()) {
+      log('warn', '停顿超时，中断 plan 生成');
+      break;
+    }
+
     if (exitPlanModeDetected && exitPlanModeTime) {
       const elapsed = Date.now() - exitPlanModeTime;
       if (elapsed > EXIT_TIMEOUT_MS && msg.type !== 'result') {
@@ -174,16 +179,6 @@ async function promptAutoRun() {
       resolve(/^[Yy]/.test(answer.trim()));
     });
   });
-}
-
-/**
- * 显示统计信息
- */
-function printStats() {
-  const data = loadTasks();
-  if (!data) return;
-  const stats = getStats(data);
-  log('info', `进度: ${stats.done}/${stats.total} done, ${stats.in_progress} in_progress, ${stats.testing} testing, ${stats.failed} failed, ${stats.pending} pending`);
 }
 
 // --------------- CLI 入口 ---------------

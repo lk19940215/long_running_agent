@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
 const { paths, log, COLOR, getProjectRoot, parseEnvFile, updateEnvVar } = require('../../common/config');
+const { appendGitignore } = require('../../common/utils');
 
 // ── readline helpers ──
 
@@ -61,17 +62,13 @@ function writeConfig(filePath, lines) {
 }
 
 function ensureGitignore() {
-  const path = require('path');
-  const gitignore = path.join(getProjectRoot(), '.gitignore');
+  const projectRoot = getProjectRoot();
   const patterns = ['.claude-coder/.env', '.claude-coder/.runtime/'];
-  let content = '';
-  if (fs.existsSync(gitignore)) {
-    content = fs.readFileSync(gitignore, 'utf8');
+  let added = false;
+  for (const pattern of patterns) {
+    if (appendGitignore(projectRoot, pattern)) added = true;
   }
-  const toAdd = patterns.filter(p => !content.includes(p));
-  if (toAdd.length > 0) {
-    const block = '\n# Claude Coder（含 API Key 和临时文件）\n' + toAdd.join('\n') + '\n';
-    fs.appendFileSync(gitignore, block, 'utf8');
+  if (added) {
     log('info', '已将 .claude-coder/.env 添加到 .gitignore');
   }
 }

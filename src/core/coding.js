@@ -1,7 +1,7 @@
 "use strict";
 
 const { runSession } = require("./base");
-const { buildQueryOptions } = require("./utils");
+const { buildQueryOptions } = require("./query");
 const { buildSystemPrompt, buildCodingPrompt } = require("./prompts");
 const { extractResult } = require("../common/logging");
 const { log } = require("../common/config");

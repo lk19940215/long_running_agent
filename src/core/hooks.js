@@ -379,6 +379,7 @@ function createLoggingHook(indicator, logStream) {
 
 const FEATURE_MAP = {
   coding: [FEATURES.GUIDANCE, FEATURES.EDIT_GUARD, FEATURES.COMPLETION, FEATURES.STALL],
+  plan: [FEATURES.STALL],
   scan: [FEATURES.STALL],
   add: [FEATURES.STALL],
   simplify: [FEATURES.STALL],
@@ -403,7 +404,7 @@ function createHooks(type, indicator, logStream, options = {}) {
     modules.editGuard = createEditGuardModule(options);
   }
 
-  if (features.includes(FEATURES.COMPLETION)) {
+  if (features.includes(FEATURES.COMPLETION) && modules.stall) {
     modules.completion = createCompletionModule(indicator, modules.stall);
   }
 

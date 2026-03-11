@@ -6,11 +6,17 @@ const net = require('net');
 const http = require('http');
 const { spawn, execSync } = require('child_process');
 const { paths, log, getProjectRoot, ensureLoopDir } = require('../common/config');
+const { readJson } = require('../common/utils');
 const { scan } = require('./scan');
 
 function loadProfile() {
   const p = paths();
-  return JSON.parse(fs.readFileSync(p.profile, 'utf8'));
+  const data = readJson(p.profile, null);
+  if (!data) {
+    log('error', 'project_profile.json 读取失败或已损坏');
+    process.exit(1);
+  }
+  return data;
 }
 
 function isPortFree(port) {

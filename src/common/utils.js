@@ -124,6 +124,30 @@ function isGitRepo(cwd) {
 }
 
 // ─────────────────────────────────────────────────────────────
+// .gitignore 工具
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * 向 .gitignore 追加条目（如果不存在）
+ * @param {string} projectRoot - 项目根目录
+ * @param {string} entry - 要添加的条目
+ * @returns {boolean} 是否有新增
+ */
+function appendGitignore(projectRoot, entry) {
+  const path = require('path');
+  const gitignorePath = path.join(projectRoot, '.gitignore');
+  let content = '';
+  if (fs.existsSync(gitignorePath)) {
+    content = fs.readFileSync(gitignorePath, 'utf8');
+  }
+  if (content.includes(entry)) return false;
+
+  const suffix = content.endsWith('\n') || content === '' ? '' : '\n';
+  fs.appendFileSync(gitignorePath, `${suffix}${entry}\n`, 'utf8');
+  return true;
+}
+
+// ─────────────────────────────────────────────────────────────
 // 进程工具
 // ─────────────────────────────────────────────────────────────
 
@@ -147,6 +171,8 @@ module.exports = {
   // Git 工具
   getGitHead,
   isGitRepo,
+  // .gitignore
+  appendGitignore,
   // 进程工具
   sleep,
 };

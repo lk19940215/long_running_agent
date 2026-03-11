@@ -1,14 +1,14 @@
 'use strict';
 
 const { runSession } = require('./base');
-const { buildQueryOptions } = require('./utils');
+const { buildQueryOptions } = require('./query');
 const { log, getProjectRoot, ensureLoopDir } = require('../common/config');
 const { execSync } = require('child_process');
 
 /**
  * 内部：运行代码审查 Session
  */
-async function _runSimplifySession(n = 3, opts = {}) {
+async function _runSimplifySession(n = 3, focus = null, opts = {}) {
   const projectRoot = getProjectRoot();
   let diff = '';
   try {
@@ -17,7 +17,8 @@ async function _runSimplifySession(n = 3, opts = {}) {
     log('warn', `无法获取最近 ${n} 个 commit 的 diff: ${err.message}`);
   }
 
-  const prompt = `/simplify\n\n审查范围：最近 ${n} 个 commit\n\n${diff.slice(0, 50000)}`;
+  const focusLine = focus ? `\n审查聚焦方向：${focus}` : '';
+  const prompt = `/simplify\n\n审查范围：最近 ${n} 个 commit${focusLine}\n\n${diff.slice(0, 50000)}`;
   const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
 
   return runSession('simplify', {
@@ -44,10 +45,13 @@ async function _runSimplifySession(n = 3, opts = {}) {
 
 /**
  * 对外 API：代码审查
+ * @param {string|null} focus - 审查聚焦方向（如 "内存效率"）
+ * @param {object} opts - 选项，opts.n 为 commit 数量（默认 3）
  */
-async function simplify(n = 3, opts = {}) {
+async function simplify(focus = null, opts = {}) {
   ensureLoopDir();
-  return _runSimplifySession(n, opts);
+  const n = opts.n || 3;
+  return _runSimplifySession(n, focus, opts);
 }
 
 module.exports = {

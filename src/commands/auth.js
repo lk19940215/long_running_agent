@@ -5,18 +5,12 @@ const os = require('os');
 const path = require('path');
 const { execSync } = require('child_process');
 const { paths, loadConfig, log, getProjectRoot, ensureLoopDir } = require('../common/config');
+const { appendGitignore } = require('../common/utils');
 
 function updateGitignore(entry) {
-  const gitignorePath = path.join(getProjectRoot(), '.gitignore');
-  let content = '';
-  if (fs.existsSync(gitignorePath)) {
-    content = fs.readFileSync(gitignorePath, 'utf8');
+  if (appendGitignore(getProjectRoot(), entry)) {
+    log('ok', `.gitignore 已添加: ${entry}`);
   }
-  if (content.includes(entry)) return;
-
-  const suffix = content.endsWith('\n') || content === '' ? '' : '\n';
-  fs.appendFileSync(gitignorePath, `${suffix}${entry}\n`, 'utf8');
-  log('ok', `.gitignore 已添加: ${entry}`);
 }
 
 function updateMcpConfig(p, mode) {

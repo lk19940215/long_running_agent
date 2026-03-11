@@ -43,9 +43,7 @@ function getTemplatePath(name) {
   return path.join(__dirname, '..', '..', 'templates', name);
 }
 
-function getPromptPath(name) {
-  return path.join(__dirname, '..', '..', 'templates', name);
-}
+const getPromptPath = getTemplatePath;
 
 function paths() {
   const loopDir = getLoopDir();

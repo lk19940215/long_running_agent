@@ -25,6 +25,7 @@ class SessionContext {
     this.cleanup = null;
     this._isStalled = () => false;
     this.abortController = new AbortController();
+    this._lastStatusKey = '';
   }
 
   _applyEnvConfig() {

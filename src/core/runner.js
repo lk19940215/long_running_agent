@@ -4,9 +4,9 @@ const fs = require('fs');
 const readline = require('readline');
 const { execSync } = require('child_process');
 const { paths, log, loadConfig, ensureLoopDir, getProjectRoot } = require('../common/config');
-const { readJson, writeJson, getGitHead, sleep } = require('../common/utils');
+const { readJson, writeJson, getGitHead, isGitRepo, sleep } = require('../common/utils');
 const { RETRY } = require('../common/constants');
-const { loadTasks, getFeatures, getStats, findNextTask, forceStatus } = require('../common/tasks');
+const { loadTasks, getFeatures, getStats, findNextTask, forceStatus, printStats } = require('../common/tasks');
 const { validate } = require('./validator');
 const { runCodingSession } = require('./coding');
 const { simplify } = require('./simplify');
@@ -110,13 +110,6 @@ function appendProgress(entry) {
   writeJson(p.progressFile, progress);
 }
 
-function printStats() {
-  const data = loadTasks();
-  if (!data) return;
-  const stats = getStats(data);
-  log('info', `进度: ${stats.done}/${stats.total} done, ${stats.in_progress} in_progress, ${stats.testing} testing, ${stats.failed} failed, ${stats.pending} pending`);
-}
-
 async function promptContinue() {
   if (!process.stdin.isTTY) return true;
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
@@ -148,9 +141,7 @@ async function run(opts = {}) {
     log('ok', `模型配置已加载: ${config.provider}${config.model ? ` (${config.model})` : ''}`);
   }
 
-  try {
-    execSync('git rev-parse --is-inside-work-tree', { cwd: projectRoot, stdio: 'ignore' });
-  } catch {
+  if (!isGitRepo(projectRoot)) {
     log('info', '初始化 git 仓库...');
     execSync('git init', { cwd: projectRoot, stdio: 'inherit' });
     execSync('git add -A && git commit -m "init: 项目初始化" --allow-empty', {
@@ -250,11 +241,10 @@ async function run(opts = {}) {
       }
 
       // 定期运行 simplify 代码审查
-      const config = loadConfig();
       const simplifyInterval = config.simplifyInterval || 0;
       if (simplifyInterval > 0 && session % simplifyInterval === 0) {
         log('info', `每 ${simplifyInterval} 个 session 运行代码审查...`);
-        await simplify(config.simplifyCommits || 3);
+        await simplify(null, { n: config.simplifyCommits || 3 });
 
         // 检查是否有代码变更
         try {

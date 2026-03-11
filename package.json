@@ -8,9 +8,11 @@
   "files": [
     "bin/",
     "src/",
-    "prompts/",
     "templates/"
   ],
+  "scripts": {
+    "test": "node test/complete.test.js && node test/integration.test.js && node test/flow.test.js"
+  },
   "keywords": [
     "claude-coder",
     "claude",
