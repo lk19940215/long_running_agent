@@ -62,12 +62,12 @@ function loadConfig() {
     defaultSonnet: env.ANTHROPIC_DEFAULT_SONNET_MODEL || '',
     defaultHaiku: env.ANTHROPIC_DEFAULT_HAIKU_MODEL || '',
     thinkingBudget: env.ANTHROPIC_THINKING_BUDGET || '',
-    stallTimeout: parseInt(env.SESSION_STALL_TIMEOUT, 10) || 1200,
+    stallTimeout: parseInt(env.SESSION_STALL_TIMEOUT, 10) || 600,
     completionTimeout: parseInt(env.SESSION_COMPLETION_TIMEOUT, 10) || 300,
     maxTurns: parseInt(env.SESSION_MAX_TURNS, 10) || 0,
     editThreshold: parseInt(env.EDIT_THRESHOLD, 10) || 15,
-    simplifyInterval: parseInt(env.SIMPLIFY_INTERVAL, 10) || 0,
-    simplifyCommits: parseInt(env.SIMPLIFY_COMMITS, 10) || 3,
+    simplifyInterval: env.SIMPLIFY_INTERVAL !== undefined ? parseInt(env.SIMPLIFY_INTERVAL, 10) : 5,
+    simplifyCommits: env.SIMPLIFY_COMMITS !== undefined ? parseInt(env.SIMPLIFY_COMMITS, 10) : 5,
     raw: env,
   };
 

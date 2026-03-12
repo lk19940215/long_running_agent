@@ -29,7 +29,7 @@ function askChoice(rl, prompt, min, max, defaultVal) {
 
 async function askApiKey(rl, platform, apiUrl, existingKey) {
   if (existingKey) {
-    console.log('保留当前 API Key 请直接回车，或输入新 Key:');
+    console.log('回车保留当前 API Key，输入新 Key 更新，输入 q 返回上层菜单:');
   } else {
     console.log(`请输入 ${platform} 的 API Key:`);
   }
@@ -38,12 +38,16 @@ async function askApiKey(rl, platform, apiUrl, existingKey) {
     console.log('');
   }
   const key = await ask(rl, '  API Key: ');
-  if (!key.trim()) {
+  const trimmed = key.trim();
+  if (trimmed.toLowerCase() === 'q') {
+    return null;
+  }
+  if (!trimmed) {
     if (existingKey) return existingKey;
     console.error('API Key 不能为空');
     process.exit(1);
   }
-  return key.trim();
+  return trimmed;
 }
 
 function writeConfig(filePath, lines) {
@@ -81,11 +85,11 @@ function showCurrentConfig(existing) {
   console.log(`  MCP:        ${existing.MCP_PLAYWRIGHT === 'true' ? `已启用 (${existing.MCP_PLAYWRIGHT_MODE || 'persistent'})` : '未启用'}`);
   const compTimeout = existing.SESSION_COMPLETION_TIMEOUT || '300';
   const turns = existing.SESSION_MAX_TURNS || '0';
-  console.log(`  停顿超时:   ${existing.SESSION_STALL_TIMEOUT || '1200'} 秒`);
+  console.log(`  停顿超时:   ${existing.SESSION_STALL_TIMEOUT || '600'} 秒`);
   console.log(`  完成检测:   ${compTimeout} 秒`);
   console.log(`  工具轮次:   ${turns === '0' ? '无限制' : turns}`);
-  const simplifyInterval = existing.SIMPLIFY_INTERVAL || '0';
-  const simplifyCommits = existing.SIMPLIFY_COMMITS || '3';
+  const simplifyInterval = existing.SIMPLIFY_INTERVAL ?? '5';
+  const simplifyCommits = existing.SIMPLIFY_COMMITS ?? '5';
   console.log(`  自动审查:   ${simplifyInterval === '0' ? '禁用' : `每 ${simplifyInterval} 个 session`}${simplifyInterval !== '0' ? `，审查 ${simplifyCommits} 个 commit` : ''}`);
   console.log('');
 }

@@ -6,8 +6,8 @@ const { log, COLOR, updateEnvVar } = require('../../common/config');
 // ── 自动审查配置 ──
 
 async function updateSimplifyConfig(rl, existing) {
-  const currentInterval = existing.SIMPLIFY_INTERVAL || '0';
-  const currentCommits = existing.SIMPLIFY_COMMITS || '3';
+  const currentInterval = existing.SIMPLIFY_INTERVAL ?? '5';
+  const currentCommits = existing.SIMPLIFY_COMMITS ?? '5';
 
   console.log(`${COLOR.blue}自动代码审查配置:${COLOR.reset}`);
   console.log(`  当前状态:     ${currentInterval === '0' ? '禁用' : `每 ${currentInterval} 个 session 运行一次`}`);

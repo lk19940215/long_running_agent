@@ -6,7 +6,7 @@ const { log, COLOR, updateEnvVar } = require('../../common/config');
 // ── 安全限制配置 ──
 
 async function updateSafetyLimits(rl, existing) {
-  const currentStall = existing.SESSION_STALL_TIMEOUT || '1200';
+  const currentStall = existing.SESSION_STALL_TIMEOUT || '600';
   const currentCompletion = existing.SESSION_COMPLETION_TIMEOUT || '300';
   const currentTurns = existing.SESSION_MAX_TURNS || '0';
 

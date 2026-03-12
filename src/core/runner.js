@@ -192,9 +192,20 @@ async function run(opts = {}) {
 
     if (dryRun) {
       const next = findNextTask(taskData);
-      log('info', `[DRY-RUN] 下一个任务: ${next ? `${next.id} - ${next.description}` : '无'}`);
-      if (!next) break;
-      continue;
+      log('info', `[DRY-RUN] 下一个任务: ${next ? `${next.id} - ${next.description}` : '无待处理任务'}`);
+      if (!next) {
+        log('ok', '[DRY-RUN] 无可执行任务，预览结束');
+      } else {
+        console.log('');
+        log('info', '[DRY-RUN] 任务队列:');
+        const allFeatures = getFeatures(taskData);
+        for (const f of allFeatures) {
+          const st = f.status || 'unknown';
+          const statusTag = { done: '✓', in_progress: '▸', pending: '○', failed: '✗', testing: '◇' }[st] || '?';
+          log('info', `  ${statusTag} [${st.padEnd(11)}] ${f.id} - ${f.description || ''}`);
+        }
+      }
+      break;
     }
 
     const headBefore = getHead();
@@ -239,10 +250,10 @@ async function run(opts = {}) {
       }
 
       // 定期运行 simplify 代码审查
-      const simplifyInterval = config.simplifyInterval || 0;
+      const simplifyInterval = config.simplifyInterval;
       if (simplifyInterval > 0 && session % simplifyInterval === 0) {
         log('info', `每 ${simplifyInterval} 个 session 运行代码审查...`);
-        await simplify(null, { n: config.simplifyCommits || 3 });
+        await simplify(null, { n: config.simplifyCommits });
 
         // 检查是否有代码变更
         try {

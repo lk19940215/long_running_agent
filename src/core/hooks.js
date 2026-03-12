@@ -464,7 +464,7 @@ function createHooks(type, indicator, logStream, options = {}) {
   }
 
   if (features.includes(FEATURES.INTERACTION)) {
-    modules.interaction = { hook: createAskUserQuestionHook() };
+    modules.interaction = { hook: createAskUserQuestionHook(indicator) };
   }
 
   // Assemble PreToolUse hooks

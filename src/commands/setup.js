@@ -19,6 +19,21 @@ const {
   updateSimplifyConfig,
 } = require('./setup-modules');
 
+const PRESERVED_KEYS = [
+  'SESSION_STALL_TIMEOUT', 'SESSION_COMPLETION_TIMEOUT',
+  'SESSION_MAX_TURNS', 'SIMPLIFY_INTERVAL', 'SIMPLIFY_COMMITS',
+];
+
+function preserveSafetyConfig(lines, existing) {
+  const preserved = PRESERVED_KEYS
+    .filter(k => existing[k])
+    .map(k => `${k}=${existing[k]}`);
+  if (preserved.length > 0) {
+    lines.push('', '# 保留的安全限制和审查配置');
+    lines.push(...preserved);
+  }
+}
+
 async function setup() {
   assets.ensureDirs();
   const rl = createInterface();
@@ -53,14 +68,22 @@ async function setup() {
     }
 
     console.log('');
+    log('info', '配置自动代码审查（可选）');
+    await updateSimplifyConfig(rl, {});
+
+    console.log('');
     log('ok', `配置完成！提供商: ${configResult.summary}`);
     console.log('');
     console.log(`  配置文件: ${envPath}`);
     console.log('  使用方式: claude-coder run "你的需求"');
     console.log('  重新配置: claude-coder setup');
     console.log('');
-    console.log(`  ${COLOR.yellow}安全限制: 默认 20 分钟无工具调用自动中断，写入 session_result 后 5 分钟${COLOR.reset}`);
-    console.log(`  ${COLOR.yellow}调整方式: claude-coder setup → 配置安全限制${COLOR.reset}`);
+    console.log(`  ${COLOR.blue}当前默认值:${COLOR.reset}`);
+    console.log(`    停顿超时:     1200 秒 (20 分钟)`);
+    console.log(`    完成检测超时: 300 秒 (5 分钟)`);
+    console.log(`    自动审查:     每 5 个 session，审查 5 个 commit`);
+    console.log('');
+    console.log(`  ${COLOR.yellow}调整方式: claude-coder setup → 配置安全限制 / 配置自动审查${COLOR.reset}`);
     console.log('');
 
     rl.close();
@@ -92,7 +115,9 @@ async function setup() {
 
     switch (action) {
       case 1: {
+        log('info', '放心切换，旧配置会自动备份，安全限制和审查配置会保留');
         const configResult = await selectProvider(rl, existing);
+        preserveSafetyConfig(configResult.lines, existing);
         appendMcpConfig(configResult.lines, {
           enabled: existing.MCP_PLAYWRIGHT === 'true',
           mode: existing.MCP_PLAYWRIGHT_MODE || null,
@@ -118,7 +143,9 @@ async function setup() {
         break;
       }
       case 6: {
+        log('info', '放心重新配置，旧配置会自动备份，安全限制和审查配置会保留');
         const configResult = await selectProvider(rl, existing);
+        preserveSafetyConfig(configResult.lines, existing);
         const mcpConfig = await configureMCP(rl);
         appendMcpConfig(configResult.lines, mcpConfig);
         writeConfig(envPath, configResult.lines);

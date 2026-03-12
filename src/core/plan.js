@@ -12,25 +12,104 @@ const { assets } = require('../common/assets');
 const { extractResultText } = require('../common/logging');
 const { printStats } = require('../common/tasks');
 
-const EXIT_TIMEOUT_MS = 30000;
+const EXIT_TIMEOUT_MS = 300000;
+const PLANS_DIR = path.join(os.homedir(), '.claude', 'plans');
 
 function buildPlanOnlyPrompt(userInput, interactive = false) {
-  const constraint = interactive
-    ? '【约束】如果有不确定的关键决策点，请使用 AskUserQuestion 工具向用户提问。'
-    : '【约束】不要提问，默认使用最佳推荐方案。';
-
   return `${userInput}
-${constraint}
-【重要】在最后输出中，必须包含实际方案文件的写入路径，格式如下：
-方案文件已写入：\`<实际路径>\`
+
+【工作流程】
+1. 探索项目代码库，理解结构和技术栈
+2. ${interactive ? '【约束】如果有不确定的关键决策点，请使用 AskUserQuestion 工具向用户提问。' : '【约束】不要提问，默认使用最佳推荐方案。'}
+3. 使用 Write 工具将完整计划写入 ~/.claude/plans/ 目录（.md 格式）
+4. 写入计划文件后，输出以下标记（独占一行）：
+   PLAN_FILE_PATH: <计划文件绝对路径>
+5. 简要总结计划要点
 `;
 }
 
-function extractPlanPath(result) {
-  const pathMatch = result.match(/`([^`]+\.md)`/) || result.match(/\/[^\s`']+\.md/);
-  if (pathMatch) {
-    return pathMatch[1] || pathMatch[0];
+/**
+ * 从文本中提取计划文件路径
+ * 优先级：PLAN_FILE_PATH 标记 > .claude/plans/*.md > 反引号包裹 .md > 任意绝对 .md
+ */
+function extractPlanPath(text) {
+  if (!text) return null;
+
+  const tagMatch = text.match(/PLAN_FILE_PATH:\s*(\S+\.md)/);
+  if (tagMatch) return tagMatch[1];
+
+  const plansMatch = text.match(/([^\s`'"(]*\.claude\/plans\/[^\s`'"()]+\.md)/);
+  if (plansMatch) return plansMatch[1];
+
+  const backtickMatch = text.match(/`([^`]+\.md)`/);
+  if (backtickMatch) return backtickMatch[1];
+
+  const absMatch = text.match(/(\/[^\s`'"]+\.md)/);
+  if (absMatch) return absMatch[1];
+
+  return null;
+}
+
+/**
+ * 多源提取计划路径（按可靠性从高到低）
+ * 1. Write 工具调用参数（最可靠）
+ * 2. assistant 消息流文本
+ * 3. result.result 文本
+ * 4. plans 目录最新文件（兜底）
+ */
+function extractPlanPathFromCollected(collected, startTime) {
+  // 第一层：从 Write 工具调用参数中直接获取
+  for (const msg of collected) {
+    if (msg.type !== 'assistant' || !msg.message?.content) continue;
+    for (const block of msg.message.content) {
+      if (block.type === 'tool_use' && block.name === 'Write') {
+        const target = block.input?.file_path || block.input?.path || '';
+        if (target.includes('.claude/plans/') && target.endsWith('.md')) {
+          if (fs.existsSync(target)) return target;
+        }
+      }
+    }
   }
+
+  // 第二层：从所有 assistant 文本中提取
+  let fullText = '';
+  for (const msg of collected) {
+    if (msg.type === 'assistant' && msg.message?.content) {
+      for (const block of msg.message.content) {
+        if (block.type === 'text' && block.text) fullText += block.text;
+      }
+    }
+  }
+  if (fullText) {
+    const p = extractPlanPath(fullText);
+    if (p && fs.existsSync(p)) return p;
+  }
+
+  // 第三层：从 result.result 中提取
+  const resultText = extractResultText(collected);
+  if (resultText) {
+    const p = extractPlanPath(resultText);
+    if (p && fs.existsSync(p)) return p;
+  }
+
+  // 第四层：扫描 plans 目录，找 session 期间新建的文件
+  if (fs.existsSync(PLANS_DIR)) {
+    try {
+      const files = fs.readdirSync(PLANS_DIR)
+        .filter(f => f.endsWith('.md'))
+        .map(f => {
+          const fp = path.join(PLANS_DIR, f);
+          return { path: fp, mtime: fs.statSync(fp).mtimeMs };
+        })
+        .filter(f => f.mtime >= startTime)
+        .sort((a, b) => b.mtime - a.mtime);
+      if (files.length > 0) {
+        log('info', `从 plans 目录发现新文件: ${path.basename(files[0].path)}`);
+        return files[0].path;
+      }
+    } catch { /* ignore */ }
+  }
+
   return null;
 }
 
@@ -39,11 +118,15 @@ function copyPlanToProject(generatedPath) {
   const targetDir = path.join(assets.projectRoot, '.claude-coder', 'plan');
   const targetPath = path.join(targetDir, filename);
 
-  if (!fs.existsSync(targetDir)) {
-    fs.mkdirSync(targetDir, { recursive: true });
+  try {
+    if (!fs.existsSync(targetDir)) {
+      fs.mkdirSync(targetDir, { recursive: true });
+    }
+    fs.copyFileSync(generatedPath, targetPath);
+    return targetPath;
+  } catch {
+    return generatedPath;
   }
-  fs.copyFileSync(generatedPath, targetPath);
-  return targetPath;
 }
 
 async function _executePlanGen(sdk, ctx, userInput, opts = {}) {
@@ -59,6 +142,7 @@ async function _executePlanGen(sdk, ctx, userInput, opts = {}) {
   }
   if (opts.model) queryOpts.model = opts.model;
 
+  const startTime = Date.now();
   let exitPlanModeDetected = false;
   let exitPlanModeTime = null;
 
@@ -74,9 +158,8 @@ async function _executePlanGen(sdk, ctx, userInput, opts = {}) {
     if (exitPlanModeDetected && exitPlanModeTime) {
       const elapsed = Date.now() - exitPlanModeTime;
       if (elapsed > EXIT_TIMEOUT_MS && msg.type !== 'result') {
-        log('warn', '检测到 ExitPlanMode，等待用户批准超时');
-        log('info', `计划可能已生成，请查看: ${path.join(os.homedir(), '.claude', 'plans')}`);
-        return { success: false, reason: 'timeout', targetPath: null };
+        log('warn', '检测到 ExitPlanMode，等待审批超时，尝试从已收集消息中提取路径');
+        break;
       }
     }
 
@@ -93,30 +176,29 @@ async function _executePlanGen(sdk, ctx, userInput, opts = {}) {
     }
   }
 
-  const result = extractResultText(collected);
-  const planPath = extractPlanPath(result);
+  const planPath = extractPlanPathFromCollected(collected, startTime);
 
-  if (planPath && fs.existsSync(planPath)) {
+  if (planPath) {
     const targetPath = copyPlanToProject(planPath);
-    log('ok', `计划已生成: ${targetPath}`);
     return { success: true, targetPath, generatedPath: planPath };
   }
 
   log('warn', '无法从输出中提取计划路径');
+  log('info', `请手动查看: ${PLANS_DIR}`);
   return { success: false, reason: 'no_path', targetPath: null };
 }
 
 async function runPlanSession(instruction, opts = {}) {
   const planOnly = opts.planOnly || false;
   const interactive = opts.interactive || false;
-  const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  const ts = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 12);
   const label = planOnly ? 'plan only' : 'plan tasks';
   const hookType = interactive ? 'plan_interactive' : 'plan';
 
   return runSession(hookType, {
     opts,
     sessionNum: 0,
-    logFileName: `plan_${dateStr}.log`,
+    logFileName: `plan_${ts}.log`,
     label,
 
     async execute(sdk, ctx) {
@@ -125,11 +207,11 @@ async function runPlanSession(instruction, opts = {}) {
       const planResult = await _executePlanGen(sdk, ctx, instruction, opts);
 
       if (!planResult.success) {
-        log('error', `计划生成失败: ${planResult.reason || planResult.error}`);
+        log('error', `\n计划生成失败: ${planResult.reason || planResult.error}`);
         return { success: false, reason: planResult.reason };
       }
 
-      log('ok', `计划已生成: ${planResult.targetPath}`);
+      log('ok', `\n计划已生成: ${planResult.targetPath}`);
 
       if (planOnly) {
         return { success: true, planPath: planResult.targetPath };
@@ -203,15 +285,15 @@ async function run(input, opts = {}) {
     process.exit(1);
   }
 
-  let shouldAutoRun = false;
-  if (!opts.planOnly) {
-    shouldAutoRun = await promptAutoRun();
-  }
-
   const result = await runPlanSession(instruction, { projectRoot, ...opts });
 
   if (result.success) {
     printStats();
+
+    let shouldAutoRun = false;
+    if (!opts.planOnly) {
+      shouldAutoRun = await promptAutoRun();
+    }
 
     if (shouldAutoRun) {
       console.log('');

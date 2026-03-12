@@ -24,8 +24,13 @@ npm install -g claude-coder
 # 配置模型
 claude-coder setup
 
-# 开始自动编码
+# 进入项目目录
 cd your-project
+
+# 初始化项目（扫描技术栈、生成 profile）
+claude-coder init
+
+# 开始自动编码
 claude-coder run "实现用户注册和登录功能"
 ```
 
@@ -33,19 +38,20 @@ claude-coder run "实现用户注册和登录功能"
 
 | 命令 | 说明 |
 |------|------|
-| `claude-coder setup` | 交互式配置（模型、MCP、安全限制） |
+| `claude-coder setup` | 交互式配置（模型、MCP、安全限制、自动审查） |
+| `claude-coder init` | 初始化项目环境（扫描技术栈、生成 profile） |
+| `claude-coder plan "需求"` | 生成计划方案 |
+| `claude-coder plan -r [file]` | 从需求文件生成计划 |
+| `claude-coder plan --planOnly` | 仅生成计划文档，不分解任务 |
+| `claude-coder plan -i "需求"` | 交互模式，允许模型提问 |
 | `claude-coder run [需求]` | 自动编码循环 |
 | `claude-coder run --max 1` | 单次执行 |
-| `claude-coder run --dry-run` | 预览模式 |
-| `claude-coder init` | 初始化项目环境 |
-| `claude-coder add "指令"` | 追加任务 |
-| `claude-coder add -r [file]` | 从需求文件追加任务 |
-| `claude-coder add "..." --model M` | 指定模型追加任务 |
+| `claude-coder run --dry-run` | 预览模式（查看任务队列） |
+| `claude-coder simplify [focus]` | 代码审查和简化 |
 | `claude-coder auth [url]` | 导出 Playwright 登录状态 |
-| `claude-coder validate` | 手动校验 |
 | `claude-coder status` | 查看进度和成本 |
 
-**选项**：`--max N` 限制 session 数（默认 50），`--pause N` 每 N 个 session 暂停确认。
+**选项**：`--max N` 限制 session 数（默认 50），`--pause N` 每 N 个 session 暂停确认，`--model M` 指定模型。
 
 ## 工作原理
 

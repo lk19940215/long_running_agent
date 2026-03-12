@@ -91,6 +91,8 @@ async function configureCodingPlan(rl, existing) {
       `ANTHROPIC_BASE_URL=${finalUrl}`,
       `ANTHROPIC_API_KEY=${apiKey}`,
       '',
+      'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1',
+      '',
       '# 模型路由配置（可在 .claude-coder/.env 修改）',
       'ANTHROPIC_DEFAULT_OPUS_MODEL=glm-5',
       'ANTHROPIC_DEFAULT_SONNET_MODEL=qwen3-coder-next',
@@ -195,6 +197,8 @@ async function configureCustomAPI(rl, existing) {
     'MODEL_PROVIDER=custom',
     `ANTHROPIC_BASE_URL=${baseUrl}`,
     `ANTHROPIC_API_KEY=${apiKey}`,
+    '',
+    'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1',
   ];
 
   if (model) {
@@ -233,6 +237,10 @@ async function updateApiKeyOnly(rl, existing) {
   };
 
   const apiKey = await askApiKey(rl, provider, apiUrlMap[provider] || '', existing.ANTHROPIC_API_KEY);
+  if (apiKey === null) {
+    log('info', '已取消，返回菜单');
+    return;
+  }
   updateEnvVar('ANTHROPIC_API_KEY', apiKey);
   if (provider === 'deepseek') {
     updateEnvVar('ANTHROPIC_AUTH_TOKEN', apiKey);

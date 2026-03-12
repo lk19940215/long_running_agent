@@ -129,11 +129,21 @@ async function handleUserQuestions(toolInput) {
  *
  * @returns {Function} PreToolUse hook handler
  */
-function createAskUserQuestionHook() {
+function createAskUserQuestionHook(indicator) {
   return async (input, _toolUseID, _context) => {
     if (input.tool_name !== 'AskUserQuestion') return {};
 
-    const { formatted } = await handleUserQuestions(input.tool_input);
+    if (indicator) {
+      indicator.pauseRendering();
+      process.stderr.write('\r\x1b[K');
+    }
+
+    let formatted;
+    try {
+      ({ formatted } = await handleUserQuestions(input.tool_input));
+    } finally {
+      if (indicator) indicator.resumeRendering();
+    }
 
     return {
       systemMessage: [
