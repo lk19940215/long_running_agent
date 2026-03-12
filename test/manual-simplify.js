@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 'use strict';
 
-const { runPlanSession } = require('./src/plan');
+const { runPlanSession } = require('../src/core/plan');
 
 async function main() {
   const userInput = '创建一个 hello world 函数。';

@@ -3,6 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const { buildEnvVars, getAllowedTools } = require('../common/config');
+const { assets } = require('../common/assets');
 
 /**
  * 检查项目是否包含代码文件
@@ -31,7 +32,7 @@ function buildQueryOptions(config, opts = {}) {
     allowedTools: getAllowedTools(config),
     permissionMode: 'bypassPermissions',
     allowDangerouslySkipPermissions: true,
-    cwd: opts.projectRoot || process.cwd(),
+    cwd: opts.projectRoot || assets.projectRoot,
     env: buildEnvVars(config),
     settingSources: ['project'],
   };

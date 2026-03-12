@@ -36,16 +36,6 @@ const FILES = Object.freeze({
 });
 
 /**
- * 超时默认值（秒）
- */
-const TIMEOUTS = Object.freeze({
-  STALL: 1200,           // 20 分钟
-  COMPLETION: 300,       // 5 分钟
-  API: 3000000,          // 50 分钟（毫秒）
-  MCP_TOOL: 30000,       // 30 秒（毫秒）
-});
-
-/**
  * 重试配置
  */
 const RETRY = Object.freeze({
@@ -62,7 +52,6 @@ module.exports = {
   TASK_STATUSES,
   STATUS_TRANSITIONS,
   FILES,
-  TIMEOUTS,
   RETRY,
   EDIT_THRESHOLD,
 };

@@ -7,28 +7,25 @@ const readline = require('readline');
 const { runSession } = require('./base');
 const { buildQueryOptions } = require('./query');
 const { buildPlanSystemPrompt, buildPlanPrompt } = require('./prompts');
-const { paths, log, loadConfig, getProjectRoot, ensureLoopDir } = require('../common/config');
+const { log, loadConfig } = require('../common/config');
+const { assets } = require('../common/assets');
 const { extractResultText } = require('../common/logging');
 const { printStats } = require('../common/tasks');
 
 const EXIT_TIMEOUT_MS = 30000;
 
-// --------------- Plan Only 模式工具函数 ---------------
+function buildPlanOnlyPrompt(userInput, interactive = false) {
+  const constraint = interactive
+    ? '【约束】如果有不确定的关键决策点，请使用 AskUserQuestion 工具向用户提问。'
+    : '【约束】不要提问，默认使用最佳推荐方案。';
 
-/**
- * 构建计划生成提示语
- */
-function buildPlanOnlyPrompt(userInput) {
   return `${userInput}
-【约束】不要提问，默认使用最佳推荐方案。
+${constraint}
 【重要】在最后输出中，必须包含实际方案文件的写入路径，格式如下：
 方案文件已写入：\`<实际路径>\`
 `;
 }
 
-/**
- * 从结果中提取文件路径
- */
 function extractPlanPath(result) {
   const pathMatch = result.match(/`([^`]+\.md)`/) || result.match(/\/[^\s`']+\.md/);
   if (pathMatch) {
@@ -37,12 +34,9 @@ function extractPlanPath(result) {
   return null;
 }
 
-/**
- * 复制计划文件到项目目录
- */
 function copyPlanToProject(generatedPath) {
   const filename = path.basename(generatedPath);
-  const targetDir = path.join(process.cwd(), '.claude-coder', 'plan');
+  const targetDir = path.join(assets.projectRoot, '.claude-coder', 'plan');
   const targetPath = path.join(targetDir, filename);
 
   if (!fs.existsSync(targetDir)) {
@@ -52,17 +46,17 @@ function copyPlanToProject(generatedPath) {
   return targetPath;
 }
 
-/**
- * 执行计划生成（共享 ctx）
- */
 async function _executePlanGen(sdk, ctx, userInput, opts = {}) {
-  const prompt = buildPlanOnlyPrompt(userInput);
+  const interactive = opts.interactive || false;
+  const prompt = buildPlanOnlyPrompt(userInput, interactive);
   const queryOpts = {
     permissionMode: 'plan',
-    disallowedTools: ['askUserQuestion'],
-    cwd: opts.projectRoot || process.cwd(),
+    cwd: opts.projectRoot || assets.projectRoot,
     hooks: ctx.hooks,
   };
+  if (!interactive) {
+    queryOpts.disallowedTools = ['askUserQuestion'];
+  }
   if (opts.model) queryOpts.model = opts.model;
 
   let exitPlanModeDetected = false;
@@ -112,19 +106,14 @@ async function _executePlanGen(sdk, ctx, userInput, opts = {}) {
   return { success: false, reason: 'no_path', targetPath: null };
 }
 
-// --------------- Session 执行器 ---------------
-
-/**
- * 运行计划 Session
- * - planOnly=false: 生成 plan.md + tasks.json
- * - planOnly=true:  仅生成 plan.md
- */
 async function runPlanSession(instruction, opts = {}) {
   const planOnly = opts.planOnly || false;
+  const interactive = opts.interactive || false;
   const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
   const label = planOnly ? 'plan only' : 'plan tasks';
+  const hookType = interactive ? 'plan_interactive' : 'plan';
 
-  return runSession('plan', {
+  return runSession(hookType, {
     opts,
     sessionNum: 0,
     logFileName: `plan_${dateStr}.log`,
@@ -133,7 +122,6 @@ async function runPlanSession(instruction, opts = {}) {
     async execute(sdk, ctx) {
       log('info', '正在生成计划方案...');
 
-      // Phase 1: 生成 plan.md
       const planResult = await _executePlanGen(sdk, ctx, instruction, opts);
 
       if (!planResult.success) {
@@ -143,12 +131,10 @@ async function runPlanSession(instruction, opts = {}) {
 
       log('ok', `计划已生成: ${planResult.targetPath}`);
 
-      // planOnly 模式到此结束
       if (planOnly) {
         return { success: true, planPath: planResult.targetPath };
       }
 
-      // Phase 2: 转换为 tasks.json
       log('info', '正在生成任务列表...');
 
       const tasksPrompt = buildPlanPrompt(planResult.targetPath);
@@ -165,11 +151,6 @@ async function runPlanSession(instruction, opts = {}) {
   });
 }
 
-// --------------- CLI 辅助函数 ---------------
-
-/**
- * 询问用户是否自动运行
- */
 async function promptAutoRun() {
   if (!process.stdin.isTTY) return false;
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
@@ -181,15 +162,9 @@ async function promptAutoRun() {
   });
 }
 
-// --------------- CLI 入口 ---------------
-
-/**
- * CLI 入口
- */
 async function run(input, opts = {}) {
   let instruction = input || '';
 
-  // 1. 文件读取 (-r 参数)
   if (opts.readFile) {
     const reqPath = path.resolve(opts.readFile);
     if (!fs.existsSync(reqPath)) {
@@ -200,18 +175,14 @@ async function run(input, opts = {}) {
     console.log(`已读取需求文件: ${reqPath}`);
   }
 
-  // 2. 校验
   if (!instruction) {
     log('error', '用法: claude-coder plan "需求内容"  或  claude-coder plan -r [requirements.md]');
     process.exit(1);
   }
 
-  // 3. 环境准备
-  const p = paths();
-  const projectRoot = getProjectRoot();
-  ensureLoopDir();
+  assets.ensureDirs();
+  const projectRoot = assets.projectRoot;
 
-  // 4. 配置加载
   const config = loadConfig();
   if (!opts.model) {
     if (config.defaultOpus) {
@@ -223,27 +194,25 @@ async function run(input, opts = {}) {
 
   const displayModel = opts.model || config.model || '(default)';
   log('ok', `模型配置已加载: ${config.provider || 'claude'} (plan 使用: ${displayModel})`);
+  if (opts.interactive) {
+    log('info', '交互模式已启用，模型可能会向您提问');
+  }
 
-  // 5. 检查前置条件
-  if (!fs.existsSync(p.profile)) {
+  if (!assets.exists('profile')) {
     log('error', 'profile 不存在，请先运行 claude-coder init 初始化项目');
     process.exit(1);
   }
 
-  // 6. 用户交互（非 planOnly 模式）
   let shouldAutoRun = false;
   if (!opts.planOnly) {
     shouldAutoRun = await promptAutoRun();
   }
 
-  // 7. 执行
   const result = await runPlanSession(instruction, { projectRoot, ...opts });
 
-  // 8. 显示统计（成功时）
   if (result.success) {
     printStats();
 
-    // 9. 自动运行（非 planOnly 模式）
     if (shouldAutoRun) {
       console.log('');
       log('info', '开始自动执行任务...');

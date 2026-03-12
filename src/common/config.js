@@ -1,13 +1,16 @@
 'use strict';
 
 const fs = require('fs');
-const path = require('path');
 
 const COLOR = {
   red: '\x1b[0;31m',
   green: '\x1b[0;32m',
   yellow: '\x1b[1;33m',
   blue: '\x1b[0;34m',
+  magenta: '\x1b[0;35m',
+  cyan: '\x1b[0;36m',
+  bold: '\x1b[1m',
+  dim: '\x1b[2m',
   reset: '\x1b[0m',
 };
 
@@ -19,66 +22,6 @@ function log(level, msg) {
     error: `${COLOR.red}[ERROR]${COLOR.reset}`,
   };
   console.error(`${tags[level] || ''} ${msg}`);
-}
-
-function getProjectRoot() {
-  return process.cwd();
-}
-
-function getLoopDir() {
-  return path.join(getProjectRoot(), '.claude-coder');
-}
-
-function ensureLoopDir() {
-  const dir = getLoopDir();
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  const runtime = path.join(dir, '.runtime');
-  if (!fs.existsSync(runtime)) fs.mkdirSync(runtime, { recursive: true });
-  const logs = path.join(runtime, 'logs');
-  if (!fs.existsSync(logs)) fs.mkdirSync(logs, { recursive: true });
-  return dir;
-}
-
-function getTemplatePath(name) {
-  return path.join(__dirname, '..', '..', 'templates', name);
-}
-
-const getPromptPath = getTemplatePath;
-
-function paths() {
-  const loopDir = getLoopDir();
-  const runtime = path.join(loopDir, '.runtime');
-  const assetsDir = path.join(loopDir, 'assets');
-  return {
-    loopDir,
-    assetsDir,
-    // User config files
-    userGuidanceFile: path.join(assetsDir, 'guidance.json'),
-    userTestRule:     path.join(assetsDir, 'test_rule.md'),
-    // Standard files
-    envFile:          path.join(loopDir, '.env'),
-    tasksFile:        path.join(loopDir, 'tasks.json'),
-    progressFile:     path.join(loopDir, 'progress.json'),
-    sessionResult:    path.join(loopDir, 'session_result.json'),
-    profile:          path.join(loopDir, 'project_profile.json'),
-    testsFile:        path.join(loopDir, 'tests.json'),
-    testEnvFile:      path.join(loopDir, 'test.env'),
-    playwrightAuth:   path.join(loopDir, 'playwright-auth.json'),
-    browserProfile:   path.join(runtime, 'browser-profile'),
-    mcpConfig:        path.join(getProjectRoot(), '.mcp.json'),
-    // Template files
-    claudeMd:            getPromptPath('agentProtocol.md'),
-    scanProtocol:        getPromptPath('scanProtocol.md'),
-    addGuide:            getPromptPath('addGuide.md'),
-    codingUser:          getPromptPath('codingUser.md'),
-    scanUser:            getPromptPath('scanUser.md'),
-    addUser:             getPromptPath('addUser.md'),
-    testRuleTemplate:    getTemplatePath('test_rule.md'),
-    guidanceTemplate:    getTemplatePath('guidance.json'),
-    // Directories
-    runtime,
-    logsDir:          path.join(runtime, 'logs'),
-  };
 }
 
 // --------------- .env parsing ---------------
@@ -101,8 +44,9 @@ function parseEnvFile(filepath) {
 // --------------- Model mapping ---------------
 
 function loadConfig() {
-  const p = paths();
-  const env = parseEnvFile(p.envFile);
+  const { assets } = require('./assets');
+  const envPath = assets.path('env');
+  const env = envPath ? parseEnvFile(envPath) : {};
   const config = {
     provider: env.MODEL_PROVIDER || 'claude',
     baseUrl: env.ANTHROPIC_BASE_URL || '',
@@ -128,7 +72,6 @@ function loadConfig() {
     raw: env,
   };
 
-  // DeepSeek chat → haiku shim (prevent reasoner billing)
   if (config.baseUrl && config.baseUrl.includes('deepseek') && config.model === 'deepseek-chat') {
     config.model = 'claude-3-haiku-20240307';
     config.defaultOpus = 'claude-3-haiku-20240307';
@@ -171,9 +114,10 @@ function getAllowedTools(config) {
 }
 
 function updateEnvVar(key, value) {
-  const p = paths();
-  if (!fs.existsSync(p.envFile)) return false;
-  let content = fs.readFileSync(p.envFile, 'utf8');
+  const { assets } = require('./assets');
+  const envPath = assets.path('env');
+  if (!envPath || !fs.existsSync(envPath)) return false;
+  let content = fs.readFileSync(envPath, 'utf8');
   const regex = new RegExp(`^${key}=.*$`, 'm');
   if (regex.test(content)) {
     content = content.replace(regex, `${key}=${value}`);
@@ -181,19 +125,13 @@ function updateEnvVar(key, value) {
     const suffix = content.endsWith('\n') ? '' : '\n';
     content += `${suffix}${key}=${value}\n`;
   }
-  fs.writeFileSync(p.envFile, content, 'utf8');
+  fs.writeFileSync(envPath, content, 'utf8');
   return true;
 }
 
 module.exports = {
   COLOR,
   log,
-  getProjectRoot,
-  getLoopDir,
-  ensureLoopDir,
-  getTemplatePath,
-  getPromptPath,
-  paths,
   parseEnvFile,
   loadConfig,
   buildEnvVars,

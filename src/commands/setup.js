@@ -1,7 +1,8 @@
 'use strict';
 
 const fs = require('fs');
-const { paths, log, COLOR, ensureLoopDir, parseEnvFile } = require('../common/config');
+const { log, COLOR, parseEnvFile } = require('../common/config');
+const { assets } = require('../common/assets');
 const {
   createInterface,
   ask,
@@ -18,17 +19,14 @@ const {
   updateSimplifyConfig,
 } = require('./setup-modules');
 
-// ── 主函数 ──
-
 async function setup() {
-  const p = paths();
-  ensureLoopDir();
+  assets.ensureDirs();
   const rl = createInterface();
 
-  // 加载现有配置
+  const envPath = assets.path('env');
   let existing = {};
-  if (fs.existsSync(p.envFile)) {
-    existing = parseEnvFile(p.envFile);
+  if (fs.existsSync(envPath)) {
+    existing = parseEnvFile(envPath);
   }
 
   console.log('');
@@ -36,8 +34,7 @@ async function setup() {
   console.log('  Claude Coder 配置');
   console.log('============================================');
 
-  // 首次配置：引导完整流程
-  if (!fs.existsSync(p.envFile) || !existing.MODEL_PROVIDER) {
+  if (!fs.existsSync(envPath) || !existing.MODEL_PROVIDER) {
     console.log('');
     console.log('  检测到未配置，开始初始化...');
     console.log('');
@@ -46,19 +43,19 @@ async function setup() {
     const mcpConfig = await configureMCP(rl);
 
     appendMcpConfig(configResult.lines, mcpConfig);
-    writeConfig(p.envFile, configResult.lines);
+    writeConfig(envPath, configResult.lines);
     ensureGitignore();
 
-    // 如果启用了 MCP，生成 .mcp.json
     if (mcpConfig.enabled && mcpConfig.mode) {
       const { updateMcpConfig } = require('./auth');
-      updateMcpConfig(p, mcpConfig.mode);
+      const mcpPath = assets.path('mcpConfig');
+      updateMcpConfig(mcpPath, mcpConfig.mode);
     }
 
     console.log('');
     log('ok', `配置完成！提供商: ${configResult.summary}`);
     console.log('');
-    console.log(`  配置文件: ${p.envFile}`);
+    console.log(`  配置文件: ${envPath}`);
     console.log('  使用方式: claude-coder run "你的需求"');
     console.log('  重新配置: claude-coder setup');
     console.log('');
@@ -70,9 +67,8 @@ async function setup() {
     return;
   }
 
-  // 已有配置：菜单选择
   while (true) {
-    existing = parseEnvFile(p.envFile);
+    existing = parseEnvFile(envPath);
     showCurrentConfig(existing);
 
     console.log('请选择要执行的操作:');
@@ -101,7 +97,7 @@ async function setup() {
           enabled: existing.MCP_PLAYWRIGHT === 'true',
           mode: existing.MCP_PLAYWRIGHT_MODE || null,
         });
-        writeConfig(p.envFile, configResult.lines);
+        writeConfig(envPath, configResult.lines);
         log('ok', `已切换到: ${configResult.summary}`);
         break;
       }
@@ -125,11 +121,12 @@ async function setup() {
         const configResult = await selectProvider(rl, existing);
         const mcpConfig = await configureMCP(rl);
         appendMcpConfig(configResult.lines, mcpConfig);
-        writeConfig(p.envFile, configResult.lines);
+        writeConfig(envPath, configResult.lines);
 
         if (mcpConfig.enabled && mcpConfig.mode) {
           const { updateMcpConfig } = require('./auth');
-          updateMcpConfig(p, mcpConfig.mode);
+          const mcpPath = assets.path('mcpConfig');
+          updateMcpConfig(mcpPath, mcpConfig.mode);
         }
 
         log('ok', '配置已更新');

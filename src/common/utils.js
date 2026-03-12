@@ -4,42 +4,6 @@ const fs = require('fs');
 const { execSync } = require('child_process');
 
 // ─────────────────────────────────────────────────────────────
-// JSON 文件操作
-// ─────────────────────────────────────────────────────────────
-
-/**
- * 读取 JSON 文件，失败返回默认值
- * @param {string} filepath - 文件路径
- * @param {*} defaultValue - 默认值
- * @returns {*} 解析后的 JSON 或默认值
- */
-function readJson(filepath, defaultValue = null) {
-  try {
-    return JSON.parse(fs.readFileSync(filepath, 'utf8'));
-  } catch {
-    return defaultValue;
-  }
-}
-
-/**
- * 写入 JSON 文件（格式化）
- * @param {string} filepath - 文件路径
- * @param {*} data - 数据
- */
-function writeJson(filepath, data) {
-  fs.writeFileSync(filepath, JSON.stringify(data, null, 2) + '\n', 'utf8');
-}
-
-/**
- * 检查文件是否存在
- * @param {string} filepath - 文件路径
- * @returns {boolean}
- */
-function fileExists(filepath) {
-  return fs.existsSync(filepath);
-}
-
-// ─────────────────────────────────────────────────────────────
 // 字符串工具
 // ─────────────────────────────────────────────────────────────
 
@@ -161,18 +125,10 @@ function sleep(ms) {
 }
 
 module.exports = {
-  // JSON 操作
-  readJson,
-  writeJson,
-  fileExists,
-  // 字符串工具
   truncateMiddle,
   truncatePath,
-  // Git 工具
   getGitHead,
   isGitRepo,
-  // .gitignore
   appendGitignore,
-  // 进程工具
   sleep,
 };

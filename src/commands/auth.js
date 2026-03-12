@@ -4,33 +4,37 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { execSync } = require('child_process');
-const { paths, loadConfig, log, getProjectRoot, ensureLoopDir } = require('../common/config');
+const { loadConfig, log } = require('../common/config');
+const { assets } = require('../common/assets');
 const { appendGitignore } = require('../common/utils');
 
 function updateGitignore(entry) {
-  if (appendGitignore(getProjectRoot(), entry)) {
+  if (appendGitignore(assets.projectRoot, entry)) {
     log('ok', `.gitignore 已添加: ${entry}`);
   }
 }
 
-function updateMcpConfig(p, mode) {
+function updateMcpConfig(mcpPath, mode) {
   let mcpConfig = {};
-  if (fs.existsSync(p.mcpConfig)) {
-    try { mcpConfig = JSON.parse(fs.readFileSync(p.mcpConfig, 'utf8')); } catch {}
+  if (fs.existsSync(mcpPath)) {
+    try { mcpConfig = JSON.parse(fs.readFileSync(mcpPath, 'utf8')); } catch {}
   }
 
   if (!mcpConfig.mcpServers) mcpConfig.mcpServers = {};
 
   const args = ['@playwright/mcp@latest'];
+  const projectRoot = assets.projectRoot;
 
   switch (mode) {
     case 'persistent': {
-      const relProfile = path.relative(getProjectRoot(), p.browserProfile).split(path.sep).join('/');
+      const browserProfilePath = assets.path('browserProfile');
+      const relProfile = path.relative(projectRoot, browserProfilePath).split(path.sep).join('/');
       args.push(`--user-data-dir=${relProfile}`);
       break;
     }
     case 'isolated': {
-      const relAuth = path.relative(getProjectRoot(), p.playwrightAuth).split(path.sep).join('/');
+      const playwrightAuthPath = assets.path('playwrightAuth');
+      const relAuth = path.relative(projectRoot, playwrightAuthPath).split(path.sep).join('/');
       args.push('--isolated', `--storage-state=${relAuth}`);
       break;
     }
@@ -40,29 +44,27 @@ function updateMcpConfig(p, mode) {
   }
 
   mcpConfig.mcpServers.playwright = { command: 'npx', args };
-  fs.writeFileSync(p.mcpConfig, JSON.stringify(mcpConfig, null, 2) + '\n', 'utf8');
+  fs.writeFileSync(mcpPath, JSON.stringify(mcpConfig, null, 2) + '\n', 'utf8');
   log('ok', `.mcp.json 已配置 Playwright MCP (${mode} 模式)`);
 }
 
 function enableMcpPlaywrightEnv() {
-  const p = paths();
-  if (!fs.existsSync(p.envFile)) return;
+  const envPath = assets.path('env');
+  if (!envPath || !fs.existsSync(envPath)) return;
 
-  let content = fs.readFileSync(p.envFile, 'utf8');
+  let content = fs.readFileSync(envPath, 'utf8');
   if (/^MCP_PLAYWRIGHT=/m.test(content)) {
     content = content.replace(/^MCP_PLAYWRIGHT=.*/m, 'MCP_PLAYWRIGHT=true');
   } else {
     const suffix = content.endsWith('\n') ? '' : '\n';
     content += `${suffix}MCP_PLAYWRIGHT=true\n`;
   }
-  fs.writeFileSync(p.envFile, content, 'utf8');
+  fs.writeFileSync(envPath, content, 'utf8');
   log('ok', '.claude-coder/.env 已设置 MCP_PLAYWRIGHT=true');
 }
 
-// ── persistent 模式：启动持久化浏览器让用户登录 ──
-
-async function authPersistent(url, p) {
-  const profileDir = p.browserProfile;
+async function authPersistent(url) {
+  const profileDir = assets.path('browserProfile');
   if (!fs.existsSync(profileDir)) fs.mkdirSync(profileDir, { recursive: true });
 
   const lockFile = path.join(profileDir, 'SingletonLock');
@@ -106,17 +108,17 @@ async function authPersistent(url, p) {
   const helperModules = path.join(__dirname, '..', 'node_modules');
   const existingNodePath = process.env.NODE_PATH || '';
   const nodePath = existingNodePath ? `${helperModules}:${existingNodePath}` : helperModules;
+  const projectRoot = assets.projectRoot;
 
   let scriptOk = false;
   try {
     execSync(`node "${tmpScript}"`, {
       stdio: 'inherit',
-      cwd: getProjectRoot(),
+      cwd: projectRoot,
       env: { ...process.env, NODE_PATH: nodePath },
     });
     scriptOk = true;
   } catch {
-    // 浏览器关闭时可能返回非零退出码，只要 profile 目录有内容就认为成功
     const profileFiles = fs.readdirSync(profileDir);
     scriptOk = profileFiles.length > 2;
     if (!scriptOk) {
@@ -130,21 +132,23 @@ async function authPersistent(url, p) {
 
   try { fs.unlinkSync(tmpScript); } catch {}
 
+  const mcpPath = assets.path('mcpConfig');
   log('ok', '登录状态已保存到持久化配置');
-  updateMcpConfig(p, 'persistent');
+  updateMcpConfig(mcpPath, 'persistent');
   updateGitignore('.claude-coder/.runtime/browser-profile');
   enableMcpPlaywrightEnv();
 
   console.log('');
   log('ok', '配置完成！');
-  const relProfile = path.relative(getProjectRoot(), profileDir);
+  const relProfile = path.relative(projectRoot, profileDir);
   log('info', `MCP 使用 persistent 模式 (user-data-dir: ${relProfile})`);
   log('info', '如需更新登录状态，重新运行 claude-coder auth');
 }
 
-// ── isolated 模式：使用 codegen 录制 storage-state ──
+async function authIsolated(url) {
+  const playwrightAuthPath = assets.path('playwrightAuth');
+  const projectRoot = assets.projectRoot;
 
-async function authIsolated(url, p) {
   console.log('操作步骤:');
   console.log('  1. 浏览器将自动打开，请手动完成登录');
   console.log('  2. 登录成功后关闭浏览器窗口');
@@ -154,24 +158,25 @@ async function authIsolated(url, p) {
 
   try {
     execSync(
-      `npx playwright codegen --save-storage="${p.playwrightAuth}" "${url}"`,
-      { stdio: 'inherit', cwd: getProjectRoot() }
+      `npx playwright codegen --save-storage="${playwrightAuthPath}" "${url}"`,
+      { stdio: 'inherit', cwd: projectRoot }
     );
   } catch (err) {
-    if (!fs.existsSync(p.playwrightAuth)) {
+    if (!fs.existsSync(playwrightAuthPath)) {
       log('error', `Playwright 登录状态导出失败: ${err.message}`);
       log('info', '请确保已安装: npx playwright install chromium');
       return;
     }
   }
 
-  if (!fs.existsSync(p.playwrightAuth)) {
+  if (!fs.existsSync(playwrightAuthPath)) {
     log('error', '未检测到导出的登录状态文件');
     return;
   }
 
+  const mcpPath = assets.path('mcpConfig');
   log('ok', '登录状态已保存到 playwright-auth.json');
-  updateMcpConfig(p, 'isolated');
+  updateMcpConfig(mcpPath, 'isolated');
   updateGitignore('.claude-coder/playwright-auth.json');
   enableMcpPlaywrightEnv();
 
@@ -182,9 +187,7 @@ async function authIsolated(url, p) {
   log('info', '如需更新登录状态，重新运行 claude-coder auth');
 }
 
-// ── extension 模式：连接真实浏览器 ──
-
-function authExtension(p) {
+function authExtension() {
   console.log('Extension 模式说明:');
   console.log('');
   console.log('  此模式通过 Chrome 扩展连接到您正在运行的浏览器。');
@@ -197,7 +200,8 @@ function authExtension(p) {
   console.log('  3. 无需额外认证操作，您的浏览器登录态将自动可用');
   console.log('');
 
-  updateMcpConfig(p, 'extension');
+  const mcpPath = assets.path('mcpConfig');
+  updateMcpConfig(mcpPath, 'extension');
   enableMcpPlaywrightEnv();
 
   console.log('');
@@ -206,12 +210,9 @@ function authExtension(p) {
   log('info', '确保 Chrome/Edge 已运行且 Playwright MCP Bridge 扩展已启用');
 }
 
-// ── 主入口 ──
-
 async function auth(url) {
-  ensureLoopDir();
+  assets.ensureDirs();
   const config = loadConfig();
-  const p = paths();
   const mode = config.playwrightMode;
   const targetUrl = url || 'http://localhost:3000';
 
@@ -221,13 +222,13 @@ async function auth(url) {
 
   switch (mode) {
     case 'persistent':
-      await authPersistent(targetUrl, p);
+      await authPersistent(targetUrl);
       break;
     case 'isolated':
-      await authIsolated(targetUrl, p);
+      await authIsolated(targetUrl);
       break;
     case 'extension':
-      authExtension(p);
+      authExtension();
       break;
     default:
       log('error', `未知的 Playwright 模式: ${mode}`);

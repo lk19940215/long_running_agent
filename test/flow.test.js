@@ -5,7 +5,6 @@ const path = require('path');
 const assert = require('assert');
 const { execSync } = require('child_process');
 
-// 测试工具函数
 const TEST_DIR = path.join(__dirname, 'fixtures', 'test-project');
 const CLI = `node ${path.join(__dirname, '..', 'bin', 'cli.js')}`;
 
@@ -25,15 +24,19 @@ function test(name, fn) {
 }
 
 function cleanup() {
-  // 清理测试目录
   if (fs.existsSync(TEST_DIR)) {
     fs.rmSync(TEST_DIR, { recursive: true, force: true });
   }
-  // 清理 .claude-coder 目录
   const claudeDir = path.join(process.cwd(), '.claude-coder');
   if (fs.existsSync(claudeDir)) {
     fs.rmSync(claudeDir, { recursive: true, force: true });
   }
+}
+
+function ensureDir() {
+  const { assets } = require('../src/common/assets');
+  assets.init(process.cwd());
+  assets.ensureDirs();
 }
 
 // ============ 测试套件 ============
@@ -62,32 +65,31 @@ test('--version 应该显示版本号', () => {
 // Phase 2: 目录结构测试
 console.log('\nPhase 2: 目录结构测试');
 
-test('ensureLoopDir 应该创建正确的目录结构', () => {
-  const { ensureLoopDir, paths } = require('../src/common/config');
+test('assets.ensureDirs 应该创建正确的目录结构', () => {
+  const { assets } = require('../src/common/assets');
+  assets.init(process.cwd());
+  assets.ensureDirs();
 
-  ensureLoopDir();
-
-  const p = paths();
-  assert(fs.existsSync(p.loopDir), '.claude-coder 应该存在');
-  assert(fs.existsSync(p.runtime), '.runtime 应该存在');
-  assert(fs.existsSync(p.logsDir), 'logs 目录应该存在');
+  assert(fs.existsSync(assets.dir('loop')), '.claude-coder 应该存在');
+  assert(fs.existsSync(assets.dir('runtime')), '.runtime 应该存在');
+  assert(fs.existsSync(assets.dir('logs')), 'logs 目录应该存在');
 });
 
 // Phase 3: 配置模块测试
 console.log('\nPhase 3: 配置模块测试');
 
 test('loadConfig 应该返回正确的配置对象', () => {
-  const { loadConfig, paths } = require('../src/common/config');
-  const p = paths();
+  const { loadConfig } = require('../src/common/config');
+  const { assets } = require('../src/common/assets');
 
-  // 创建测试 .env 文件
+  const envPath = assets.path('env');
   const envContent = `
 MODEL_PROVIDER=claude
 ANTHROPIC_API_KEY=test-key
 ANTHROPIC_MODEL=claude-sonnet-4-6
 API_TIMEOUT_MS=3000000
 `;
-  fs.writeFileSync(p.envFile, envContent);
+  fs.writeFileSync(envPath, envContent);
 
   const config = loadConfig();
 
@@ -98,10 +100,11 @@ API_TIMEOUT_MS=3000000
 });
 
 test('parseEnvFile 应该正确解析 .env 文件', () => {
-  const { parseEnvFile, paths } = require('../src/common/config');
-  const p = paths();
+  const { parseEnvFile } = require('../src/common/config');
+  const { assets } = require('../src/common/assets');
 
-  const env = parseEnvFile(p.envFile);
+  const envPath = assets.path('env');
+  const env = parseEnvFile(envPath);
 
   assert.strictEqual(env.MODEL_PROVIDER, 'claude');
   assert.strictEqual(env.ANTHROPIC_API_KEY, 'test-key');
@@ -111,12 +114,11 @@ test('parseEnvFile 应该正确解析 .env 文件', () => {
 console.log('\nPhase 4: 前置条件检查测试');
 
 test('plan 无 profile 时应该报错并提示运行 init', () => {
-  const { paths } = require('../src/common/config');
-  const p = paths();
+  const { assets } = require('../src/common/assets');
+  const profilePath = assets.path('profile');
 
-  // 删除 profile
-  if (fs.existsSync(p.profile)) {
-    fs.unlinkSync(p.profile);
+  if (fs.existsSync(profilePath)) {
+    fs.unlinkSync(profilePath);
   }
 
   try {
@@ -129,45 +131,35 @@ test('plan 无 profile 时应该报错并提示运行 init', () => {
 });
 
 test('run 无 profile 时应该报错', () => {
-  const { paths } = require('../src/common/config');
-  const p = paths();
+  const { assets } = require('../src/common/assets');
+  const profilePath = assets.path('profile');
+  const tasksPath = assets.path('tasks');
 
-  // 删除 profile
-  if (fs.existsSync(p.profile)) {
-    fs.unlinkSync(p.profile);
-  }
-  // 删除 tasks
-  if (fs.existsSync(p.tasksFile)) {
-    fs.unlinkSync(p.tasksFile);
-  }
+  if (fs.existsSync(profilePath)) fs.unlinkSync(profilePath);
+  if (fs.existsSync(tasksPath)) fs.unlinkSync(tasksPath);
 
   try {
     const output = execSync(`${CLI} run --max 1`, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] });
-    // 如果成功执行，检查输出
     assert(output.includes('profile') || output.includes('init'), '应该提示运行 init');
   } catch (err) {
-    // 错误时检查 stderr
     const output = err.stderr?.toString() || err.stdout?.toString() || '';
     assert(output.includes('profile') || output.includes('init'), '应该提示运行 init');
   }
 });
 
 test('run 无 tasks.json 时应该报错并提示运行 plan', () => {
-  const { paths } = require('../src/common/config');
-  const p = paths();
+  const { assets } = require('../src/common/assets');
+  const profilePath = assets.path('profile');
+  const tasksPath = assets.path('tasks');
 
-  // 创建空的 profile
-  fs.mkdirSync(path.dirname(p.profile), { recursive: true });
-  fs.writeFileSync(p.profile, JSON.stringify({
+  fs.mkdirSync(path.dirname(profilePath), { recursive: true });
+  fs.writeFileSync(profilePath, JSON.stringify({
     tech_stack: { backend: { framework: 'express' } },
     services: [],
     existing_docs: ['README.md']
   }));
 
-  // 删除 tasks
-  if (fs.existsSync(p.tasksFile)) {
-    fs.unlinkSync(p.tasksFile);
-  }
+  if (fs.existsSync(tasksPath)) fs.unlinkSync(tasksPath);
 
   try {
     const output = execSync(`${CLI} run --max 1`, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] });
@@ -213,17 +205,16 @@ test('simplify.js 应该导出正确的函数', () => {
 console.log('\nPhase 6: 任务模块测试');
 
 test('tasks.js 应该正确处理任务数据', () => {
-  const { paths } = require('../src/common/config');
-  const p = paths();
+  const { assets } = require('../src/common/assets');
+  const tasksPath = assets.path('tasks');
 
-  // 创建测试 tasks.json
   const tasksData = {
     features: [
       { id: '1', description: 'Test task 1', status: 'pending' },
       { id: '2', description: 'Test task 2', status: 'done' }
     ]
   };
-  fs.writeFileSync(p.tasksFile, JSON.stringify(tasksData));
+  fs.writeFileSync(tasksPath, JSON.stringify(tasksData));
 
   const { loadTasks, getStats } = require('../src/common/tasks');
   const data = loadTasks();
@@ -241,20 +232,16 @@ test('tasks.js 应该正确处理任务数据', () => {
 console.log('\nPhase 7: simplify 目录检查测试');
 
 test('simplify 应该确保目录存在', async () => {
-  const { paths } = require('../src/common/config');
-  const p = paths();
+  const { assets } = require('../src/common/assets');
+  const logsDir = assets.dir('logs');
 
-  // 删除日志目录
-  if (fs.existsSync(p.logsDir)) {
-    fs.rmSync(p.logsDir, { recursive: true, force: true });
+  if (fs.existsSync(logsDir)) {
+    fs.rmSync(logsDir, { recursive: true, force: true });
   }
 
-  // 确保不会因为目录不存在而崩溃
-  // 注意：这里只测试 ensureLoopDir 是否被正确调用
-  const { ensureLoopDir } = require('../src/common/config');
-  ensureLoopDir();
+  assets.ensureDirs();
 
-  assert(fs.existsSync(p.logsDir), 'logs 目录应该被创建');
+  assert(fs.existsSync(logsDir), 'logs 目录应该被创建');
 });
 
 // 清理

@@ -2,14 +2,12 @@
 
 const { runSession } = require('./base');
 const { buildQueryOptions } = require('./query');
-const { log, getProjectRoot, ensureLoopDir } = require('../common/config');
+const { log } = require('../common/config');
+const { assets } = require('../common/assets');
 const { execSync } = require('child_process');
 
-/**
- * 内部：运行代码审查 Session
- */
 async function _runSimplifySession(n = 3, focus = null, opts = {}) {
-  const projectRoot = getProjectRoot();
+  const projectRoot = assets.projectRoot;
   let diff = '';
   try {
     diff = execSync(`git diff HEAD~${n}..HEAD`, { cwd: projectRoot, encoding: 'utf8', maxBuffer: 50 * 1024 * 1024 });
@@ -31,7 +29,6 @@ async function _runSimplifySession(n = 3, focus = null, opts = {}) {
       log('info', `正在审查最近 ${n} 个 commit 的代码变更...`);
 
       const queryOpts = buildQueryOptions(ctx.config, opts);
-      queryOpts.maxTurns = 1;
       queryOpts.hooks = ctx.hooks;
       queryOpts.abortController = ctx.abortController;
 
@@ -43,13 +40,8 @@ async function _runSimplifySession(n = 3, focus = null, opts = {}) {
   });
 }
 
-/**
- * 对外 API：代码审查
- * @param {string|null} focus - 审查聚焦方向（如 "内存效率"）
- * @param {object} opts - 选项，opts.n 为 commit 数量（默认 3）
- */
 async function simplify(focus = null, opts = {}) {
-  ensureLoopDir();
+  assets.ensureDirs();
   const n = opts.n || 3;
   return _runSimplifySession(n, focus, opts);
 }

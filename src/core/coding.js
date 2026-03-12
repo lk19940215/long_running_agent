@@ -25,6 +25,7 @@ async function runCodingSession(sessionNum, opts = {}) {
       queryOpts.systemPrompt = buildSystemPrompt(false);
       queryOpts.hooks = ctx.hooks;
       queryOpts.abortController = ctx.abortController;
+      queryOpts.disallowedTools = ['askUserQuestion'];
 
       const collected = await ctx.runQuery(sdk, prompt, queryOpts);
       const result = extractResult(collected);

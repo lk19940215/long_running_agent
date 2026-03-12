@@ -3,10 +3,9 @@
 const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
-const { paths, log, COLOR, getProjectRoot, parseEnvFile, updateEnvVar } = require('../../common/config');
+const { log, COLOR, updateEnvVar } = require('../../common/config');
 const { appendGitignore } = require('../../common/utils');
-
-// ── readline helpers ──
+const { assets } = require('../../common/assets');
 
 function createInterface() {
   return readline.createInterface({ input: process.stdin, output: process.stdout });
@@ -16,14 +15,16 @@ function ask(rl, question) {
   return new Promise(resolve => rl.question(question, resolve));
 }
 
-async function askChoice(rl, prompt, min, max, defaultVal) {
-  while (true) {
-    const raw = await ask(rl, prompt);
-    const val = raw.trim() || String(defaultVal || '');
-    const num = parseInt(val, 10);
-    if (num >= min && num <= max) return num;
-    console.log(`请输入 ${min}-${max}`);
-  }
+function askChoice(rl, prompt, min, max, defaultVal) {
+  return new Promise(async (resolve) => {
+    while (true) {
+      const raw = await ask(rl, prompt);
+      const val = raw.trim() || String(defaultVal ?? '');
+      const num = parseInt(val, 10);
+      if (num >= min && num <= max) return resolve(num);
+      console.log(`请输入 ${min}-${max}`);
+    }
+  });
 }
 
 async function askApiKey(rl, platform, apiUrl, existingKey) {
@@ -45,8 +46,6 @@ async function askApiKey(rl, platform, apiUrl, existingKey) {
   return key.trim();
 }
 
-// ── config file helpers ──
-
 function writeConfig(filePath, lines) {
   const dir = path.dirname(filePath);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
@@ -62,18 +61,16 @@ function writeConfig(filePath, lines) {
 }
 
 function ensureGitignore() {
-  const projectRoot = getProjectRoot();
+  const projectRoot = assets.projectRoot;
   const patterns = ['.claude-coder/.env', '.claude-coder/.runtime/'];
   let added = false;
   for (const pattern of patterns) {
     if (appendGitignore(projectRoot, pattern)) added = true;
   }
   if (added) {
-    log('info', '已将 .claude-coder/.env 添加到 .gitignore');
+    log('info', '已更新 .gitignore');
   }
 }
-
-// ── show current config ──
 
 function showCurrentConfig(existing) {
   console.log('');

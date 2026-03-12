@@ -3,8 +3,9 @@
 const fs = require('fs');
 const readline = require('readline');
 const { execSync } = require('child_process');
-const { paths, log, loadConfig, ensureLoopDir, getProjectRoot } = require('../common/config');
-const { readJson, writeJson, getGitHead, isGitRepo, sleep } = require('../common/utils');
+const { log, loadConfig } = require('../common/config');
+const { assets } = require('../common/assets');
+const { getGitHead, isGitRepo, sleep } = require('../common/utils');
 const { RETRY } = require('../common/constants');
 const { loadTasks, getFeatures, getStats, findNextTask, forceStatus, printStats } = require('../common/tasks');
 const { validate } = require('./validator');
@@ -15,12 +16,11 @@ const { loadSDK } = require('../common/sdk');
 const MAX_RETRY = RETRY.MAX_ATTEMPTS;
 
 function getHead() {
-  return getGitHead(getProjectRoot());
+  return getGitHead(assets.projectRoot);
 }
 
 function killServicesByProfile() {
-  const p = paths();
-  const profile = readJson(p.profile, null);
+  const profile = assets.readJson('profile', null);
   if (!profile) return;
   try {
     const services = profile.services || [];
@@ -50,7 +50,7 @@ async function rollback(headBefore, reason) {
 
   if (process.platform === 'win32') await sleep(1500);
 
-  const cwd = getProjectRoot();
+  const cwd = assets.projectRoot;
   const gitEnv = { ...process.env, GIT_TERMINAL_PROMPT: '0' };
 
   log('warn', `回滚到 ${headBefore} ...`);
@@ -92,10 +92,11 @@ function markTaskFailed() {
 
 function tryPush() {
   try {
-    const remotes = execSync('git remote', { cwd: getProjectRoot(), encoding: 'utf8' }).trim();
+    const cwd = assets.projectRoot;
+    const remotes = execSync('git remote', { cwd, encoding: 'utf8' }).trim();
     if (!remotes) return;
     log('info', '正在推送代码...');
-    execSync('git push', { cwd: getProjectRoot(), stdio: 'inherit' });
+    execSync('git push', { cwd, stdio: 'inherit' });
     log('ok', '推送成功');
   } catch {
     log('warn', '推送失败 (请检查网络或权限)，继续执行...');
@@ -103,11 +104,10 @@ function tryPush() {
 }
 
 function appendProgress(entry) {
-  const p = paths();
-  let progress = readJson(p.progressFile, { sessions: [] });
+  let progress = assets.readJson('progress', { sessions: [] });
   if (!Array.isArray(progress.sessions)) progress.sessions = [];
   progress.sessions.push(entry);
-  writeJson(p.progressFile, progress);
+  assets.writeJson('progress', progress);
 }
 
 async function promptContinue() {
@@ -122,9 +122,8 @@ async function promptContinue() {
 }
 
 async function run(opts = {}) {
-  const p = paths();
-  const projectRoot = getProjectRoot();
-  ensureLoopDir();
+  assets.ensureDirs();
+  const projectRoot = assets.projectRoot;
 
   const maxSessions = opts.max || 50;
   const pauseEvery = opts.pause ?? 0;
@@ -150,13 +149,12 @@ async function run(opts = {}) {
     });
   }
 
-  // 检查前置条件
-  if (!fs.existsSync(p.profile)) {
+  if (!assets.exists('profile')) {
     log('error', 'profile 不存在，请先运行 claude-coder init 初始化项目');
     process.exit(1);
   }
 
-  if (!fs.existsSync(p.tasksFile)) {
+  if (!assets.exists('tasks')) {
     log('error', 'tasks.json 不存在，请先运行 claude-coder plan 生成任务');
     process.exit(1);
   }

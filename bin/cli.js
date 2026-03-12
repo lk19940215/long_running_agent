@@ -7,7 +7,7 @@ const COMMANDS = {
   run:       { desc: '自动编码循环',             usage: 'claude-coder run [--max N] [--pause N] [--dry-run]' },
   setup:     { desc: '交互式模型配置',           usage: 'claude-coder setup' },
   init:      { desc: '初始化项目环境',           usage: 'claude-coder init' },
-  plan:      { desc: '生成计划方案',             usage: 'claude-coder plan "需求" | plan -r requirements.md [--planOnly]' },
+  plan:      { desc: '生成计划方案',             usage: 'claude-coder plan "需求" | plan -r requirements.md [--planOnly] [-i]' },
   simplify:  { desc: '代码审查和简化',           usage: 'claude-coder simplify [focus]' },
   auth:      { desc: '导出 Playwright 登录状态', usage: 'claude-coder auth [url]' },
   status:    { desc: '查看任务进度和成本',       usage: 'claude-coder status' },
@@ -25,6 +25,7 @@ function showHelp() {
   console.log('  claude-coder plan "实现用户登录"      生成计划方案');
   console.log('  claude-coder plan -r requirements.md 从文件读取需求');
   console.log('  claude-coder plan --planOnly         仅生成计划文档');
+  console.log('  claude-coder plan -i "优化系统"      交互模式，允许模型提问');
   console.log('  claude-coder run                     执行所有待处理任务');
   console.log('  claude-coder run --max 1             单次执行');
   console.log('  claude-coder run --max 5 --pause 5   每 5 个 session 暂停确认');
@@ -40,7 +41,7 @@ function showHelp() {
 function parseArgs(argv) {
   const args = argv.slice(2);
   const command = args[0];
-  const opts = { max: 50, pause: 0, dryRun: false, readFile: null, model: null, n: 3, planOnly: false };
+  const opts = { max: 50, pause: 0, dryRun: false, readFile: null, model: null, n: 3, planOnly: false, interactive: false };
   const positional = [];
 
   for (let i = 1; i < args.length; i++) {
@@ -73,6 +74,10 @@ function parseArgs(argv) {
       }
       case '--planOnly':
         opts.planOnly = true;
+        break;
+      case '-i':
+      case '--interactive':
+        opts.interactive = true;
         break;
       case '--help':
       case '-h':

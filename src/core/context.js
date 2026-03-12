@@ -2,23 +2,20 @@
 
 const fs = require('fs');
 const path = require('path');
-const { paths, loadConfig, buildEnvVars, log } = require('../common/config');
+const { loadConfig, buildEnvVars, log } = require('../common/config');
 const { Indicator } = require('../common/indicator');
 const { logMessage: baseLogMessage } = require('../common/logging');
 const { createHooks } = require('./hooks');
+const { assets } = require('../common/assets');
 
-/**
- * Session 上下文类
- * 封装所有 session 共享的状态和操作
- */
 class SessionContext {
   constructor(type, opts = {}) {
     this.type = type;
     this.opts = opts;
+    assets.init(opts.projectRoot || process.cwd());
     this.config = loadConfig();
     this._applyEnvConfig();
     this.indicator = new Indicator();
-    this.p = paths();
     this.logStream = null;
     this.logFile = null;
     this.hooks = null;
@@ -37,7 +34,8 @@ class SessionContext {
       this.logStream = externalLogStream;
       this._externalLogStream = true;
     } else {
-      this.logFile = path.join(this.p.logsDir, logFileName);
+      const logsDir = assets.dir('logs');
+      this.logFile = path.join(logsDir, logFileName);
       this.logStream = fs.createWriteStream(this.logFile, { flags: 'a' });
       this._externalLogStream = false;
     }

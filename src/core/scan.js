@@ -1,22 +1,17 @@
 'use strict';
 
-const fs = require('fs');
-const { paths, log, ensureLoopDir } = require('../common/config');
-const { readJson } = require('../common/utils');
+const { log } = require('../common/config');
+const { assets } = require('../common/assets');
 const { runSession } = require('./base');
 const { buildQueryOptions, hasCodeFiles } = require('./query');
 const { buildSystemPrompt, buildScanPrompt } = require('./prompts');
 const { extractResult } = require('../common/logging');
 const { RETRY } = require('../common/constants');
 
-/**
- * 验证 profile 质量
- */
 function validateProfile() {
-  const p = paths();
-  if (!fs.existsSync(p.profile)) return { valid: false, issues: ['profile 不存在'] };
+  if (!assets.exists('profile')) return { valid: false, issues: ['profile 不存在'] };
 
-  const profile = readJson(p.profile, null);
+  const profile = assets.readJson('profile', null);
   if (!profile) return { valid: false, issues: ['profile 解析失败'] };
   const issues = [];
 
@@ -33,11 +28,8 @@ function validateProfile() {
   return { valid: issues.length === 0, issues };
 }
 
-/**
- * 内部：运行扫描 Session
- */
 async function _runScanSession(requirement, opts = {}) {
-  const projectType = hasCodeFiles(opts.projectRoot || process.cwd()) ? 'existing' : 'new';
+  const projectType = hasCodeFiles(opts.projectRoot || assets.projectRoot) ? 'existing' : 'new';
   const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
 
   return runSession('scan', {
@@ -63,12 +55,8 @@ async function _runScanSession(requirement, opts = {}) {
   });
 }
 
-/**
- * 对外 API：扫描项目（含重试和校验）
- */
 async function scan(requirement, opts = {}) {
-  const p = paths();
-  ensureLoopDir();
+  assets.ensureDirs();
 
   const maxAttempts = RETRY.SCAN_ATTEMPTS;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -76,7 +64,7 @@ async function scan(requirement, opts = {}) {
 
     const result = await _runScanSession(requirement, opts);
 
-    if (fs.existsSync(p.profile)) {
+    if (assets.exists('profile')) {
       const profileCheck = validateProfile();
       if (!profileCheck.valid) {
         log('warn', `profile 质量问题: ${profileCheck.issues.join('; ')}`);

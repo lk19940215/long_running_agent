@@ -30,8 +30,10 @@ async function updateSimplifyConfig(rl, existing) {
     }
   }
 
-  const newInterval = existing.SIMPLIFY_INTERVAL || currentInterval;
-  if (newInterval !== '0') {
+  const effectiveInterval = intervalInput.trim()
+    ? String(parseInt(intervalInput.trim(), 10) || 0)
+    : currentInterval;
+  if (effectiveInterval !== '0') {
     console.log('');
     const commitsInput = await ask(rl, `审查 commit 数量（回车保留 ${currentCommits}）: `);
     if (commitsInput.trim()) {

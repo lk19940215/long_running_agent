@@ -3,8 +3,10 @@
 const fs = require('fs');
 const path = require('path');
 const { inferPhaseStep } = require('../common/indicator');
-const { log, paths } = require('../common/config');
+const { log } = require('../common/config');
 const { EDIT_THRESHOLD, FILES } = require('../common/constants');
+const { createAskUserQuestionHook } = require('../common/interaction');
+const { assets } = require('../common/assets');
 
 // ─────────────────────────────────────────────────────────────
 // Constants
@@ -19,6 +21,7 @@ const FEATURES = Object.freeze({
   EDIT_GUARD: 'editGuard',
   COMPLETION: 'completion',
   STALL: 'stall',
+  INTERACTION: 'interaction',
 });
 
 // ─────────────────────────────────────────────────────────────
@@ -34,21 +37,34 @@ class GuidanceInjector {
   }
 
   /**
-   * Load rules from user's guidance.json
+   * Load rules from user's guidance.json and pre-compile regex patterns.
    */
   load() {
     if (this.loaded) return;
 
-    const p = paths();
-    const configPath = p.userGuidanceFile;
-
     try {
-      const content = fs.readFileSync(configPath, 'utf8');
+      const content = assets.read('guidance');
       const config = JSON.parse(content);
       this.rules = config.rules || [];
     } catch {
-      // Config file not found or parse error
       this.rules = [];
+    }
+
+    this._compiledMatchers = new Map();
+    this._compiledConditions = new Map();
+    for (const rule of this.rules) {
+      try {
+        this._compiledMatchers.set(rule.name, new RegExp(rule.matcher));
+      } catch {
+        this._compiledMatchers.set(rule.name, null);
+      }
+      if (rule.condition?.pattern !== undefined) {
+        try {
+          this._compiledConditions.set(rule.name, new RegExp(rule.condition.pattern, 'i'));
+        } catch {
+          this._compiledConditions.set(rule.name, null);
+        }
+      }
     }
 
     this.loaded = true;
@@ -66,17 +82,18 @@ class GuidanceInjector {
   /**
    * Check if condition matches
    * Supports: { field, pattern } or { any: [...] }
+   * @param {string} [ruleName] - Rule name for looking up pre-compiled regex
    */
-  matchCondition(input, condition) {
+  matchCondition(input, condition, ruleName) {
     if (!condition) return true;
 
-    // Single condition: { field, pattern }
     if (condition.field && condition.pattern !== undefined) {
       const value = this.getFieldValue(input, condition.field);
-      return new RegExp(condition.pattern, 'i').test(String(value || ''));
+      const re = (ruleName && this._compiledConditions?.get(ruleName)) ||
+        new RegExp(condition.pattern, 'i');
+      return re.test(String(value || ''));
     }
 
-    // Multiple conditions (OR): { any: [...] }
     if (condition.any && Array.isArray(condition.any)) {
       return condition.any.some(c => this.matchCondition(input, c));
     }
@@ -119,13 +136,12 @@ class GuidanceInjector {
    * Process a single rule and return guidance content
    */
   processRule(rule, input, basePath) {
-    // Check matcher
-    if (!new RegExp(rule.matcher).test(input.tool_name)) {
+    const matcherRe = this._compiledMatchers?.get(rule.name) ?? new RegExp(rule.matcher);
+    if (!matcherRe.test(input.tool_name)) {
       return null;
     }
 
-    // Check condition
-    if (!this.matchCondition(input, rule.condition)) {
+    if (!this.matchCondition(input, rule.condition, rule.name)) {
       return null;
     }
 
@@ -170,13 +186,22 @@ class GuidanceInjector {
   }
 
   /**
+   * Reset per-session state for clean session boundaries.
+   * Also clears loaded flag so guidance.json is re-read on next hook call.
+   */
+  reset() {
+    this.injectedRules.clear();
+    this.cache = {};
+    this.loaded = false;
+  }
+
+  /**
    * Create hook function for PreToolUse
    */
   createHook() {
-    // Cache paths at hook creation time
-    const cachedPaths = paths();
+    const basePath = assets.dir('loop');
 
-    return async (input) => {
+    return async (input, _toolUseID, _context) => {
       this.load();
 
       if (this.rules.length === 0) return {};
@@ -185,23 +210,27 @@ class GuidanceInjector {
       const tipParts = [];
 
       for (const rule of this.rules) {
-        const result = this.processRule(rule, input, cachedPaths.loopDir);
+        const result = this.processRule(rule, input, basePath);
         if (result) {
           if (result.guidance) guidanceParts.push(result.guidance);
           if (result.tip) tipParts.push(result.tip);
         }
       }
 
-      // Combine guidance and tips
       const allParts = [...guidanceParts, ...tipParts];
       if (allParts.length === 0) return {};
 
-      return { additionalContext: allParts.join('\n\n') };
+      return {
+        hookSpecificOutput: {
+          hookEventName: 'PreToolUse',
+          additionalContext: allParts.join('\n\n'),
+        }
+      };
     };
   }
 }
 
-// Singleton instance
+// Shared instance (reset per session via createGuidanceModule)
 const guidanceInjector = new GuidanceInjector();
 
 // ─────────────────────────────────────────────────────────────
@@ -224,7 +253,7 @@ function isSessionResultWrite(toolName, toolInput) {
     const target = toolInput?.file_path || toolInput?.path || '';
     return target.endsWith(SESSION_RESULT_FILENAME);
   }
-  if (toolName === 'Bash') {
+  if (toolName === 'Bash' || toolName === 'Shell') {
     const cmd = toolInput?.command || '';
     if (!cmd.includes(SESSION_RESULT_FILENAME)) return false;
     return />\s*[^\s]*session_result/.test(cmd);
@@ -237,37 +266,45 @@ function isSessionResultWrite(toolName, toolInput) {
 // ─────────────────────────────────────────────────────────────
 
 /**
- * Create guidance injection module
+ * Create guidance injection module.
+ * Resets the shared injector's per-session state to prevent cross-session leaks.
  */
 function createGuidanceModule() {
+  guidanceInjector.reset();
   return {
-    hook: {
-      matcher: '*',
-      hooks: [guidanceInjector.createHook()]
-    }
+    hook: guidanceInjector.createHook()
   };
 }
 
 /**
- * Create edit guard module
+ * Create edit guard module.
+ * Uses a sliding time window: edits older than cooldownMs are decayed,
+ * allowing the model to resume editing after a "thinking" break.
  */
 function createEditGuardModule(options) {
-  const editCounts = {};
+  const editTimestamps = {};
   const threshold = options.editThreshold || DEFAULT_EDIT_THRESHOLD;
+  const cooldownMs = options.editCooldownMs || 60000;
 
   return {
-    hook: async (input) => {
+    hook: async (input, _toolUseID, _context) => {
       if (!['Write', 'Edit', 'MultiEdit'].includes(input.tool_name)) return {};
       const target = input.tool_input?.file_path || input.tool_input?.path || '';
       if (!target) return {};
 
-      editCounts[target] = (editCounts[target] || 0) + 1;
-      if (editCounts[target] > threshold) {
+      const now = Date.now();
+      if (!editTimestamps[target]) editTimestamps[target] = [];
+
+      editTimestamps[target] = editTimestamps[target].filter(t => now - t < cooldownMs);
+      editTimestamps[target].push(now);
+
+      if (editTimestamps[target].length > threshold) {
         return {
           hookSpecificOutput: {
             hookEventName: 'PreToolUse',
             permissionDecision: 'deny',
-            permissionDecisionReason: `已对 ${target} 编辑 ${editCounts[target]} 次，疑似死循环。请重新审视方案后再继续。`
+            permissionDecisionReason:
+              `${cooldownMs / 1000}s 内对 ${target} 编辑 ${editTimestamps[target].length} 次（上限 ${threshold}），疑似死循环。请重新审视方案后再继续。`
           }
         };
       }
@@ -349,7 +386,7 @@ function createStallModule(indicator, logStream, options) {
  */
 function createCompletionModule(indicator, stallModule) {
   return {
-    hook: async (input) => {
+    hook: async (input, _toolUseID, _context) => {
       indicator.updatePhase('thinking');
       indicator.updateStep('');
       indicator.toolTarget = '';
@@ -366,7 +403,7 @@ function createCompletionModule(indicator, stallModule) {
  * Create logging hook
  */
 function createLoggingHook(indicator, logStream) {
-  return async (input) => {
+  return async (input, _toolUseID, _context) => {
     inferPhaseStep(indicator, input.tool_name, input.tool_input);
     logToolCall(logStream, input);
     return {};
@@ -380,9 +417,10 @@ function createLoggingHook(indicator, logStream) {
 const FEATURE_MAP = {
   coding: [FEATURES.GUIDANCE, FEATURES.EDIT_GUARD, FEATURES.COMPLETION, FEATURES.STALL],
   plan: [FEATURES.STALL],
+  plan_interactive: [FEATURES.STALL, FEATURES.INTERACTION],
   scan: [FEATURES.STALL],
   add: [FEATURES.STALL],
-  simplify: [FEATURES.STALL],
+  simplify: [FEATURES.STALL, FEATURES.INTERACTION],
   custom: null
 };
 
@@ -412,6 +450,10 @@ function createHooks(type, indicator, logStream, options = {}) {
     modules.guidance = createGuidanceModule();
   }
 
+  if (features.includes(FEATURES.INTERACTION)) {
+    modules.interaction = { hook: createAskUserQuestionHook() };
+  }
+
   // Assemble PreToolUse hooks
   const preToolUseHooks = [];
   preToolUseHooks.push(createLoggingHook(indicator, logStream));
@@ -421,7 +463,11 @@ function createHooks(type, indicator, logStream, options = {}) {
   }
 
   if (modules.guidance) {
-    preToolUseHooks.push(...modules.guidance.hook.hooks);
+    preToolUseHooks.push(modules.guidance.hook);
+  }
+
+  if (modules.interaction) {
+    preToolUseHooks.push(modules.interaction.hook);
   }
 
   // Assemble PostToolUse hooks
@@ -453,52 +499,16 @@ function createHooks(type, indicator, logStream, options = {}) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Backward Compatibility: createSessionHooks
-// ─────────────────────────────────────────────────────────────
-
-function createSessionHooks(indicator, logStream, options = {}) {
-  const {
-    enableStallDetection = false,
-    enableEditGuard = false,
-    enableCompletionDetection = true,
-    enableGuidanceInjection = false,
-  } = options;
-
-  const features = ['stall'];
-
-  if (!enableStallDetection) {
-    features.pop();
-  }
-
-  if (enableEditGuard) features.push('editGuard');
-  if (enableCompletionDetection) features.push('completion');
-  if (enableGuidanceInjection) features.push('guidance');
-
-  return createHooks('custom', indicator, logStream, { ...options, features });
-}
-
-// ─────────────────────────────────────────────────────────────
 // Exports
 // ─────────────────────────────────────────────────────────────
 
 module.exports = {
-  // Main API
   createHooks,
-  createSessionHooks,
-
-  // GuidanceInjector class
   GuidanceInjector,
-
-  // Module factories
   createGuidanceModule,
   createEditGuardModule,
   createCompletionModule,
   createStallModule,
-
-  // Constants
   FEATURES,
-
-  // Utilities
-  logToolCall,
   isSessionResultWrite,
 };

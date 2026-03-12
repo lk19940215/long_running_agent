@@ -1,7 +1,8 @@
 'use strict';
 
 const { ask, askChoice } = require('./helpers');
-const { paths, log, COLOR, updateEnvVar } = require('../../common/config');
+const { log, COLOR, updateEnvVar } = require('../../common/config');
+const { assets } = require('../../common/assets');
 
 // ── MCP 配置 ──
 
@@ -82,7 +83,7 @@ async function updateMCPOnly(rl) {
   if (mcpConfig.enabled && mcpConfig.mode) {
     updateEnvVar('MCP_PLAYWRIGHT_MODE', mcpConfig.mode);
     const { updateMcpConfig } = require('../auth');
-    updateMcpConfig(paths(), mcpConfig.mode);
+    updateMcpConfig(assets.path('mcpConfig'), mcpConfig.mode);
   }
   log('ok', 'MCP 配置已更新');
 }

@@ -1,9 +1,9 @@
 'use strict';
 
-const fs = require('fs');
 const { execSync } = require('child_process');
-const { paths, log, getProjectRoot } = require('../common/config');
-const { readJson, getGitHead } = require('../common/utils');
+const { log } = require('../common/config');
+const { getGitHead } = require('../common/utils');
+const { assets } = require('../common/assets');
 const { TASK_STATUSES } = require('../common/constants');
 const { loadTasks, getFeatures } = require('../common/tasks');
 
@@ -38,26 +38,25 @@ function inferFromTasks(taskId) {
 }
 
 function validateSessionResult() {
-  const p = paths();
-
-  if (!fs.existsSync(p.sessionResult)) {
+  if (!assets.exists('sessionResult')) {
     log('error', 'Agent 未生成 session_result.json');
     return { valid: false, fatal: true, recoverable: false, reason: 'session_result.json 不存在' };
   }
 
-  const data = readJson(p.sessionResult, null);
+  const data = assets.readJson('sessionResult', null);
   if (data === null) {
     log('warn', 'session_result.json 解析失败');
-    const raw = fs.readFileSync(p.sessionResult, 'utf8');
-    const extracted = tryExtractFromBroken(raw);
-    if (extracted) {
-      log('info', `从截断 JSON 中提取到关键字段: ${JSON.stringify(extracted)}`);
-      return { valid: false, fatal: false, recoverable: true, reason: 'JSON 截断但提取到关键字段', data: extracted };
+    const raw = assets.read('sessionResult');
+    if (raw) {
+      const extracted = tryExtractFromBroken(raw);
+      if (extracted) {
+        log('info', `从截断 JSON 中提取到关键字段: ${JSON.stringify(extracted)}`);
+        return { valid: false, fatal: false, recoverable: true, reason: 'JSON 截断但提取到关键字段', data: extracted };
+      }
     }
     return { valid: false, fatal: false, recoverable: true, reason: 'JSON 解析失败' };
   }
 
-  // Backward compat: unwrap legacy { current: {...} } format
   const sessionData = data.current && typeof data.current === 'object' ? data.current : data;
 
   const required = ['session_result', 'status_after'];
@@ -92,7 +91,7 @@ function checkGitProgress(headBefore) {
     return { hasCommit: false, warning: false };
   }
 
-  const projectRoot = getProjectRoot();
+  const projectRoot = assets.projectRoot;
   const headAfter = getGitHead(projectRoot);
 
   if (headBefore === headAfter) {
@@ -109,12 +108,10 @@ function checkGitProgress(headBefore) {
 }
 
 function checkTestCoverage(taskId, statusAfter) {
-  const p = paths();
-
-  if (!fs.existsSync(p.testsFile)) return;
   if (statusAfter !== 'done' || !taskId) return;
+  if (!assets.exists('tests')) return;
 
-  const tests = readJson(p.testsFile, null);
+  const tests = assets.readJson('tests', null);
   if (!tests) return;
   const testCases = tests.test_cases || [];
   const taskTests = testCases.filter(t => t.feature_id === taskId);
@@ -140,7 +137,6 @@ function validate(headBefore, taskId) {
   if (srResult.valid) {
     hasWarnings = gitResult.warning;
   } else {
-    // session_result.json has issues — cross-validate with git + tasks.json
     if (gitResult.hasCommit) {
       const taskStatus = inferFromTasks(taskId);
       if (taskStatus === 'done' || taskStatus === 'testing') {

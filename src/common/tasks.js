@@ -1,24 +1,18 @@
 'use strict';
 
-const fs = require('fs');
-const { paths, log, COLOR } = require('../common/config');
-const { readJson, writeJson } = require('../common/utils');
-const { TASK_STATUSES, STATUS_TRANSITIONS } = require('../common/constants');
+const { log, COLOR } = require('./config');
+const { assets } = require('./assets');
+const { TASK_STATUSES, STATUS_TRANSITIONS } = require('./constants');
 
-// 暴露常量供外部使用
 const VALID_STATUSES = TASK_STATUSES;
 const TRANSITIONS = STATUS_TRANSITIONS;
 
 function loadTasks() {
-  const p = paths();
-  const data = readJson(p.tasksFile, null);
-  if (data === null) return null;
-  return data;
+  return assets.readJson('tasks', null);
 }
 
 function saveTasks(data) {
-  const p = paths();
-  writeJson(p.tasksFile, data);
+  assets.writeJson('tasks', data);
 }
 
 function getFeatures(data) {
@@ -63,10 +57,6 @@ function setStatus(data, taskId, newStatus) {
   return task;
 }
 
-/**
- * Harness-level forced status change (bypasses TRANSITIONS validation).
- * Used when harness needs to mark tasks failed after max retries.
- */
 function forceStatus(data, status) {
   const features = getFeatures(data);
   for (const f of features) {
@@ -108,7 +98,6 @@ function printStats() {
 }
 
 function showStatus() {
-  const p = paths();
   const data = loadTasks();
   if (!data) {
     log('warn', '未找到 .claude-coder/tasks.json，请先运行 claude-coder run');
@@ -133,8 +122,7 @@ function showStatus() {
     console.log(`  ▸ in_progress: ${stats.in_progress}  ▸ testing: ${stats.testing}`);
   }
 
-  // Cost summary from progress.json (harness records SDK cost per session)
-  const progress = readJson(p.progressFile, null);
+  const progress = assets.readJson('progress', null);
   if (progress) {
     const sessions = (progress.sessions || []).filter(s => typeof s.cost === 'number');
     if (sessions.length > 0) {
@@ -143,7 +131,6 @@ function showStatus() {
     }
   }
 
-  // Task list
   console.log(`\n  ${'─'.repeat(45)}`);
   for (const f of features) {
     const icon = { done: '✔', pending: '○', in_progress: '▸', testing: '⟳', failed: '✘' }[f.status] || '?';
