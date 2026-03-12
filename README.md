@@ -2,9 +2,13 @@
 
 **中文** | [English](docs/README.en.md)
 
-受 [Anthropic: Effective harnesses for long-running agents](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents) 启发，Claude Coder 是一个**自主编码 harness**，依托 Claude Agent SDK 的 `query()` 接口，提供项目扫描、任务分解、多 session 编排、自动校验与 git 回滚的能力，支持一句话需求或 `requirements.md` 驱动，兼容所有 Anthropic API 兼容的模型提供商。
+一个**长时间自运行的自主编码 Agent Harness**：基于 Claude Agent SDK，通过 Hook 提示注入引导模型行为，倒计时活跃度监控保障稳定运行，多 session 编排实现一句话需求到完整项目的全自动交付。
 
-**核心思路**：AI Agent 单次会话上下文有限，大型需求容易丢失进度或产出不可用代码。本工具将 Agent 包装为一个**可靠的、可重试的函数** — harness 管理任务状态、校验每次产出、失败时自动回滚，Agent 只需专注于编码。
+### 亮点
+
+- **Hook 提示注入**：通过 JSON 配置在工具调用时向模型注入上下文引导，零代码修改即可扩展规则（[机制详解](design/hook-mechanism.md)）
+- **长时间自循环编码**：多 session 编排 + 倒计时活跃度监控 + git 回滚重试，Agent 可持续编码数小时不中断（[守护机制](design/session-guard.md)）
+- **配置驱动**：支持 Claude 官方、Coding Plan 多模型路由、DeepSeek 等任意 Anthropic 兼容 API
 
 ---
 
@@ -25,6 +29,24 @@ cd your-project
 claude-coder run "实现用户注册和登录功能"
 ```
 
+## 命令列表
+
+| 命令 | 说明 |
+|------|------|
+| `claude-coder setup` | 交互式配置（模型、MCP、安全限制） |
+| `claude-coder run [需求]` | 自动编码循环 |
+| `claude-coder run --max 1` | 单次执行 |
+| `claude-coder run --dry-run` | 预览模式 |
+| `claude-coder init` | 初始化项目环境 |
+| `claude-coder add "指令"` | 追加任务 |
+| `claude-coder add -r [file]` | 从需求文件追加任务 |
+| `claude-coder add "..." --model M` | 指定模型追加任务 |
+| `claude-coder auth [url]` | 导出 Playwright 登录状态 |
+| `claude-coder validate` | 手动校验 |
+| `claude-coder status` | 查看进度和成本 |
+
+**选项**：`--max N` 限制 session 数（默认 50），`--pause N` 每 N 个 session 暂停确认。
+
 ## 工作原理
 
 ```
@@ -44,23 +66,15 @@ claude-coder run "实现用户注册和登录功能"
 
 每个 session 内，Agent 自主执行 6 步：恢复上下文 → 环境检查 → 选任务 → 编码 → 测试 → 收尾（git commit）。
 
-## 命令
+## 机制文档
 
-| 命令 | 说明 |
+| 文档 | 说明 |
 |------|------|
-| `claude-coder setup` | 交互式模型配置 |
-| `claude-coder run [需求]` | 自动编码循环 |
-| `claude-coder run --max 1` | 单次执行 |
-| `claude-coder run --dry-run` | 预览模式 |
-| `claude-coder init` | 初始化项目环境 |
-| `claude-coder add "指令"` | 追加任务 |
-| `claude-coder add -r [file]` | 从需求文件追加任务 |
-| `claude-coder add "..." --model M` | 指定模型追加任务 |
-| `claude-coder auth [url]` | 导出 Playwright 登录状态 |
-| `claude-coder validate` | 手动校验 |
-| `claude-coder status` | 查看进度和成本 |
-
-**选项**：`--max N` 限制 session 数（默认 50），`--pause N` 每 N 个 session 暂停确认（默认不暂停）。
+| [Hook 注入机制](design/hook-mechanism.md) | SDK Hook 调研、GuidanceInjector 三级匹配、配置格式、副作用评估 |
+| [Session 守护机制](design/session-guard.md) | 中断策略、倒计时活跃度检测、工具运行状态追踪、防刷屏 |
+| [技术架构](design/ARCHITECTURE.md) | 核心设计规则、模块职责、提示语注入架构 |
+| [测试凭证方案](docs/PLAYWRIGHT_CREDENTIALS.md) | Playwright 登录态导出、API Key 持久化 |
+| [SDK 使用指南](docs/CLAUDE_AGENT_SDK_GUIDE.md) | Claude Agent SDK 接口参考 |
 
 ## 使用场景
 
@@ -68,19 +82,37 @@ claude-coder run "实现用户注册和登录功能"
 
 **已有项目**：`claude-coder run "新增头像上传功能"` — 先扫描现有代码和技术栈，再增量开发。
 
-**需求文档驱动**：在项目根目录创建 `requirements.md`，运行 `claude-coder run` — 需求变更后用 `claude-coder add -r` 同步新任务。
+**需求文档驱动**：在项目根目录创建 `requirements.md`，运行 `claude-coder run`。需求变更后 `claude-coder add -r` 同步新任务。
 
-**追加任务**：`claude-coder add "新增管理员后台"` 或 `claude-coder add -r requirements.md` — 仅追加到任务列表，下次 run 时执行。
-
-**自动测试 + 凭证持久化**：`claude-coder auth http://localhost:3000` — 导出浏览器登录态（cookies + localStorage），Agent 测试时自动使用。缺 API Key 时 Agent 会自行记录到 `test.env` 并继续推进，不会停工。详见 [测试凭证持久化方案](docs/PLAYWRIGHT_CREDENTIALS.md)。
+**自动测试 + 凭证持久化**：`claude-coder auth http://localhost:3000` — 导出浏览器登录态，Agent 测试时自动使用。详见 [测试凭证方案](docs/PLAYWRIGHT_CREDENTIALS.md)。
 
 ## 模型支持
 
 | 提供商 | 说明 |
 |--------|------|
 | 默认 | Claude 官方模型，使用系统登录态 |
-| Coding Plan | 自建 API，使用推荐的多模型路由配置 |
+| Coding Plan | 自建 API，推荐的多模型路由配置 |
 | API | DeepSeek 或其他 Anthropic 兼容 API |
+
+## 建议配置
+
+### 长时间自运行 Agent（最稳）
+
+```bash
+ANTHROPIC_DEFAULT_OPUS_MODEL=glm-5
+ANTHROPIC_DEFAULT_SONNET_MODEL=qwen3-coder-next
+ANTHROPIC_DEFAULT_HAIKU_MODEL=qwen3-coder-plus
+ANTHROPIC_MODEL=kimi-k2.5
+```
+
+### 自用 Claude Code（最强）
+
+```bash
+ANTHROPIC_DEFAULT_OPUS_MODEL=qwen3-max-2026-01-23
+ANTHROPIC_DEFAULT_SONNET_MODEL=qwen3-coder-next
+ANTHROPIC_DEFAULT_HAIKU_MODEL=qwen3-coder-plus
+ANTHROPIC_MODEL=glm-5
+```
 
 ## 项目结构
 
@@ -90,59 +122,27 @@ your-project/
     .env                    # 模型配置
     project_profile.json    # 项目扫描结果
     tasks.json              # 任务列表 + 状态
-    session_result.json     # 上次 session 结果（扁平）
+    session_result.json     # 上次 session 结果
     progress.json           # 会话历史 + 成本
     tests.json              # 验证记录
-    test.env                # 测试凭证（API Key 等，可选）
-    playwright-auth.json    # 登录状态快照（isolated 模式，auth 命令生成）
-    .runtime/               # 临时文件
-      logs/                 # 每 session 独立日志（含工具调用记录）
-      browser-profile/      # 持久化浏览器 Profile（persistent 模式，auth 命令生成）
-  requirements.md           # 需求文档（可选）
+    test.env                # 测试凭证（可选）
+    .runtime/
+      logs/                 # 每 session 独立日志
 ```
 
 ## 常见问题
 
 **"Credit balance is too low"**：运行 `claude-coder setup` 重新配置 API Key。
 
-**中断恢复**：直接重新运行 `claude-coder run`，会从上次中断处继续。
+**中断恢复**：直接重新运行 `claude-coder run`，从上次中断处继续。
 
-**长时间无响应**：模型处理复杂文件时可能出现 10-20 分钟的思考间隔（spinner 会显示红色警告），这是正常行为。超过 20 分钟无工具调用时 Harness 会自动中断并重试。可通过 `.env` 中 `SESSION_STALL_TIMEOUT=秒数` 调整阈值。
+**长时间无响应**：模型处理复杂任务时可能出现长思考间隔（indicator 显示黄色"工具执行中"或红色"无响应"），这是正常行为。超过阈值后 harness 自动中断并重试。通过 `claude-coder setup` 的安全限制配置或 `.env` 中 `SESSION_STALL_TIMEOUT=秒数` 调整。
 
 **跳过任务**：将 `.claude-coder/tasks.json` 中该任务的 `status` 改为 `done`。
 
-**Windows 支持**：完全支持，纯 Node.js 实现。
+## 参考文章
 
-## 文档
-
-- [技术架构](docs/ARCHITECTURE.md) — 核心设计规则、模块职责、提示语注入架构、注意力机制、Hook 数据流
-- [测试凭证持久化方案](docs/PLAYWRIGHT_CREDENTIALS.md) — 自动测试的凭证管理：Playwright 登录态导出、API Key 持久化、Agent 缺凭证时的行为策略
-
-## 建议配置
-
-### 长时间自运行 Agent（最稳）
-特点：
-- 最稳定
-- 最不跑偏
-- 适合 长时间 Agent
-  ```bash
-  ANTHROPIC_DEFAULT_OPUS_MODEL=glm-5
-  ANTHROPIC_DEFAULT_SONNET_MODEL=qwen3-coder-next
-  ANTHROPIC_DEFAULT_HAIKU_MODEL=qwen3-coder-plus
-  ANTHROPIC_MODEL=kimi-k2.5
-  ```
-
-### 自用 Claude Code（最强）
-特点：
-- reasoning 最强
-- debug 能力最强
-- 复杂 coding 任务最好
-  ```bash
-  ANTHROPIC_DEFAULT_OPUS_MODEL=qwen3-max-2026-01-23
-  ANTHROPIC_DEFAULT_SONNET_MODEL=qwen3-coder-next
-  ANTHROPIC_DEFAULT_HAIKU_MODEL=qwen3-coder-plus
-  ANTHROPIC_MODEL=glm-5
-  ```
+[Anthropic: Effective harnesses for long-running agents](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents)
 
 ## License
 

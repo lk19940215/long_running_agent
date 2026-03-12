@@ -7,7 +7,7 @@ const { log } = require('../common/config');
 const { EDIT_THRESHOLD, FILES } = require('../common/constants');
 const { createAskUserQuestionHook } = require('../common/interaction');
 const { assets } = require('../common/assets');
-
+const { localTimestamp } = require('../common/utils');
 // ─────────────────────────────────────────────────────────────
 // Constants
 // ─────────────────────────────────────────────────────────────
@@ -237,6 +237,7 @@ const guidanceInjector = new GuidanceInjector();
 // Utility Functions
 // ─────────────────────────────────────────────────────────────
 
+
 function logToolCall(logStream, input) {
   if (!logStream) return;
   const target = input.tool_input?.file_path || input.tool_input?.path || '';
@@ -244,7 +245,7 @@ function logToolCall(logStream, input) {
   const pattern = input.tool_input?.pattern || '';
   const detail = target || cmd.slice(0, 200) || (pattern ? `pattern: ${pattern}` : '');
   if (detail) {
-    logStream.write(`[${new Date().toISOString()}] ${input.tool_name}: ${detail}\n`);
+    logStream.write(`[${localTimestamp()}] ${input.tool_name}: ${detail}\n`);
   }
 }
 
@@ -337,7 +338,7 @@ function createStallModule(indicator, logStream, options) {
         const actualMin = Math.floor(sinceCompletion / 60000);
         log('warn', `\nsession_result 已写入 ${actualMin} 分钟，超过 ${shortMin} 分钟上限，自动中断`);
         if (logStream) {
-          logStream.write(`\n[${new Date().toISOString()}] STALL: session_result 写入后 ${actualMin} 分钟（上限 ${shortMin} 分钟），自动中断\n`);
+          logStream.write(`\n[${localTimestamp()}] STALL: session_result 写入后 ${actualMin} 分钟（上限 ${shortMin} 分钟），自动中断\n`);
         }
         if (abortController) {
           abortController.abort();
@@ -353,7 +354,7 @@ function createStallModule(indicator, logStream, options) {
       const idleMin = Math.floor(idleMs / 60000);
       log('warn', `\n无响应超过 ${idleMin} 分钟，自动中断 session`);
       if (logStream) {
-        logStream.write(`\n[${new Date().toISOString()}] STALL: 无响应 ${idleMin} 分钟，自动中断\n`);
+        logStream.write(`\n[${localTimestamp()}] STALL: 无响应 ${idleMin} 分钟，自动中断\n`);
       }
       if (abortController) {
         abortController.abort();
@@ -373,7 +374,7 @@ function createStallModule(indicator, logStream, options) {
       log('info', '');
       log('info', `检测到 session_result 写入，${shortMin} 分钟内模型未终止将自动中断`);
       if (logStream) {
-        logStream.write(`\n[${new Date().toISOString()}] COMPLETION_DETECTED: session_result.json written, ${shortMin}min grace period\n`);
+        logStream.write(`\n[${localTimestamp()}] COMPLETION_DETECTED: session_result.json written, ${shortMin}min grace period\n`);
       }
     },
     cleanup: () => { if (stallChecker) clearInterval(stallChecker); },
@@ -383,10 +384,12 @@ function createStallModule(indicator, logStream, options) {
 
 /**
  * Create completion detection module (PostToolUse hook)
+ * endTool() resets toolRunning and refreshes lastActivityTime (countdown reset)
  */
 function createCompletionModule(indicator, stallModule) {
   return {
     hook: async (input, _toolUseID, _context) => {
+      indicator.endTool();
       indicator.updatePhase('thinking');
       indicator.updateStep('');
       indicator.toolTarget = '';
@@ -396,6 +399,16 @@ function createCompletionModule(indicator, stallModule) {
       }
       return {};
     }
+  };
+}
+
+/**
+ * Create PostToolUseFailure hook to ensure endTool on tool errors
+ */
+function createFailureHook(indicator) {
+  return async (_input, _toolUseID, _context) => {
+    indicator.endTool();
+    return {};
   };
 }
 
@@ -470,11 +483,16 @@ function createHooks(type, indicator, logStream, options = {}) {
     preToolUseHooks.push(modules.interaction.hook);
   }
 
-  // Assemble PostToolUse hooks
+  // Assemble PostToolUse hooks (always include endTool for countdown reset)
   const postToolUseHooks = [];
   if (modules.completion) {
     postToolUseHooks.push(modules.completion.hook);
+  } else {
+    postToolUseHooks.push(createFailureHook(indicator));
   }
+
+  // PostToolUseFailure hook: ensure endTool even on tool errors
+  const failureHook = createFailureHook(indicator);
 
   // Build hooks object
   const hooks = {};
@@ -484,6 +502,7 @@ function createHooks(type, indicator, logStream, options = {}) {
   if (postToolUseHooks.length > 0) {
     hooks.PostToolUse = [{ matcher: '*', hooks: postToolUseHooks }];
   }
+  hooks.PostToolUseFailure = [{ matcher: '*', hooks: [failureHook] }];
 
   // Cleanup functions
   const cleanupFns = [];

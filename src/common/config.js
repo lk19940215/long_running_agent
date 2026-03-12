@@ -54,7 +54,6 @@ function loadConfig() {
     authToken: env.ANTHROPIC_AUTH_TOKEN || '',
     model: env.ANTHROPIC_MODEL || '',
     timeoutMs: parseInt(env.API_TIMEOUT_MS, 10) || 3000000,
-    mcpToolTimeout: parseInt(env.MCP_TOOL_TIMEOUT, 10) || 30000,
     mcpPlaywright: env.MCP_PLAYWRIGHT === 'true',
     playwrightMode: env.MCP_PLAYWRIGHT_MODE || 'persistent',
     disableNonessential: env.CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC || '',
@@ -90,7 +89,6 @@ function buildEnvVars(config) {
   if (config.authToken) env.ANTHROPIC_AUTH_TOKEN = config.authToken;
   if (config.model) env.ANTHROPIC_MODEL = config.model;
   if (config.timeoutMs) env.API_TIMEOUT_MS = String(config.timeoutMs);
-  if (config.mcpToolTimeout) env.MCP_TOOL_TIMEOUT = String(config.mcpToolTimeout);
   if (config.disableNonessential) env.CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC = config.disableNonessential;
   if (config.effortLevel) env.CLAUDE_CODE_EFFORT_LEVEL = config.effortLevel;
   if (config.defaultOpus) env.ANTHROPIC_DEFAULT_OPUS_MODEL = config.defaultOpus;

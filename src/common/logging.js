@@ -1,8 +1,6 @@
 'use strict';
 
-// ─────────────────────────────────────────────────────────────
-// 日志工具 - 统一的日志处理
-// ─────────────────────────────────────────────────────────────
+const { localTimestamp } = require('./utils');
 
 /**
  * 处理 SDK 消息并写入日志流
@@ -14,7 +12,6 @@ function logMessage(message, logStream, indicator) {
   if (message.type === 'assistant' && message.message?.content) {
     for (const block of message.message.content) {
       if (block.type === 'text' && block.text) {
-        // 模型有文字输出，更新活动时间
         if (indicator) indicator.updateActivity();
         process.stdout.write(block.text);
         if (logStream) logStream.write(block.text);
@@ -25,13 +22,16 @@ function logMessage(message, logStream, indicator) {
     }
   }
 
-  if (message.type === 'tool_result' && logStream) {
-    const isErr = message.is_error || false;
-    const content = typeof message.content === 'string'
-      ? message.content.slice(0, 500)
-      : JSON.stringify(message.content).slice(0, 500);
-    if (isErr) {
-      logStream.write(`[TOOL_ERROR] ${content}\n`);
+  if (message.type === 'tool_result') {
+    if (indicator) indicator.updateActivity();
+    if (logStream) {
+      const isErr = message.is_error || false;
+      const content = typeof message.content === 'string'
+        ? message.content.slice(0, 500)
+        : JSON.stringify(message.content).slice(0, 500);
+      if (isErr) {
+        logStream.write(`[TOOL_ERROR] ${content}\n`);
+      }
     }
   }
 }
@@ -66,11 +66,12 @@ function extractResultText(messages) {
  */
 function writeSessionSeparator(logStream, sessionNum, label) {
   const sep = '='.repeat(60);
-  logStream.write(`\n${sep}\n[Session ${sessionNum}] ${label} ${new Date().toISOString()}\n${sep}\n`);
+  logStream.write(`\n${sep}\n[Session ${sessionNum}] ${label} ${localTimestamp()}\n${sep}\n`);
 }
 
 module.exports = {
   logMessage,
+  localTimestamp,
   extractResult,
   extractResultText,
   writeSessionSeparator,

@@ -23,7 +23,6 @@ async function configureDefault() {
       '',
       'MODEL_PROVIDER=claude',
       'API_TIMEOUT_MS=3000000',
-      'MCP_TOOL_TIMEOUT=30000',
     ],
     summary: 'Claude 官方模型',
   };
@@ -99,7 +98,6 @@ async function configureCodingPlan(rl, existing) {
       'ANTHROPIC_MODEL=kimi-k2.5',
       '',
       'API_TIMEOUT_MS=3000000',
-      'MCP_TOOL_TIMEOUT=30000',
     ],
     summary: `Coding Plan (${finalUrl})`,
   };
@@ -167,7 +165,7 @@ async function configureDeepSeekMode(rl, existing, choice) {
     );
   }
 
-  lines.push('API_TIMEOUT_MS=600000', 'MCP_TOOL_TIMEOUT=30000');
+  lines.push('API_TIMEOUT_MS=600000');
 
   return { lines, summary: `DeepSeek (${dsModel})` };
 }
@@ -203,7 +201,7 @@ async function configureCustomAPI(rl, existing) {
     lines.push(`ANTHROPIC_MODEL=${model}`);
   }
 
-  lines.push('API_TIMEOUT_MS=3000000', 'MCP_TOOL_TIMEOUT=30000');
+  lines.push('API_TIMEOUT_MS=3000000');
 
   return { lines, summary: `自定义 API (${baseUrl})` };
 }

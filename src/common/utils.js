@@ -124,6 +124,18 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+
+// ─────────────────────────────────────────────────────────────
+// 日志工具 - 统一的日志处理
+// ─────────────────────────────────────────────────────────────
+function localTimestamp() {
+  const d = new Date();
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  const ss = String(d.getSeconds()).padStart(2, '0');
+  return `${hh}:${mm}:${ss}`;
+}
+
 module.exports = {
   truncateMiddle,
   truncatePath,
@@ -131,4 +143,5 @@ module.exports = {
   isGitRepo,
   appendGitignore,
   sleep,
+  localTimestamp,
 };

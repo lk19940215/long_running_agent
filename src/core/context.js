@@ -81,20 +81,24 @@ class SessionContext {
   }
 
   _logMessage(message) {
+    const hasText = message.type === 'assistant'
+      && message.message?.content?.some(b => b.type === 'text' && b.text);
+
+    if (hasText && this.indicator) {
+      this.indicator.pauseRendering();
+      process.stderr.write('\r\x1b[K');
+    }
+
     baseLogMessage(message, this.logStream, this.indicator);
 
-    if (message.type === 'assistant' && message.message?.content && this.indicator) {
-      for (const block of message.message.content) {
-        if (block.type === 'text' && block.text) {
-          process.stderr.write('\r\x1b[K');
-          const contentKey = `${this.indicator.phase}|${this.indicator.step}|${this.indicator.toolTarget}`;
-          if (contentKey !== this._lastStatusKey) {
-            this._lastStatusKey = contentKey;
-            const statusLine = this.indicator.getStatusLine();
-            if (statusLine) process.stderr.write(statusLine + '\n');
-          }
-        }
+    if (hasText && this.indicator) {
+      const contentKey = `${this.indicator.phase}|${this.indicator.step}|${this.indicator.toolTarget}`;
+      if (contentKey !== this._lastStatusKey) {
+        this._lastStatusKey = contentKey;
+        const statusLine = this.indicator.getStatusLine();
+        if (statusLine) process.stderr.write(statusLine + '\n');
       }
+      this.indicator.resumeRendering();
     }
   }
 

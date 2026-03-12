@@ -1,7 +1,7 @@
 'use strict';
 
 const { COLOR } = require('./config');
-const { truncateMiddle, truncatePath } = require('./utils');
+const { localTimestamp, truncatePath } = require('./utils');
 
 const SPINNERS = ['⠋', '⠙', '⠸', '⠴', '⠦', '⠇'];
 
@@ -78,12 +78,7 @@ class Indicator {
   resumeRendering() { this._paused = false; }
 
   getStatusLine() {
-    const now = new Date();
-    const hh = String(now.getHours()).padStart(2, '0');
-    const mi = String(now.getMinutes()).padStart(2, '0');
-    const sc = String(now.getSeconds()).padStart(2, '0');
-    const clock = `${hh}:${mi}:${sc}`;
-
+    const clock = localTimestamp();
     const elapsed = Math.floor((Date.now() - this.startTime) / 1000);
     const mm = String(Math.floor(elapsed / 60)).padStart(2, '0');
     const ss = String(elapsed % 60).padStart(2, '0');
@@ -176,8 +171,7 @@ function extractBashTarget(cmd) {
 function inferPhaseStep(indicator, toolName, toolInput) {
   const name = (toolName || '').toLowerCase();
 
-  indicator.lastToolTime = Date.now();
-  indicator.lastActivityTime = Date.now();
+  indicator.startTool(toolName);
 
   if (name === 'write' || name === 'edit' || name === 'multiedit' || name === 'str_replace_editor' || name === 'strreplace') {
     indicator.updatePhase('coding');
@@ -203,6 +197,11 @@ function inferPhaseStep(indicator, toolName, toolInput) {
     indicator.updatePhase('thinking');
     indicator.updateStep('查阅文档');
     indicator.toolTarget = '';
+  } else if (name.startsWith('mcp__')) {
+    indicator.updatePhase('coding');
+    const action = name.split('__').pop() || name;
+    indicator.updateStep(`浏览器: ${action}`);
+    indicator.toolTarget = extractMcpTarget(toolInput);
   } else {
     indicator.updateStep('工具调用');
     indicator.toolTarget = '';
