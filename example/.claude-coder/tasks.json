@@ -91,7 +91,7 @@
         "确认 App.tsx 作为布局组件已统一管理 Header 和 Footer",
         "Playwright MCP 遍历所有页面，browser_snapshot 验证每页只有一个 footer 元素"
       ],
-      "status": "pending",
+      "status": "done",
       "depends_on": ["feat-007"]
     },
     {

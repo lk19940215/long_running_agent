@@ -2,5 +2,5 @@
   "session_result": "success",
   "status_before": "pending",
   "status_after": "done",
-  "notes": "feat-008 完成：所有 GitHub 链接已验证正确指向 https://github.com/lk19940215/claude-coder。\n验证结果：\n- Header.tsx Star 按钮: 正确\n- HeroSection.tsx View on GitHub: 正确\n- Footer.tsx GitHub 链接: 正确\n\n服务运行在 5179 端口（5173-5178 被占用）。Playwright MCP 端到端验证通过。\n\n下一步：feat-009 '修复页面重复 Header/Footer 问题' 或 feat-010 '添加 AI 教学 PPT 示例'"
+  "notes": "feat-009 完成：修复页面重复 Header/Footer 问题。\n\n问题根源：App.tsx 已统一包含 Header/Footer 并通过 Outlet 渲染子页面，但各页面组件又重复引入 Header/Footer，导致每个页面都渲染了两套 Header/Footer。\n\n修改文件（5个）：\n1. src/pages/Home.tsx - 移除 Header/Footer 导入和使用\n2. src/pages/Features.tsx - 移除 Header/Footer 导入和使用\n3. src/pages/QuickStart.tsx - 移除 Header/Footer 导入和使用\n4. src/pages/Docs.tsx - 移除 Header/Footer 导入和使用\n5. src/pages/Examples.tsx - 移除 Header/Footer 导入和使用\n\n验证结果：Playwright MCP 端到端测试通过，访问首页、功能特性、快速上手、文档、案例5个页面，均只显示一个 Header（banner）和一个 Footer（contentinfo），无重复。"
 }
