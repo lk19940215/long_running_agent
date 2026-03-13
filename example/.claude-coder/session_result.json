@@ -2,5 +2,5 @@
   "session_result": "success",
   "status_before": "pending",
   "status_after": "done",
-  "notes": "本次完成 feat-004：迁移通用组件 Header 和 Footer。\n\n已完成工作：\n1. 确认 Header.tsx 和 Footer.tsx 组件已存在且代码完整\n2. 修改 App.tsx，引入 Header 和 Footer 组件，使用 main 标签包裹 Outlet 并添加 pt-16 padding 为固定 Header 留出空间\n3. Playwright MCP 验证：\n   - 首页 Header 和 Footer 渲染正确\n   - 导航链接显示正常（首页、功能特性、快速上手、文档、案例）\n   - 路由跳转 /#/features 成功\n   - 页面内容正确渲染\n\n下个任务：feat-005（迁移首页组件 HeroSection、FeaturesSection、HowItWorks、CTASection），需要在 Home.tsx 中组合这些组件。"
+  "notes": "feat-006 完成：迁移页面组件 Features、QuickStart、Docs、Examples。\n\n已完成内容：\n1. ✅ Features.tsx - 功能特性页，包含侧边栏导航和4个功能区块（Hook提示注入、Session守护、多模型路由、测试凭证）\n2. ✅ QuickStart.tsx - 快速上手页，包含4个步骤卡片（安装、配置、初始化项目、开始编码）\n3. ✅ Docs.tsx - 文档中心页，包含侧边栏导航和4个文档区块（入门指南、核心概念、命令参考、故障排查）\n4. ✅ Examples.tsx - 使用案例页，包含4个案例卡片（Todo应用、头像上传、需求文档驱动、自动测试）\n\n所有组件已使用 React + TypeScript 编写，遵循项目编码规范：\n- 使用 CSS 变量（var(--bg-100)、var(--text-50)等）\n- 使用 Tailwind CSS 响应式类\n- 路由配置已更新（懒加载）\n\n测试验证（Playwright MCP）：\n- 首页 (/) ✅ - HeroSection, FeaturesSection, HowItWorks, CTASection\n- 功能特性 (/#/features) ✅ - 侧边栏 + 4个功能区块\n- 快速上手 (/#/quick-start) ✅ - 4个步骤卡片\n- 文档中心 (/#/docs) ✅ - 侧边栏 + 4个文档区块\n- 使用案例 (/#/examples) ✅ - 4个案例卡片\n\n进度：3/4 done (feat-001, feat-005, feat-006 完成)，剩余 feat-007 文档和部署配置。"
 }
