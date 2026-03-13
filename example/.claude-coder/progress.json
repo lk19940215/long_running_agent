@@ -16,6 +16,15 @@
       "taskId": "feat-002",
       "statusAfter": "done",
       "notes": "本次完成 feat-002：搭建 React 18 + TypeScript 开发环境。\n\n已执行操作：\n1. 更新 package.json - 替换 Vue 依赖为 React 18 + ReactDOM + React Router + TypeScript\n2. 创建 vite.config.ts - Vite + @vitejs/plugin-react 配置\n3. 创建 tsconfig.json - TypeScript 主配置\n4. 创建 tsconfig.node.json - Node 配置\n5. 更新 index.html - 入口脚本改为 /src/main.tsx\n6. 创建 src/main.tsx - React 应用入口（含 HashRouter）\n7. 创建 src/App.tsx - 根组件（临时简单版本）\n8. 删除旧文件 vite.config.js\n9. 安装新依赖 npm install\n10. 启动开发服务器 npm run dev（端口 5175）\n\n验证结果：\n- React 18 应用启动成功（HTTP 200）\n- TypeScript 编译通过无错误\n- 页面渲染正确：标题、副标题、成功提示全部显示\n- Console 仅有 favicon 404（非阻断）和 React Router 警告\n\n给下个会话的提醒：\n- React 服务运行在端口 5175（原 5173/5174 被占用）\n- 下一个任务是 feat-003：迁移基础设施（路由配置、全局样式、类型定义、工具函数）\n- 保留 Vue 文件暂不删除，待后续任务完成后统一清理"
+    },
+    {
+      "session": 3,
+      "timestamp": "2026-03-13T15:40:48.784Z",
+      "result": "success",
+      "cost": 2.150256749999999,
+      "taskId": "feat-003",
+      "statusAfter": "done",
+      "notes": "本次完成 feat-003：迁移基础设施。\n\n1. 路由配置 (src/router/index.tsx)\n   - 使用 React Router v6 createHashRouter 实现 Hash 路由模式\n   - 配置 5 个路由: /, /features, /quick-start, /docs, /examples\n   - 实现懒加载 (React.lazy + Suspense) 优化首屏加载\n   - 添加 PageLoading 加载状态组件\n\n2. 全局样式 (src/assets/styles/global.css)\n   - 保留原有 CSS 变量和样式定义\n   - 包含 Tailwind CSS 指令、颜色变量、工具类样式\n\n3. 类型定义 (src/types/index.ts)\n   - 定义 NavLink, Feature, DocItem, Example, QuickStartStep, FooterLink, SocialLink 等类型\n\n4. 工具函数 (src/utils/index.ts)\n   - sleep, scrollToElement, truncateText, copyToClipboard, isMobile, debounce, getActivePath\n\n5. 入口文件更新\n   - src/main.tsx: React 18 createRoot 入口\n   - src/App.tsx: 使用 Outlet 渲染子路由\n\n6. 页面组件迁移 (Vue → React)\n   - 创建 5 个页面: Home, Features, QuickStart, Docs, Examples\n   - 创建 Header, Footer 公共组件\n   - 创建 HeroSection, FeaturesSection, HowItWorks, CTASection 首页区块组件\n\n7. 删除旧文件\n   - 移除所有 .vue 文件和旧的 router/index.js\n\n端到端验证: Playwright 验证所有 5 个页面正常加载，路由跳转正常，TypeScript 编译无错误。"
     }
   ]
 }
