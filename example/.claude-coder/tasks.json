@@ -51,7 +51,7 @@
         "添加 Unhappy Path 测试用例（UP-001、UP-002）和探索性测试用例",
         "Playwright MCP 执行关键测试用例，验证 GitHub 链接正确、Footer 单一、文字可读"
       ],
-      "status": "pending",
+      "status": "done",
       "depends_on": ["feat-008", "feat-009", "feat-010", "feat-011"]
     }
   ]

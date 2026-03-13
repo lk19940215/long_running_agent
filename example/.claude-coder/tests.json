@@ -28,6 +28,222 @@
       "expected": "页面显示 5 个示例卡片，第 5 个卡片标题为'AI 教学 PPT 生成器'，包含'查看仓库'按钮指向正确 GitHub 仓库",
       "last_result": "pass",
       "last_run_session": 6
+    },
+    {
+      "id": "HP-001",
+      "category": "happy_path",
+      "priority": "P0",
+      "title": "首页核心元素渲染",
+      "description": "验证首页 Hero 区块、标题、副标题、CTA 按钮正确渲染",
+      "steps": [
+        "browser_navigate → http://localhost:5183/claude-coder/",
+        "browser_snapshot → 验证页面标题为 'Claude Coder'",
+        "验证副标题包含 '摸鱼神器'",
+        "验证描述包含 'AI 加班你摸鱼'",
+        "验证'开始使用'按钮可见且可点击",
+        "验证 GitHub Star 链接指向正确仓库"
+      ],
+      "verify": "Playwright MCP 访问首页，验证 Hero 区块文字和按钮",
+      "expected": "页面显示 'Claude Coder' 标题、'摸鱼神器 🐟' 副标题、'开始使用' 按钮",
+      "last_result": "pass",
+      "last_run_session": 8
+    },
+    {
+      "id": "HP-002",
+      "category": "happy_path",
+      "priority": "P0",
+      "title": "导航菜单跳转",
+      "description": "验证 Header 导航菜单所有链接可正常跳转",
+      "steps": [
+        "browser_navigate → http://localhost:5183/claude-coder/",
+        "browser_click → '功能特性' 导航链接",
+        "browser_wait_for → url 包含 '#/features'",
+        "browser_click → '快速上手' 导航链接",
+        "browser_wait_for → url 包含 '#/quick-start'",
+        "browser_click → '文档' 导航链接",
+        "browser_wait_for → url 包含 '#/docs'",
+        "browser_click → '案例' 导航链接",
+        "browser_wait_for → url 包含 '#/examples'",
+        "browser_click → '首页' 导航链接",
+        "browser_wait_for → url 为 '#/'"
+      ],
+      "verify": "依次点击所有导航链接，验证路由跳转正确",
+      "expected": "所有导航链接可点击，URL 正确变化，页面内容切换无刷新",
+      "last_result": "pending",
+      "last_run_session": null
+    },
+    {
+      "id": "HP-003",
+      "category": "happy_path",
+      "priority": "P0",
+      "title": "功能特性页 6 大特性展示",
+      "description": "验证功能特性页显示 6 个特性卡片，内容完整",
+      "steps": [
+        "browser_navigate → http://localhost:5183/claude-coder/#/features",
+        "browser_snapshot → 验证页面标题为 '功能特性'",
+        "验证包含 6 个特性卡片：一句话需求、长时间自运行、安全可控、多模型支持、测试凭证管理、灵活配置"
+      ],
+      "verify": "访问 /#/features，验证 6 个特性卡片显示",
+      "expected": "页面显示 6 个特性卡片，每个卡片包含标题和描述",
+      "last_result": "pending",
+      "last_run_session": null
+    },
+    {
+      "id": "HP-004",
+      "category": "happy_path",
+      "priority": "P0",
+      "title": "快速上手页终端预览",
+      "description": "验证快速上手页显示终端预览和安装命令",
+      "steps": [
+        "browser_navigate → http://localhost:5183/claude-coder/#/quick-start",
+        "browser_snapshot → 验证页面标题为 '快速上手'",
+        "验证包含终端预览区域",
+        "验证终端中包含安装命令 'pip install claude-coder'"
+      ],
+      "verify": "访问 /#/quick-start，验证终端预览和代码块",
+      "expected": "页面显示终端预览，包含安装命令和配置示例",
+      "last_result": "pending",
+      "last_run_session": null
+    },
+    {
+      "id": "HP-005",
+      "category": "happy_path",
+      "priority": "P0",
+      "title": "文档页目录结构",
+      "description": "验证文档页显示目录结构和文档内容",
+      "steps": [
+        "browser_navigate → http://localhost:5183/claude-coder/#/docs",
+        "browser_snapshot → 验证页面标题为 '文档'",
+        "验证左侧目录包含：快速开始、配置指南、核心概念",
+        "验证右侧内容区域显示文档正文"
+      ],
+      "verify": "访问 /#/docs，验证文档目录和内容显示",
+      "expected": "页面显示文档目录树和对应内容",
+      "last_result": "pending",
+      "last_run_session": null
+    },
+    {
+      "id": "HP-006",
+      "category": "happy_path",
+      "priority": "P0",
+      "title": "案例页 5 个示例卡片",
+      "description": "验证案例页显示 5 个示例卡片，包含 GitHub 仓库链接",
+      "steps": [
+        "browser_navigate → http://localhost:5183/claude-coder/#/examples",
+        "browser_snapshot → 验证页面标题为 '使用案例'",
+        "验证包含 5 个示例卡片",
+        "验证卡片标题包含：个人博客、电商小程序、数据分析看板、AI 聊天助手、AI 教学 PPT 生成器",
+        "验证第 5 个卡片包含 '查看仓库' 按钮，链接指向 github.com/lk19940215/ai-teaching-ppt"
+      ],
+      "verify": "访问 /#/examples，验证 5 个示例卡片和 GitHub 链接",
+      "expected": "页面显示 5 个示例卡片，第 5 个卡片有正确的 GitHub 仓库链接",
+      "last_result": "pass",
+      "last_run_session": 8
+    },
+    {
+      "id": "HP-007",
+      "category": "happy_path",
+      "priority": "P0",
+      "title": "GitHub 外链正确性",
+      "description": "验证 Header 和 Footer 的 GitHub 链接指向正确仓库",
+      "steps": [
+        "browser_navigate → http://localhost:5183/claude-coder/",
+        "验证 Header 中 Star 按钮链接为 https://github.com/lk19940215/claude-coder",
+        "验证 Footer 中 GitHub 链接为 https://github.com/lk19940215/claude-coder",
+        "验证 Hero 区块 'View on GitHub' 链接正确"
+      ],
+      "verify": "检查所有 GitHub 链接的 href 属性",
+      "expected": "所有 GitHub 链接指向 https://github.com/lk19940215/claude-coder",
+      "last_result": "pass",
+      "last_run_session": 8
+    },
+    {
+      "id": "UP-001",
+      "category": "unhappy_path",
+      "priority": "P1",
+      "title": "无效路由处理",
+      "description": "访问不存在的路由，验证应用不崩溃且显示合理",
+      "steps": [
+        "browser_navigate → http://localhost:5183/claude-coder/#/nonexistent",
+        "browser_snapshot → 验证应用未崩溃",
+        "验证页面显示 404 或重定向到首页"
+      ],
+      "verify": "访问无效路由 #/nonexistent",
+      "expected": "应用不崩溃，显示 404 页面或重定向到首页",
+      "last_result": "pending",
+      "last_run_session": null
+    },
+    {
+      "id": "UP-002",
+      "category": "unhappy_path",
+      "priority": "P1",
+      "title": "页面刷新测试",
+      "description": "在子页面刷新，验证 Hash 路由正常工作",
+      "steps": [
+        "browser_navigate → http://localhost:5183/claude-coder/#/features",
+        "browser_wait_for → 页面加载完成",
+        "browser_press_key → F5 或调用 page.reload()",
+        "browser_wait_for → 页面重新加载",
+        "browser_snapshot → 验证 URL 仍为 #/features",
+        "验证页面内容仍为功能特性页，不是 404"
+      ],
+      "verify": "在 /#/features 页面刷新",
+      "expected": "刷新后 URL 保持 #/features，页面内容正确显示",
+      "last_result": "pending",
+      "last_run_session": null
+    },
+    {
+      "id": "EXP-001",
+      "category": "exploratory",
+      "priority": "P2",
+      "title": "响应式布局移动端",
+      "description": "验证移动端下的布局和导航显示",
+      "steps": [
+        "browser_navigate → http://localhost:5183/claude-coder/",
+        "browser_resize → 宽度 375px, 高度 667px（iPhone SE）",
+        "browser_snapshot → 验证布局适配移动端",
+        "验证导航菜单变为汉堡菜单或垂直排列",
+        "验证文字大小适配，无横向滚动条"
+      ],
+      "verify": "Playwright MCP 设置视口为移动端尺寸",
+      "expected": "布局正确适配，导航可用，无布局错乱",
+      "last_result": "pending",
+      "last_run_session": null
+    },
+    {
+      "id": "EXP-002",
+      "category": "exploratory",
+      "priority": "P2",
+      "title": "深色模式对比度检查",
+      "description": "验证深色模式下所有文字清晰可读",
+      "steps": [
+        "browser_navigate → http://localhost:5183/claude-coder/",
+        "browser_evaluate → 检查所有文字元素的 color 和 background-color 对比度",
+        "验证浅色文字 (--text-50, --text-200) 在深色背景 (--bg-100, --bg-200) 上清晰可见",
+        "验证 '摸鱼神器' 副标题的青色 (--lazy-cyan) 在深色背景下有足够对比度"
+      ],
+      "verify": "执行 JS 检查文字对比度或使用 Playwright 截图人工检查",
+      "expected": "所有文字在深色背景下清晰可读，对比度符合 WCAG 标准",
+      "last_result": "pending",
+      "last_run_session": null
+    },
+    {
+      "id": "EXP-003",
+      "category": "exploratory",
+      "priority": "P2",
+      "title": "动画性能检查",
+      "description": "验证页面动画流畅，无卡顿",
+      "steps": [
+        "browser_navigate → http://localhost:5183/claude-coder/",
+        "browser_evaluate → 检查动画元素的 performance",
+        "验证 fadeInUp 动画在页面加载时触发",
+        "验证 blink 动画在 '摸鱼神器' 文字上运行",
+        "验证卡片 hover 效果流畅"
+      ],
+      "verify": "Playwright MCP 访问首页并检查动画",
+      "expected": "所有动画流畅运行，60fps，无卡顿",
+      "last_result": "pending",
+      "last_run_session": null
     }
   ]
 }
