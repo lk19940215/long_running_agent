@@ -65,6 +65,76 @@
       ],
       "status": "done",
       "depends_on": ["feat-006"]
+    },
+    {
+      "id": "feat-008",
+      "category": "frontend",
+      "priority": 8,
+      "description": "更新 GitHub 链接为正确仓库地址",
+      "steps": [
+        "修改 Header.tsx 第50行 GitHub 链接为 https://github.com/lk19940215/claude-coder",
+        "修改 Footer.tsx 第7行 quickLinks 数组中的 GitHub 链接",
+        "修改 HeroSection.tsx 第26行 GitHub 按钮链接",
+        "grep -r 'github.com' src/ | grep -v 'lk19940215' 确认无遗漏的占位链接"
+      ],
+      "status": "pending",
+      "depends_on": ["feat-007"]
+    },
+    {
+      "id": "feat-009",
+      "category": "frontend",
+      "priority": 9,
+      "description": "修复页面重复 Header/Footer 问题",
+      "steps": [
+        "从 Home.tsx 移除 Header 和 Footer 导入及使用，保留 main 内容",
+        "从 Examples.tsx、Docs.tsx、QuickStart.tsx、Features.tsx 移除 Header 和 Footer",
+        "确认 App.tsx 作为布局组件已统一管理 Header 和 Footer",
+        "Playwright MCP 遍历所有页面，browser_snapshot 验证每页只有一个 footer 元素"
+      ],
+      "status": "pending",
+      "depends_on": ["feat-007"]
+    },
+    {
+      "id": "feat-010",
+      "category": "frontend",
+      "priority": 10,
+      "description": "添加 AI 教学 PPT 示例仓库到案例页面",
+      "steps": [
+        "在 Examples.tsx 的 examples 数组中添加新条目：id=5, title=AI 教学 PPT 生成器",
+        "添加 repo 链接字段指向 https://github.com/lk19940215/ai-teaching-ppt",
+        "更新示例卡片组件，添加 GitHub 仓库链接按钮",
+        "Playwright MCP 访问 /examples 页面，验证新示例卡片和仓库链接可点击"
+      ],
+      "status": "pending",
+      "depends_on": ["feat-007"]
+    },
+    {
+      "id": "feat-011",
+      "category": "frontend",
+      "priority": 11,
+      "description": "优化样式和文案（深色模式+动画+摸鱼主题）",
+      "steps": [
+        "更新 HeroSection.tsx 文案：副标题改为'摸鱼神器'，描述添加'AI加班你摸鱼'主题",
+        "在 global.css 添加新动画：fadeInUp、blink、gradientFlow",
+        "在 global.css 添加新配色变量：--fish-gold、--lazy-cyan、.text-glow 类",
+        "Playwright MCP 访问首页，验证动画效果流畅、文字在深色背景下清晰可见"
+      ],
+      "status": "pending",
+      "depends_on": ["feat-007"]
+    },
+    {
+      "id": "feat-012",
+      "category": "frontend",
+      "priority": 12,
+      "description": "编写端到端测试用例到 tests.json",
+      "steps": [
+        "【规则】阅读 .claude-coder/assets/test_rule.md",
+        "创建 .claude-coder/tests.json，添加 Happy Path 测试用例（HP-001 至 HP-007）",
+        "添加 Unhappy Path 测试用例（UP-001、UP-002）和探索性测试用例",
+        "Playwright MCP 执行关键测试用例，验证 GitHub 链接正确、Footer 单一、文字可读"
+      ],
+      "status": "pending",
+      "depends_on": ["feat-008", "feat-009", "feat-010", "feat-011"]
     }
   ]
 }
