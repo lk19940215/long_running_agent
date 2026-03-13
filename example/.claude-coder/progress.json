@@ -79,6 +79,23 @@
       "taskId": "feat-006",
       "statusAfter": "done",
       "notes": "feat-007 完成：清理 Vue 文件并验证项目完整性。\n\n已完成内容：\n1. ✅ 删除 src/main.js（Vue 入口文件）\n2. ✅ 更新 tailwind.config.js content 路径，移除 vue 扩展名\n3. ✅ 修正 tasks.json 中 feat-006 状态为 done\n4. ✅ 执行 npm run build，构建成功\n5. ✅ Playwright MCP 完整遍历验证所有路由：\n   - 首页 (/) - HeroSection, FeaturesSection, HowItWorks, CTASection\n   - 功能特性 (/#/features) - 侧边栏 + 4个功能区块\n   - 快速上手 (/#/quick-start) - 4个步骤卡片\n   - 文档中心 (/#/docs) - 侧边栏 + 4个文档区块\n   - 使用案例 (/#/examples) - 4个案例卡片\n\n项目状态：\n- Vue 迁移 React 工作全部完成（feat-004, feat-005, feat-006, feat-007）\n- 所有 4 个 feature 状态均为 done\n- 构建产物已更新到 dist/ 目录\n\nGit 提交：72be3da feat(feat-007): 清理 Vue 文件并验证项目完整性"
+    },
+    {
+      "session": 1,
+      "timestamp": "2026-03-13T16:21:09.350Z",
+      "result": "success",
+      "cost": 0.36640775000000003,
+      "taskId": "feat-008",
+      "statusAfter": "done",
+      "notes": "完成 feat-008：更新了 3 个文件中的 GitHub 链接。Header.tsx 第50行、Footer.tsx 第7行、HeroSection.tsx 第26行，全部从 'https://github.com' 替换为 'https://github.com/lk19940215/claude-coder'。已通过 grep 验证 src 目录无遗漏的占位链接。下一任务 feat-009（修复重复 Footer）可以开始。"
+    },
+    {
+      "session": 2,
+      "timestamp": "2026-03-13T16:28:15.725Z",
+      "result": "success",
+      "taskId": "feat-008",
+      "statusAfter": "done",
+      "notes": "feat-008 验证完成：通过 Playwright 端到端测试确认 GitHub 链接已正确更新为 https://github.com/lk19940215/claude-coder。Header Star 按钮、Footer GitHub 链接、HeroSection View on GitHub 按钮均验证通过。服务保持运行。"
     }
   ]
 }
