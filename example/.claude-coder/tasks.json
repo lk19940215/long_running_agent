@@ -77,7 +77,7 @@
         "修改 HeroSection.tsx 第26行 GitHub 按钮链接",
         "grep -r 'github.com' src/ | grep -v 'lk19940215' 确认无遗漏的占位链接"
       ],
-      "status": "pending",
+      "status": "done",
       "depends_on": ["feat-007"]
     },
     {
