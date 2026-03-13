@@ -8,6 +8,33 @@ const { loadConfig, log } = require('../common/config');
 const { assets } = require('../common/assets');
 const { appendGitignore } = require('../common/utils');
 
+function resolvePlaywright() {
+  const { createRequire } = require('module');
+  const pkg = 'playwright';
+
+  try {
+    return path.dirname(require.resolve(`${pkg}/package.json`));
+  } catch {}
+
+  try {
+    const r = createRequire(path.join(process.cwd(), 'noop.js'));
+    return path.dirname(r.resolve(`${pkg}/package.json`));
+  } catch {}
+
+  try {
+    const globalRoot = execSync('npm root -g', { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).trim();
+    const pkgJsonPath = path.join(globalRoot, pkg, 'package.json');
+    if (fs.existsSync(pkgJsonPath)) return path.join(globalRoot, pkg);
+  } catch {}
+
+  return null;
+}
+
+function normalizeUrl(url) {
+  if (!url) return null;
+  return /^https?:\/\//.test(url) ? url : `http://${url}`;
+}
+
 function updateGitignore(entry) {
   if (appendGitignore(assets.projectRoot, entry)) {
     log('ok', `.gitignore 已添加: ${entry}`);
@@ -63,7 +90,69 @@ function enableMcpPlaywrightEnv() {
   log('ok', '.claude-coder/.env 已设置 MCP_PLAYWRIGHT=true');
 }
 
+// ─────────────────────────────────────────────────────────────
+// 浏览器脚本（session cookie 自动持久化）
+// ─────────────────────────────────────────────────────────────
+
+function buildBrowserScript(playwrightDir, profileDir, url) {
+  const thirtyDays = Math.floor(Date.now() / 1000) + 86400 * 30;
+  return [
+    `const { chromium } = require(${JSON.stringify(playwrightDir)});`,
+    `(async () => {`,
+    `  const ctx = await chromium.launchPersistentContext(${JSON.stringify(profileDir)}, { headless: false });`,
+    `  const page = ctx.pages()[0] || await ctx.newPage();`,
+    `  try { await page.goto(${JSON.stringify(url)}); } catch {}`,
+    `  console.log('请在浏览器中完成操作后关闭窗口...');`,
+    `  const persistSessionCookies = async () => {`,
+    `    try {`,
+    `      const cookies = await ctx.cookies();`,
+    `      const session = cookies.filter(c => c.expires === -1);`,
+    `      if (session.length > 0) {`,
+    `        await ctx.addCookies(session.map(c => ({ ...c, expires: ${thirtyDays} })));`,
+    `        console.log('已将 ' + session.length + ' 个 session cookie 转为持久化');`,
+    `      }`,
+    `    } catch {}`,
+    `  };`,
+    `  ctx.on('page', p => p.on('close', () => persistSessionCookies()));`,
+    `  for (const p of ctx.pages()) p.on('close', () => persistSessionCookies());`,
+    `  await new Promise(r => {`,
+    `    ctx.on('close', r);`,
+    `    const t = setInterval(async () => {`,
+    `      try {`,
+    `        if (!ctx.pages().length) { clearInterval(t); await persistSessionCookies(); r(); }`,
+    `      } catch { clearInterval(t); r(); }`,
+    `    }, 2000);`,
+    `  });`,
+    `  try { await ctx.close(); } catch {}`,
+    `})().then(() => process.exit(0)).catch(() => process.exit(0));`,
+  ].join('\n');
+}
+
+function runBrowserScript(script, cwd) {
+  const tmpScript = path.join(os.tmpdir(), `pw-auth-${Date.now()}.js`);
+  fs.writeFileSync(tmpScript, script);
+  try {
+    execSync(`node "${tmpScript}"`, { stdio: 'inherit', cwd });
+    return true;
+  } catch {
+    return false;
+  } finally {
+    try { fs.unlinkSync(tmpScript); } catch {}
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// auth 模式实现
+// ─────────────────────────────────────────────────────────────
+
 async function authPersistent(url) {
+  const playwrightDir = resolvePlaywright();
+  if (!playwrightDir) {
+    log('error', '未找到 playwright 模块');
+    log('info', '请安装: npm install -g playwright && npx playwright install chromium');
+    return;
+  }
+
   const profileDir = assets.path('browserProfile');
   if (!fs.existsSync(profileDir)) fs.mkdirSync(profileDir, { recursive: true });
 
@@ -76,61 +165,23 @@ async function authPersistent(url) {
   console.log('操作步骤:');
   console.log('  1. 浏览器将自动打开，请手动完成登录');
   console.log('  2. 登录成功后关闭浏览器窗口');
-  console.log('  3. 登录状态将保存在持久化配置中');
+  console.log('  3. 登录状态将保存在持久化配置中（session cookie 自动转持久化）');
   console.log('  4. MCP 后续会话自动复用此登录状态');
   console.log('');
 
-  const scriptContent = [
-    `let chromium;`,
-    `try { chromium = require('playwright').chromium; } catch {`,
-    `  try { chromium = require('@playwright/test').chromium; } catch {`,
-    `    console.error('错误: 未找到 playwright 模块');`,
-    `    console.error('请安装: npx playwright install chromium');`,
-    `    process.exit(1);`,
-    `  }`,
-    `}`,
-    `(async () => {`,
-    `  const ctx = await chromium.launchPersistentContext(${JSON.stringify(profileDir)}, { headless: false });`,
-    `  const page = ctx.pages()[0] || await ctx.newPage();`,
-    `  try { await page.goto(${JSON.stringify(url)}); } catch {}`,
-    `  console.log('请在浏览器中完成登录后关闭窗口...');`,
-    `  await new Promise(r => {`,
-    `    ctx.on('close', r);`,
-    `    const t = setInterval(() => { try { if (!ctx.pages().length) { clearInterval(t); r(); } } catch { clearInterval(t); r(); } }, 2000);`,
-    `  });`,
-    `  try { await ctx.close(); } catch {}`,
-    `})().then(() => process.exit(0)).catch(() => process.exit(0));`,
-  ].join('\n');
-
-  const tmpScript = path.join(os.tmpdir(), `pw-auth-${Date.now()}.js`);
-  fs.writeFileSync(tmpScript, scriptContent);
-
-  const helperModules = path.join(__dirname, '..', 'node_modules');
-  const existingNodePath = process.env.NODE_PATH || '';
-  const nodePath = existingNodePath ? `${helperModules}:${existingNodePath}` : helperModules;
+  const script = buildBrowserScript(playwrightDir, profileDir, url);
   const projectRoot = assets.projectRoot;
 
-  let scriptOk = false;
-  try {
-    execSync(`node "${tmpScript}"`, {
-      stdio: 'inherit',
-      cwd: projectRoot,
-      env: { ...process.env, NODE_PATH: nodePath },
-    });
-    scriptOk = true;
-  } catch {
+  const ok = runBrowserScript(script, projectRoot);
+  if (!ok) {
     const profileFiles = fs.readdirSync(profileDir);
-    scriptOk = profileFiles.length > 2;
-    if (!scriptOk) {
+    if (profileFiles.length <= 2) {
       log('error', 'Playwright 启动失败，且未检测到有效的浏览器配置');
       log('info', '请确保已安装 Chromium: npx playwright install chromium');
-      try { fs.unlinkSync(tmpScript); } catch {}
       return;
     }
     log('warn', '浏览器退出码非零，但已检测到有效配置，继续...');
   }
-
-  try { fs.unlinkSync(tmpScript); } catch {}
 
   const mcpPath = assets.path('mcpConfig');
   log('ok', '登录状态已保存到持久化配置');
@@ -142,7 +193,7 @@ async function authPersistent(url) {
   log('ok', '配置完成！');
   const relProfile = path.relative(projectRoot, profileDir);
   log('info', `MCP 使用 persistent 模式 (user-data-dir: ${relProfile})`);
-  log('info', '如需更新登录状态，重新运行 claude-coder auth');
+  log('info', '验证: 再次运行 claude-coder auth <URL>，浏览器应直接进入已登录状态');
 }
 
 async function authIsolated(url) {
@@ -184,7 +235,6 @@ async function authIsolated(url) {
   log('ok', '配置完成！');
   log('info', 'MCP 使用 isolated 模式 (storage-state)');
   log('info', 'cookies 和 localStorage 每次会话自动从 playwright-auth.json 加载');
-  log('info', '如需更新登录状态，重新运行 claude-coder auth');
 }
 
 function authExtension() {
@@ -210,11 +260,15 @@ function authExtension() {
   log('info', '确保 Chrome/Edge 已运行且 Playwright MCP Bridge 扩展已启用');
 }
 
+// ─────────────────────────────────────────────────────────────
+// 入口
+// ─────────────────────────────────────────────────────────────
+
 async function auth(url) {
   assets.ensureDirs();
   const config = loadConfig();
   const mode = config.playwrightMode;
-  const targetUrl = url || 'http://localhost:3000';
+  const targetUrl = normalizeUrl(url) || 'http://localhost:3000';
 
   log('info', `Playwright 模式: ${mode}`);
   log('info', `目标 URL: ${targetUrl}`);

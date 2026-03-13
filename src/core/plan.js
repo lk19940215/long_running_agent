@@ -247,14 +247,15 @@ async function promptAutoRun() {
 async function run(input, opts = {}) {
   let instruction = input || '';
 
+  let reqPath = null;
   if (opts.readFile) {
-    const reqPath = path.resolve(opts.readFile);
+    reqPath = path.resolve(assets.projectRoot || process.cwd(), opts.readFile);
     if (!fs.existsSync(reqPath)) {
       log('error', `文件不存在: ${reqPath}`);
       process.exit(1);
     }
     instruction = fs.readFileSync(reqPath, 'utf8');
-    console.log(`已读取需求文件: ${reqPath}`);
+    log('ok', `已读取需求文件: ${reqPath}`);
   }
 
   if (!instruction) {
@@ -288,6 +289,16 @@ async function run(input, opts = {}) {
   const result = await runPlanSession(instruction, { projectRoot, ...opts });
 
   if (result.success) {
+    if (reqPath && result.planPath) {
+      try {
+        const planName = path.basename(result.planPath, '.md');
+        const backupDir = path.dirname(result.planPath);
+        const backupPath = path.join(backupDir, `${planName}-requirements.md`);
+        fs.copyFileSync(reqPath, backupPath);
+        log('ok', `需求文档已备份: ${path.basename(backupPath)}`);
+      } catch { /* ignore */ }
+    }
+
     printStats();
 
     let shouldAutoRun = false;

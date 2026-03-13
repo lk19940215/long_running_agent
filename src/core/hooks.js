@@ -25,6 +25,21 @@ const FEATURES = Object.freeze({
 });
 
 // ─────────────────────────────────────────────────────────────
+// Hook Factory: createHooks
+// ─────────────────────────────────────────────────────────────
+
+const FEATURE_MAP = {
+  coding: [FEATURES.GUIDANCE, FEATURES.EDIT_GUARD, FEATURES.COMPLETION, FEATURES.STALL],
+  plan: [FEATURES.STALL],
+  plan_interactive: [FEATURES.STALL, FEATURES.INTERACTION],
+  scan: [FEATURES.STALL],
+  add: [FEATURES.STALL],
+  simplify: [FEATURES.STALL],
+  repair: [FEATURES.STALL],
+  custom: null
+};
+
+// ─────────────────────────────────────────────────────────────
 // GuidanceInjector: JSON-based configurable guidance system
 // ─────────────────────────────────────────────────────────────
 
@@ -153,13 +168,9 @@ class GuidanceInjector {
       const injectOnce = fileConfig.injectOnce === true;
       const ruleKey = `${rule.name}_file`;
 
-      // Skip if already injected and injectOnce is true
-      if (injectOnce && this.injectedRules.has(ruleKey)) {
-        // Don't inject file content again
-      } else {
+      if (!(injectOnce && this.injectedRules.has(ruleKey))) {
         if (injectOnce) this.injectedRules.add(ruleKey);
 
-        // Get cached content or read file
         const cacheKey = `${rule.name}_content`;
         if (!this.cache[cacheKey]) {
           this.cache[cacheKey] = this.getFileContent(fileConfig.path, basePath);
@@ -366,7 +377,6 @@ function createStallModule(indicator, logStream, options) {
   stallChecker = setInterval(checkStall, 30000);
 
   return {
-    setCompletionDetected: () => { completionDetectedAt = Date.now(); },
     onCompletionDetected: () => {
       completionDetectedAt = Date.now();
       const shortMin = Math.ceil(completionTimeoutMs / 60000);
@@ -422,20 +432,6 @@ function createLoggingHook(indicator, logStream) {
   };
 }
 
-// ─────────────────────────────────────────────────────────────
-// Hook Factory: createHooks
-// ─────────────────────────────────────────────────────────────
-
-const FEATURE_MAP = {
-  coding: [FEATURES.GUIDANCE, FEATURES.EDIT_GUARD, FEATURES.COMPLETION, FEATURES.STALL],
-  plan: [FEATURES.STALL],
-  plan_interactive: [FEATURES.STALL, FEATURES.INTERACTION],
-  scan: [FEATURES.STALL],
-  add: [FEATURES.STALL],
-  simplify: [FEATURES.STALL, FEATURES.INTERACTION],
-  repair: [FEATURES.STALL],
-  custom: null
-};
 
 /**
  * Create hooks based on session type

@@ -3,7 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
-const { log, COLOR, updateEnvVar } = require('../../common/config');
+const { log, COLOR } = require('../../common/config');
 const { appendGitignore } = require('../../common/utils');
 const { assets } = require('../../common/assets');
 
@@ -66,7 +66,7 @@ function writeConfig(filePath, lines) {
 
 function ensureGitignore() {
   const projectRoot = assets.projectRoot;
-  const patterns = ['.claude-coder/.env', '.claude-coder/.runtime/'];
+  const patterns = ['.claude-coder/.env', '.claude-coder/.runtime/', '.claude-coder/test.env'];
   let added = false;
   for (const pattern of patterns) {
     if (appendGitignore(projectRoot, pattern)) added = true;

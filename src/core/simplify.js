@@ -22,7 +22,7 @@ async function _runSimplifySession(n = 3, focus = null, opts = {}) {
   const focusLine = focus ? `\n审查聚焦方向：${focus}` : "";
   const tasksPath = assets.path('tasks');
   const taskLine = tasksPath ? `\n任务文件: ${tasksPath}（可读取了解当前项目任务上下文）` : '';
-  const prompt = `/simplify\n\n审查范围：最近 ${n} 个 commit${taskLine}${focusLine}\n\n${diff.slice(0, 50000)}`;
+  const prompt = `/simplify\n\n审查范围：最近 ${n} 个 commit${taskLine}${focusLine}\n不要向用户提问，默认使用推荐方式直接执行。\n\n${diff.slice(0, 50000)}`;
   const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
 
   return runSession("simplify", {
@@ -37,6 +37,7 @@ async function _runSimplifySession(n = 3, focus = null, opts = {}) {
       const queryOpts = buildQueryOptions(ctx.config, opts);
       queryOpts.hooks = ctx.hooks;
       queryOpts.abortController = ctx.abortController;
+      queryOpts.disallowedTools = ['askUserQuestion'];
 
       await ctx.runQuery(sdk, prompt, queryOpts);
       log("ok", "代码审查完成");

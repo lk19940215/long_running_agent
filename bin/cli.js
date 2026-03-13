@@ -33,7 +33,7 @@ function showHelp() {
   console.log('  claude-coder simplify               代码审查和简化');
   console.log('  claude-coder simplify "内存效率"     聚焦特定领域审查');
   console.log('  claude-coder auth                    导出 Playwright 登录状态');
-  console.log('  claude-coder auth http://localhost:8080   指定登录 URL'); 
+  console.log('  claude-coder auth http://localhost:8080   指定登录 URL');
   console.log('  claude-coder status                  查看进度和成本');
   console.log(`\n前置条件: npm install -g @anthropic-ai/claude-agent-sdk`);
 }

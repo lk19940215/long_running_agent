@@ -50,7 +50,7 @@ claude-coder run "实现用户注册和登录功能"
 | `claude-coder run --max 1` | 单次执行 |
 | `claude-coder run --dry-run` | 预览模式（查看任务队列） |
 | `claude-coder simplify [focus]` | 代码审查和简化 |
-| `claude-coder auth [url]` | 导出 Playwright 登录状态 |
+| `claude-coder auth [url]` | 导出 Playwright 登录状态（session cookie 自动持久化） |
 | `claude-coder status` | 查看进度和成本 |
 
 **选项**：`--max N` 限制 session 数（默认 50），`--pause N` 每 N 个 session 暂停确认，`--model M` 指定模型。
@@ -102,7 +102,17 @@ Harness 在循环间自动维护：
 
 **需求文档驱动**：`claude-coder plan -r requirements.md` 从需求文件生成计划并分解任务，再运行 `claude-coder run` 自动执行。
 
-**自动测试 + 凭证持久化**：`claude-coder auth http://localhost:3000` — 导出浏览器登录态，Agent 测试时自动使用。详见 [测试凭证方案](docs/PLAYWRIGHT_CREDENTIALS.md)。
+**自动测试 + 登录态持久化**：
+
+```bash
+# 首次登录：浏览器打开 → 手动登录 → 关闭浏览器
+claude-coder auth http://localhost:9991
+
+# 验证登录态：再次运行，浏览器应直接进入已登录状态
+claude-coder auth http://localhost:9991
+```
+
+Session cookie 自动转为持久化（30 天有效），Agent 测试时通过 Playwright MCP 自动复用。详见 [测试凭证方案](docs/PLAYWRIGHT_CREDENTIALS.md)。
 
 ## 模型支持
 
@@ -143,7 +153,7 @@ your-project/
     session_result.json     # 上次 session 结果
     progress.json           # 会话历史 + 成本
     tests.json              # 验证记录
-    test.env                # 测试凭证（可选）
+    test.env                # 测试凭证（Agent 按需创建）
     .runtime/
       logs/                 # 每 session 独立日志
 ```

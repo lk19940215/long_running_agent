@@ -71,7 +71,6 @@ function writeSessionSeparator(logStream, sessionNum, label) {
 
 module.exports = {
   logMessage,
-  localTimestamp,
   extractResult,
   extractResultText,
   writeSessionSeparator,
