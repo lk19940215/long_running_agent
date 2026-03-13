@@ -23,6 +23,7 @@ class SessionContext {
     this._isStalled = () => false;
     this.abortController = new AbortController();
     this._lastStatusKey = '';
+    this._needsNewline = false;
   }
 
   _applyEnvConfig() {
@@ -91,7 +92,17 @@ class SessionContext {
 
     baseLogMessage(message, this.logStream, this.indicator);
 
+    if (hasText) {
+      const textBlocks = message.message.content.filter(b => b.type === 'text' && b.text);
+      const lastText = textBlocks[textBlocks.length - 1];
+      this._needsNewline = lastText && !lastText.text.endsWith('\n');
+    }
+
     if (hasText && this.indicator) {
+      if (this._needsNewline) {
+        process.stdout.write('\n');
+        this._needsNewline = false;
+      }
       const contentKey = `${this.indicator.phase}|${this.indicator.step}|${this.indicator.toolTarget}`;
       if (contentKey !== this._lastStatusKey) {
         this._lastStatusKey = contentKey;
@@ -103,6 +114,10 @@ class SessionContext {
   }
 
   finish() {
+    if (this._needsNewline) {
+      process.stdout.write('\n');
+      this._needsNewline = false;
+    }
     if (this.cleanup) this.cleanup();
     if (this.logStream && !this._externalLogStream) this.logStream.end();
     this.indicator.stop();

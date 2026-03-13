@@ -11,6 +11,8 @@ const { loadTasks, getFeatures, getStats, findNextTask, forceStatus, printStats 
 const { validate } = require('./validator');
 const { runCodingSession } = require('./coding');
 const { simplify } = require('./simplify');
+const { repairFile } = require('./repair');
+const { buildArchivePrompt } = require('./prompts');
 const { loadSDK } = require('../common/sdk');
 
 const MAX_RETRY = RETRY.MAX_ATTEMPTS;
@@ -110,6 +112,21 @@ function appendProgress(entry) {
   assets.writeJson('progress', progress);
 }
 
+async function archiveDoneTasks() {
+  const data = loadTasks();
+  if (!data) return;
+  const features = data.features || [];
+  const done = features.filter(f => f.status === 'done');
+  if (done.length < 3) return;
+
+  const tasksPath = assets.path('tasks');
+  const prompt = buildArchivePrompt(done, data.completed_milestones, tasksPath);
+
+  log('info', `归档 ${done.length} 个完成任务...`);
+  await repairFile(tasksPath, { prompt });
+  log('ok', '任务归档完成');
+}
+
 async function promptContinue() {
   if (!process.stdin.isTTY) return true;
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
@@ -161,7 +178,9 @@ async function run(opts = {}) {
 
   printStats();
 
-  if (!dryRun) await loadSDK();
+  if (!dryRun) {
+    await loadSDK();
+  }
   log('info', `开始编码循环 (最多 ${maxSessions} 个会话) ...`);
   console.log('');
 
@@ -173,10 +192,17 @@ async function run(opts = {}) {
     log('info', `Session ${session} / ${maxSessions}`);
     console.log('--------------------------------------------');
 
-    const taskData = loadTasks();
+    let taskData = loadTasks();
     if (!taskData) {
-      log('error', 'tasks.json 无法读取，终止循环');
-      break;
+      log('warn', 'tasks.json 读取异常，尝试 AI 修复...');
+      await repairFile(assets.path('tasks'));
+      taskData = loadTasks();
+      if (!taskData) {
+        log('error', 'tasks.json 无法修复，终止循环');
+        break;
+      }
+      log('ok', 'tasks.json AI 修复成功');
+      await archiveDoneTasks();
     }
 
     const features = getFeatures(taskData);
@@ -249,9 +275,10 @@ async function run(opts = {}) {
         log('ok', `Session ${session} 校验通过`);
       }
 
-      // 定期运行 simplify 代码审查
+      // 定期归档 + 代码审查
       const simplifyInterval = config.simplifyInterval;
       if (simplifyInterval > 0 && session % simplifyInterval === 0) {
+        await archiveDoneTasks();
         log('info', `每 ${simplifyInterval} 个 session 运行代码审查...`);
         await simplify(null, { n: config.simplifyCommits });
 

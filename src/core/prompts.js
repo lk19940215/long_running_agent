@@ -215,6 +215,32 @@ function buildPlanPrompt(planPath) {
   });
 }
 
+// --------------- Archive Prompt ---------------
+
+function buildArchivePrompt(doneTasks, milestones, tasksPath) {
+  const nextId = String((milestones || []).length + 1).padStart(3, '0');
+  const doneList = doneTasks.map(f => `- ${f.id}: ${f.description}`).join('\n');
+  const existing = milestones && milestones.length > 0
+    ? `已有里程碑示例:\n${JSON.stringify(milestones.slice(-2), null, 2)}`
+    : '目前无已有里程碑';
+
+  return `维护 tasks.json 文件：将已完成任务归档为里程碑。
+
+文件路径: ${tasksPath}
+
+${existing}
+
+需要归档的 ${doneTasks.length} 个 done 任务:
+${doneList}
+
+操作要求:
+1. 在 completed_milestones 数组末尾追加一条记录，格式: { "id": "${nextId}", "summary": "5-20字的精简概述" }
+2. summary 要概括这批任务的核心成果，不要机械拼接描述
+3. 从 features 数组中移除所有 status 为 "done" 的任务
+4. 保持文件中其他字段不变
+5. 用 Write 工具写回 ${tasksPath}`;
+}
+
 // --------------- Exports ---------------
 
 module.exports = {
@@ -223,4 +249,5 @@ module.exports = {
   buildScanPrompt,
   buildPlanSystemPrompt,
   buildPlanPrompt,
+  buildArchivePrompt,
 };

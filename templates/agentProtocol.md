@@ -19,7 +19,7 @@
 ## 铁律（不可违反）
 
 1. **按规模分批执行**：大型功能一次只做一个；小型任务（改动 < 200 行、涉及 1-2 个文件）可合并 2 个相关任务在同一 session 完成；`category: "infra"` 可批量执行 2-3 个。所有批量任务必须在 session 结束前全部到达 `done` 或 `failed`
-2. **不得删除或修改 tasks.json 中已有任务的描述**：只能修改 `status` 字段；允许根据 requirements.md 新增任务
+2. **不得删除或修改 tasks.json 中已有任务的描述**：只能修改 `status` 字段
 3. **不得跳过状态**：必须按照状态机的合法迁移路径更新
 4. **不得过早标记 done**：只有通过端到端测试才能标记
 5. **每次结束前必须 git commit**：确保代码不丢失
@@ -27,8 +27,7 @@
 7. **发现 Bug 优先修复**：先确保现有功能正常，再开发新功能
 8. **按需维护文档**：README 仅当对外行为变化时更新；架构/API 文档在新增模块或 API 时更新；内部重构、Bug 修复不强制更新
 9. **不得修改 CLAUDE.md**：这是你的指令文件，不是你的编辑对象
-10. **不得修改 requirements.md**：这是用户的需求输入，你只能读取和遵循，绝对不能修改、删除或重写
-11. **project_profile.json 基于事实**：所有字段必须来自实际文件扫描，禁止猜测或编造
+10. **project_profile.json 基于事实**：所有字段必须来自实际文件扫描，禁止猜测或编造
 
 ---
 
@@ -44,7 +43,6 @@
 | 文件 | 用途 | 你的权限 |
 |---|---|---|
 | `CLAUDE.md` | 本文件，你的全局指令 | 只读，不得修改 |
-| `requirements.md` | **用户的需求文档（用户输入，禁止修改）** | **只读，绝对不得修改、删除或重写** |
 | `.claude-coder/project_profile.json` | 项目元数据（技术栈、服务、初始化命令等） | 首次扫描时创建，之后只读 |
 | `.claude-coder/tasks.json` | 功能任务列表，带状态跟踪 | 只能修改 `status` 字段 |
 | `.claude-coder/progress.json` | 跨会话记忆日志（外部循环自动维护） | 只读 |
@@ -74,7 +72,6 @@
   "version": 1,
   "test_cases": [
     {
-      "id": "test-feat001-api",
       "feature_id": "feat-001",
       "verify": "curl -s http://localhost:8000/api/users | head -1",
       "expected": "HTTP 200, 返回 JSON 数组",
@@ -119,7 +116,6 @@
    - 如果 prompt 中包含"上次会话"（Hint 7），说明 harness 已注入上次会话摘要，**跳过读取 session_result.json 历史**
 2. 批量读取以下文件（一次工具调用，跳过已注入的）：`.claude-coder/project_profile.json`、`.claude-coder/tasks.json`（仅当无 Hint 6 时）
 3. 如果无 Hint 7 且 `session_result.json` 不存在，运行 `git log --oneline -20` 补充上下文
-4. 如果项目根目录存在 `requirements.md`，读取用户的详细需求和偏好（技术约束、样式要求等），作为本次会话的参考依据
 
 ### 第二步：环境与健康检查
 
@@ -182,7 +178,7 @@
 
 ### 第六步：收尾（每次会话必须执行）
 
-1. **后台服务管理**：根据 prompt 提示决定——单次模式（`--max 1`）时停止所有后台服务，连续模式时保持服务运行。停止服务的跨平台命令见 coding prompt 中的「进程管理规范」
+1. **后台服务管理**：根据 prompt 提示决定——单次模式（`--max 1`）时停止所有后台服务，连续模式时保持服务运行。
 2. **按需更新文档和 profile**：
    - **README / 用户文档**：仅当对外行为变化（新增功能、API 变更、使用方式变化）时更新
    - **项目指令文件**：如果本次新增了模块、改变了模块职责或新增了 API 端点，更新 `.claude/CLAUDE.md`。同时确保 `project_profile.json` 的 `existing_docs` 列表包含此文件

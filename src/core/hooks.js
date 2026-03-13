@@ -371,7 +371,6 @@ function createStallModule(indicator, logStream, options) {
       completionDetectedAt = Date.now();
       const shortMin = Math.ceil(completionTimeoutMs / 60000);
       indicator.setCompletionDetected(shortMin);
-      log('info', '');
       log('info', `检测到 session_result 写入，${shortMin} 分钟内模型未终止将自动中断`);
       if (logStream) {
         logStream.write(`\n[${localTimestamp()}] COMPLETION_DETECTED: session_result.json written, ${shortMin}min grace period\n`);
@@ -434,6 +433,7 @@ const FEATURE_MAP = {
   scan: [FEATURES.STALL],
   add: [FEATURES.STALL],
   simplify: [FEATURES.STALL, FEATURES.INTERACTION],
+  repair: [FEATURES.STALL],
   custom: null
 };
 

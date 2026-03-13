@@ -6,8 +6,10 @@
 
 ### 亮点
 
+- **自动编码**：多 session 编排 + 倒计时活跃度监控 + git 回滚重试，Agent 可持续编码数小时不中断（[守护机制](design/session-guard.md)）
+- **自动审查**：定期自动运行代码审查（simplify），注入当前任务上下文，确保代码质量和任务对齐
+- **自动维护**：tasks.json 里程碑归档保持文件精简；文件损坏时 AI 自动修复，无需人工干预
 - **Hook 提示注入**：通过 JSON 配置在工具调用时向模型注入上下文引导，零代码修改即可扩展规则（[机制详解](design/hook-mechanism.md)）
-- **长时间自循环编码**：多 session 编排 + 倒计时活跃度监控 + git 回滚重试，Agent 可持续编码数小时不中断（[守护机制](design/session-guard.md)）
 - **配置驱动**：支持 Claude 官方、Coding Plan 多模型路由、DeepSeek 等任意 Anthropic 兼容 API
 
 ---
@@ -66,11 +68,21 @@ claude-coder run "实现用户注册和登录功能"
                                         │
                                    harness 校验
                                         │
-                              通过 → 下一个任务
+                              通过 ─┬→ 下一个任务
+                                    │
+                              (定期) 自动审查 simplify
+                              (自动) 里程碑归档
+                                    │
                               失败 → git 回滚 + 重试
+                              JSON 损坏 → AI 自动修复
 ```
 
 每个 session 内，Agent 自主执行 6 步：恢复上下文 → 环境检查 → 选任务 → 编码 → 测试 → 收尾（git commit）。
+
+Harness 在循环间自动维护：
+- **自动审查**：每 N 个 session 运行 simplify，审查最近代码变更并注入当前任务上下文
+- **里程碑归档**：完成任务自动归档到 `completed_milestones`，保持 tasks.json 精简
+- **AI 修复**：tasks.json 等关键文件损坏时，自动启动 AI session 修复
 
 ## 机制文档
 
@@ -88,7 +100,7 @@ claude-coder run "实现用户注册和登录功能"
 
 **已有项目**：`claude-coder run "新增头像上传功能"` — 先扫描现有代码和技术栈，再增量开发。
 
-**需求文档驱动**：在项目根目录创建 `requirements.md`，运行 `claude-coder run`。需求变更后 `claude-coder add -r` 同步新任务。
+**需求文档驱动**：`claude-coder plan -r requirements.md` 从需求文件生成计划并分解任务，再运行 `claude-coder run` 自动执行。
 
 **自动测试 + 凭证持久化**：`claude-coder auth http://localhost:3000` — 导出浏览器登录态，Agent 测试时自动使用。详见 [测试凭证方案](docs/PLAYWRIGHT_CREDENTIALS.md)。
 

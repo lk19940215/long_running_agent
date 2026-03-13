@@ -5,10 +5,10 @@ const path = require('path');
 
 const BUNDLED_DIR = path.join(__dirname, '..', '..', 'templates');
 
-// kind: 'template' — 双目录解析（用户 assets → 内置 bundled），有缓存
-// kind: 'data'     — .claude-coder/ 目录，无缓存
-// kind: 'runtime'  — .claude-coder/.runtime/ 目录，无缓存
-// kind: 'root'     — 项目根目录，无缓存
+// kind: 'template' — 双目录解析（用户 assets → 内置 bundled）
+// kind: 'data'     — .claude-coder/ 目录
+// kind: 'runtime'  — .claude-coder/.runtime/ 目录
+// kind: 'root'     — 项目根目录
 const REGISTRY = new Map([
   // Templates
   ['agentProtocol',  { file: 'agentProtocol.md',          kind: 'template' }],
@@ -64,14 +64,12 @@ class AssetManager {
     this.assetsDir = null;
     this.bundledDir = BUNDLED_DIR;
     this.registry = new Map(REGISTRY);
-    this.cache = new Map();
   }
 
   init(projectRoot) {
     this.projectRoot = projectRoot || process.cwd();
     this.loopDir = path.join(this.projectRoot, '.claude-coder');
     this.assetsDir = path.join(this.loopDir, 'assets');
-    this.cache.clear();
   }
 
   _ensureInit() {
@@ -119,13 +117,9 @@ class AssetManager {
     if (!entry) return null;
 
     if (entry.kind === 'template') {
-      const key = entry.file;
-      if (this.cache.has(key)) return this.cache.get(key);
       const filePath = this._resolveTemplate(entry.file);
       if (!filePath) return '';
-      const content = fs.readFileSync(filePath, 'utf8');
-      this.cache.set(key, content);
-      return content;
+      return fs.readFileSync(filePath, 'utf8');
     }
 
     const filePath = this.path(name);
@@ -191,9 +185,6 @@ class AssetManager {
     return deployed;
   }
 
-  clearCache() {
-    this.cache.clear();
-  }
 }
 
 const assets = new AssetManager();
