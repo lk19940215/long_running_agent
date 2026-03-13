@@ -3,6 +3,11 @@
  */
 
 /**
+ * GitHub 仓库地址
+ */
+export const GITHUB_REPO_URL = 'https://github.com/lk19940215/claude-coder';
+
+/**
  * 延迟指定毫秒
  */
 export const sleep = (ms: number): Promise<void> =>

@@ -1,10 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { GITHUB_REPO_URL } from '../../utils';
 
 const quickLinks = [
   { label: '功能特性', path: '/features' },
   { label: '文档', path: '/docs' },
-  { label: 'GitHub', href: 'https://github.com/lk19940215/claude-coder', external: true },
+  { label: 'GitHub', href: GITHUB_REPO_URL, external: true },
   { label: '使用案例', path: '/examples' },
 ];
 

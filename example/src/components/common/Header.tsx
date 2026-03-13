@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { GITHUB_REPO_URL } from '../../utils';
 
 const navLinks = [
   { path: '/', label: '首页' },
@@ -47,7 +48,7 @@ const Header: React.FC = () => {
           {/* Right Buttons */}
           <div className="hidden md:flex items-center space-x-4">
             <a
-              href="https://github.com/lk19940215/claude-coder"
+              href={GITHUB_REPO_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center space-x-2 text-[var(--text-400)] hover:text-[var(--text-50)] transition-colors"

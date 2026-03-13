@@ -14,3 +14,7 @@ Port 5179 is in use, trying another one...
 
   [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m5180[22m/claude-coder/[39m
 [2m  [32m➜[39m  [1mNetwork[22m[2m: use [22m[1m--host[22m[2m to expose[22m
+[2m00:45:34[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/utils/index.ts[22m
+[2m00:45:54[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/common/Header.tsx, /src/assets/styles/global.css[22m
+[2m00:45:54[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/common/Footer.tsx, /src/assets/styles/global.css[22m
+[2m00:45:54[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/home/HeroSection.tsx, /src/assets/styles/global.css[22m

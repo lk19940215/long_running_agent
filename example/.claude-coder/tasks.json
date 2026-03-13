@@ -5,95 +5,13 @@
     {
       "id": "001",
       "summary": "项目基础架构搭建完成"
+    },
+    {
+      "id": "002",
+      "summary": "Vue 全站迁移 React 完成，组件与布局问题修复"
     }
   ],
   "features": [
-    {
-      "id": "feat-004",
-      "category": "frontend",
-      "priority": 4,
-      "description": "迁移通用组件：Header 导航栏和 Footer 页脚",
-      "steps": [
-        "将 src/components/common/Header.vue 转换为 Header.tsx，ref 改 useState，router-link 改 Link",
-        "将 src/components/common/Footer.vue 转换为 Footer.tsx",
-        "在 App.tsx 中引入 Header 和 Footer 组件",
-        "Playwright MCP 验证导航栏和页脚渲染正确，链接可点击"
-      ],
-      "status": "done",
-      "depends_on": ["feat-003"]
-    },
-    {
-      "id": "feat-005",
-      "category": "frontend",
-      "priority": 5,
-      "description": "迁移首页组件：HeroSection、FeaturesSection、HowItWorks、CTASection",
-      "steps": [
-        "转换 HeroSection.vue 为 HeroSection.tsx，保留动画和样式",
-        "转换 FeaturesSection.vue 为 FeaturesSection.tsx",
-        "转换 HowItWorks.vue 为 HowItWorks.tsx，v-for 改 map()",
-        "转换 CTASection.tsx，组合为 Home.tsx 页面",
-        "Playwright MCP 访问首页，验证四个区块内容和样式"
-      ],
-      "status": "done",
-      "depends_on": ["feat-004"]
-    },
-    {
-      "id": "feat-006",
-      "category": "frontend",
-      "priority": 6,
-      "description": "迁移页面组件：Features、QuickStart、Docs、Examples",
-      "steps": [
-        "转换 Features.vue 为 Features.tsx，ref 改 useState",
-        "转换 QuickStart.vue 为 QuickStart.tsx",
-        "转换 Docs.vue 为 Docs.tsx",
-        "转换 Examples.vue 为 Examples.tsx",
-        "Playwright MCP 依次访问 /features、/quickstart、/docs、/examples，验证页面内容"
-      ],
-      "status": "done",
-      "depends_on": ["feat-005"]
-    },
-    {
-      "id": "feat-007",
-      "category": "frontend",
-      "priority": 7,
-      "description": "清理 Vue 文件并验证项目完整性",
-      "steps": [
-        "删除所有 .vue 文件和 main.js，删除 Vue 相关依赖 (vue, vue-router)",
-        "更新 tailwind.config.js 的 content 路径为 .ts/.tsx",
-        "执行 npm run build，验证构建无错误",
-        "Playwright MCP 完整遍历所有路由，验证功能与样式一致性"
-      ],
-      "status": "done",
-      "depends_on": ["feat-006"]
-    },
-    {
-      "id": "feat-008",
-      "category": "frontend",
-      "priority": 8,
-      "description": "更新 GitHub 链接为正确仓库地址",
-      "steps": [
-        "修改 Header.tsx 第50行 GitHub 链接为 https://github.com/lk19940215/claude-coder",
-        "修改 Footer.tsx 第7行 quickLinks 数组中的 GitHub 链接",
-        "修改 HeroSection.tsx 第26行 GitHub 按钮链接",
-        "grep -r 'github.com' src/ | grep -v 'lk19940215' 确认无遗漏的占位链接"
-      ],
-      "status": "done",
-      "depends_on": ["feat-007"]
-    },
-    {
-      "id": "feat-009",
-      "category": "frontend",
-      "priority": 9,
-      "description": "修复页面重复 Header/Footer 问题",
-      "steps": [
-        "从 Home.tsx 移除 Header 和 Footer 导入及使用，保留 main 内容",
-        "从 Examples.tsx、Docs.tsx、QuickStart.tsx、Features.tsx 移除 Header 和 Footer",
-        "确认 App.tsx 作为布局组件已统一管理 Header 和 Footer",
-        "Playwright MCP 遍历所有页面，browser_snapshot 验证每页只有一个 footer 元素"
-      ],
-      "status": "done",
-      "depends_on": ["feat-007"]
-    },
     {
       "id": "feat-010",
       "category": "frontend",

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { GITHUB_REPO_URL } from '../../utils';
 
 const HeroSection: React.FC = () => {
   return (
@@ -23,7 +24,7 @@ const HeroSection: React.FC = () => {
             开始使用
           </Link>
           <a
-            href="https://github.com/lk19940215/claude-coder"
+            href={GITHUB_REPO_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center space-x-2 text-[var(--text-400)] hover:text-[var(--text-50)] transition-colors"
