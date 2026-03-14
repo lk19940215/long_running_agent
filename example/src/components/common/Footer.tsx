@@ -3,10 +3,11 @@ import { Link } from 'react-router-dom';
 import { GITHUB_REPO_URL } from '../../utils';
 
 const quickLinks = [
+  { label: '快速上手', path: '/quick-start' },
   { label: '功能特性', path: '/features' },
   { label: '文档', path: '/docs' },
+  { label: '案例', path: '/examples' },
   { label: 'GitHub', href: GITHUB_REPO_URL, external: true },
-  { label: '使用案例', path: '/examples' },
 ];
 
 const socialLinks = [
@@ -94,7 +95,7 @@ const Footer: React.FC = () => {
         </div>
 
         <div className="mt-8 pt-8 border-t border-[var(--border-300)] text-center text-[var(--text-400)] text-sm">
-          <p>&copy; 2024 Claude Coder. Licensed under MIT.</p>
+          <p>&copy; {new Date().getFullYear()} Claude Coder. Licensed under MIT.</p>
         </div>
       </div>
     </footer>

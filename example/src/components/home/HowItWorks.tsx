@@ -5,22 +5,22 @@ const steps = [
   {
     number: '1',
     title: '描述需求',
-    description: '用自然语言描述你的需求，或使用 requirements.md 文件。',
+    description: '一句话或 requirements.md，用自然语言告诉 AI 你想要什么。',
   },
   {
     number: '2',
-    title: '自动分解',
-    description: 'AI 自动将需求分解为可执行的任务队列，按优先级排序。',
+    title: '智能分解',
+    description: 'AI 自动扫描项目技术栈，将需求拆分为可执行任务并按依赖排序。',
   },
   {
     number: '3',
     title: '持续编码',
-    description: 'Agent 自动执行编码任务，处理依赖、生成代码、运行测试。',
+    description: 'Agent 多 Session 循环编码，生成代码、处理依赖、运行测试，自动 git commit。',
   },
   {
     number: '4',
     title: '验证交付',
-    description: '自动验证功能，生成 session_result，准备下一轮迭代。',
+    description: '每个 Session 自动验证功能，失败则 git 回滚重试，通过即产出可用代码。',
   },
 ];
 
@@ -43,19 +43,18 @@ const HowItWorks: React.FC = () => {
           {steps.map((step, index) => (
             <div key={index} className="relative">
               <div className={`card text-center animate-float-delay-${index % 2}`}>
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[var(--fish-gold)] to-[var(--lazy-cyan)] flex items-center justify-center mb-4 mx-auto">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[var(--gradient-start)] to-[var(--gradient-end)] flex items-center justify-center mb-4 mx-auto">
                   <span className="text-white font-bold text-lg">{step.number}</span>
                 </div>
                 <h3 className="text-xl font-semibold text-[var(--text-50)] mb-2">
                   {step.title}
                 </h3>
-                <p className="text-[var(--text-400)]">{step.description}</p>
+                <p className="text-[var(--text-300)] leading-relaxed">{step.description}</p>
               </div>
-              {/* Arrow connector for desktop */}
               {index < steps.length - 1 && (
                 <div className="hidden lg:block absolute top-1/2 -right-4 transform -translate-y-1/2">
                   <svg
-                    className="w-8 h-8 text-[var(--primary-500)]"
+                    className="w-8 h-8 text-[var(--gradient-start)]"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"

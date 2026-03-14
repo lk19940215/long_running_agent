@@ -49,6 +49,7 @@
   /* 文字 */
   --text-50: #f9fafb;
   --text-200: #e5e7eb;
+  --text-300: #c9cdd4;
   --text-400: #9ca3af;
   --text-600: #4b5563;
 
@@ -265,21 +266,57 @@ body {
   animation: float 3s ease-in-out infinite;
 }
 
-/* 微抖动动画 */
-@keyframes microShake {
-  0%, 100% {
-    transform: translateX(0) rotate(0deg);
+/* 波浪浮动动画 */
+@keyframes wave {
+  0% { transform: translateY(0); }
+  20% { transform: translateY(-6px); }
+  40% { transform: translateY(2px); }
+  60% { transform: translateY(-3px); }
+  80% { transform: translateY(1px); }
+  100% { transform: translateY(0); }
+}
+
+.animate-wave {
+  animation: wave 4s ease-in-out infinite;
+}
+
+.animate-wave-slow {
+  animation: wave 5s ease-in-out infinite;
+  animation-delay: 0.3s;
+}
+
+/* 标题微浮动 */
+@keyframes titleFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+.animate-title-float {
+  animation: titleFloat 3s ease-in-out infinite;
+}
+
+/* 爱心粒子飘散 */
+@keyframes heartFloat {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
   }
-  25% {
-    transform: translateX(-1px) rotate(-0.5deg);
+  50% {
+    opacity: 0.7;
   }
-  75% {
-    transform: translateX(1px) rotate(0.5deg);
+  100% {
+    opacity: 0;
+    transform: translate(var(--heart-dx), var(--heart-dy)) scale(0.3);
   }
 }
 
-.animate-micro-shake {
-  animation: microShake 0.3s ease-in-out infinite;
+.heart-particle {
+  position: absolute;
+  pointer-events: none;
+  animation: heartFloat var(--heart-duration) ease-out forwards;
+  color: var(--heart-color);
+  font-size: var(--heart-size);
+  z-index: 10;
 }
 
 /* 延迟浮动动画 */
@@ -346,7 +383,8 @@ body {
 }
 
 .nav-item.active {
-  color: var(--lazy-cyan);
-  background-color: rgba(34, 211, 238, 0.1);
+  color: var(--gradient-start);
+  background-color: rgba(139, 92, 246, 0.12);
   font-weight: 500;
+  border-left: 2px solid var(--gradient-start);
 }

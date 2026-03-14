@@ -4,8 +4,8 @@ import { GITHUB_REPO_URL } from '../../utils';
 
 const navLinks = [
   { path: '/', label: '首页' },
-  { path: '/features', label: '功能特性' },
   { path: '/quick-start', label: '快速上手' },
+  { path: '/features', label: '功能特性' },
   { path: '/docs', label: '文档' },
   { path: '/examples', label: '案例' },
 ];

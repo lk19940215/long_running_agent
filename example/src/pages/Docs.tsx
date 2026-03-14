@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
+import { scrollToElement } from '../utils';
 
 const docs = [
   { id: 'getting-started', title: '入门指南' },
@@ -10,6 +11,12 @@ const docs = [
 
 const Docs: React.FC = () => {
   const [activeDoc, setActiveDoc] = useState('getting-started');
+
+  const handleNavClick = useCallback((e: React.MouseEvent, id: string) => {
+    e.preventDefault();
+    setActiveDoc(id);
+    scrollToElement(id);
+  }, []);
 
   return (
     <div className="min-h-screen">
@@ -26,7 +33,7 @@ const Docs: React.FC = () => {
                       <a
                         href={`#${item.id}`}
                         className={`nav-item ${activeDoc === item.id ? 'active' : ''}`}
-                        onClick={() => setActiveDoc(item.id)}
+                        onClick={(e) => handleNavClick(e, item.id)}
                       >
                         {item.title}
                       </a>
@@ -44,29 +51,49 @@ const Docs: React.FC = () => {
                 {/* Getting Started */}
                 <section id="getting-started" className="card">
                   <h2 className="text-2xl font-bold text-[var(--text-50)] mb-4">入门指南</h2>
-                  <p className="text-[var(--text-400)] mb-4">了解 Claude Coder 的基本概念和快速开始方法。</p>
-                  <ul className="list-disc list-inside text-[var(--text-400)] space-y-2">
-                    <li><Link to="/quick-start" className="text-[var(--primary-400)] hover:underline">安装指南</Link></li>
-                    <li>配置说明</li>
-                    <li>第一个项目</li>
+                  <p className="text-[var(--text-300)] mb-4 leading-relaxed">
+                    三步即可启动你的第一个自主编码 Agent：安装 → 配置 → 运行。
+                  </p>
+                  <ul className="space-y-2">
+                    <li className="flex items-center gap-2">
+                      <span className="text-[var(--gradient-start)]">→</span>
+                      <Link to="/quick-start" className="text-[var(--primary-400)] hover:underline">安装指南</Link>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-[var(--gradient-start)]">→</span>
+                      <span className="text-[var(--text-300)]">模型配置：<code className="text-sm text-[var(--primary-300)]">claude-coder setup</code></span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-[var(--gradient-start)]">→</span>
+                      <span className="text-[var(--text-300)]">第一个项目：<code className="text-sm text-[var(--primary-300)]">claude-coder run "你的需求"</code></span>
+                    </li>
                   </ul>
                 </section>
 
                 {/* Core Concepts */}
                 <section id="core-concepts" className="card">
                   <h2 className="text-2xl font-bold text-[var(--text-50)] mb-4">核心概念</h2>
-                  <div className="space-y-4">
+                  <div className="space-y-5">
                     <div>
-                      <h3 className="text-lg font-semibold text-[var(--text-50)]">Hook 注入机制</h3>
-                      <p className="text-[var(--text-400)]">在特定工具调用时自动注入上下文提示，扩展 AI 能力。</p>
+                      <h3 className="text-lg font-semibold text-[var(--text-50)] mb-1">Hook 注入机制</h3>
+                      <p className="text-[var(--text-300)] leading-relaxed">
+                        在 SDK 工具调用（如 edit_file、run_command）时自动注入上下文提示，
+                        三级匹配粒度灵活控制 AI 行为，无需修改源码。
+                      </p>
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-[var(--text-50)]">Session 守护</h3>
-                      <p className="text-[var(--text-400)]">监控 Session 状态，处理中断和恢复，保证长时间运行。</p>
+                      <h3 className="text-lg font-semibold text-[var(--text-50)] mb-1">Session 守护</h3>
+                      <p className="text-[var(--text-300)] leading-relaxed">
+                        Harness 持续监控 Agent Session 状态，自动处理超时、中断、无响应。
+                        失败时 git 回滚 + 重试，确保长时间无人值守编码的稳定性。
+                      </p>
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-[var(--text-50)]">任务分解</h3>
-                      <p className="text-[var(--text-400)]">将复杂需求拆分为可执行的子任务，按优先级排序。</p>
+                      <h3 className="text-lg font-semibold text-[var(--text-50)] mb-1">任务分解与编排</h3>
+                      <p className="text-[var(--text-300)] leading-relaxed">
+                        将复杂需求拆分为独立子任务，按依赖关系排序。每个 Session 执行 6 步流程：
+                        恢复上下文 → 环境检查 → 选任务 → 编码 → 测试 → 收尾。
+                      </p>
                     </div>
                   </div>
                 </section>
@@ -75,52 +102,45 @@ const Docs: React.FC = () => {
                 <section id="commands" className="card">
                   <h2 className="text-2xl font-bold text-[var(--text-50)] mb-4">命令参考</h2>
                   <div className="space-y-3">
-                    <div className="flex items-center gap-4">
-                      <code className="code-block px-3 py-1 text-sm">setup</code>
-                      <span className="text-[var(--text-400)]">交互式配置向导</span>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <code className="code-block px-3 py-1 text-sm">init</code>
-                      <span className="text-[var(--text-400)]">初始化项目配置</span>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <code className="code-block px-3 py-1 text-sm">plan</code>
-                      <span className="text-[var(--text-400)]">生成任务计划</span>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <code className="code-block px-3 py-1 text-sm">run</code>
-                      <span className="text-[var(--text-400)]">执行编码任务</span>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <code className="code-block px-3 py-1 text-sm">simplify</code>
-                      <span className="text-[var(--text-400)]">代码简化审查</span>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <code className="code-block px-3 py-1 text-sm">auth</code>
-                      <span className="text-[var(--text-400)]">认证凭证管理</span>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <code className="code-block px-3 py-1 text-sm">status</code>
-                      <span className="text-[var(--text-400)]">查看系统状态</span>
-                    </div>
+                    {[
+                      { cmd: 'setup', desc: '交互式配置（模型、MCP、安全限制、自动审查）' },
+                      { cmd: 'init', desc: '初始化项目（扫描技术栈、生成 profile）' },
+                      { cmd: 'plan "需求"', desc: '生成任务计划方案' },
+                      { cmd: 'run "需求"', desc: '启动自动编码循环' },
+                      { cmd: 'simplify', desc: '代码审查和简化' },
+                      { cmd: 'auth [url]', desc: '导出 Playwright 登录状态' },
+                      { cmd: 'status', desc: '查看进度和成本统计' },
+                    ].map(({ cmd, desc }) => (
+                      <div key={cmd} className="flex items-center gap-4">
+                        <code className="code-block px-3 py-1 text-sm shrink-0 text-white">{cmd}</code>
+                        <span className="text-[var(--text-300)]">{desc}</span>
+                      </div>
+                    ))}
                   </div>
                 </section>
 
                 {/* Troubleshooting */}
                 <section id="troubleshooting" className="card">
                   <h2 className="text-2xl font-bold text-[var(--text-50)] mb-4">故障排查</h2>
-                  <div className="space-y-4">
+                  <div className="space-y-5">
                     <div>
-                      <h3 className="text-lg font-semibold text-[var(--text-50)]">余额不足</h3>
-                      <p className="text-[var(--text-400)]">检查 API Key 余额，或切换至其他模型提供商。</p>
+                      <h3 className="text-lg font-semibold text-[var(--text-50)] mb-1">余额不足 (Credit balance too low)</h3>
+                      <p className="text-[var(--text-300)] leading-relaxed">
+                        运行 <code className="text-sm text-[var(--primary-300)]">claude-coder setup</code> 重新配置 API Key，或切换至其他模型。
+                      </p>
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-[var(--text-50)]">中断恢复</h3>
-                      <p className="text-[var(--text-400)]">Session 会自动保存状态，重新运行即可从断点继续。</p>
+                      <h3 className="text-lg font-semibold text-[var(--text-50)] mb-1">中断恢复</h3>
+                      <p className="text-[var(--text-300)] leading-relaxed">
+                        Session 自动保存进度，直接重新运行 <code className="text-sm text-[var(--primary-300)]">claude-coder run</code> 即可从断点继续。
+                      </p>
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-[var(--text-50)]">长时间无响应</h3>
-                      <p className="text-[var(--text-400)]">检查网络连接，或增加 API 超时设置。</p>
+                      <h3 className="text-lg font-semibold text-[var(--text-50)] mb-1">长时间无响应</h3>
+                      <p className="text-[var(--text-300)] leading-relaxed">
+                        模型处理复杂任务时可能出现长思考间隔，这是正常行为。
+                        超过阈值后 Harness 自动中断并重试。可通过 <code className="text-sm text-[var(--primary-300)]">SESSION_STALL_TIMEOUT</code> 调整。
+                      </p>
                     </div>
                   </div>
                 </section>
