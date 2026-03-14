@@ -16,11 +16,11 @@
       "id": "feat-010",
       "category": "frontend",
       "priority": 10,
-      "description": "添加 AI 教学 PPT 示例仓库到案例页面",
+      "description": "添加 AI 教学 PPT 示例仓库到案例页�?,
       "steps": [
-        "在 Examples.tsx 的 examples 数组中添加新条目：id=5, title=AI 教学 PPT 生成器",
+        "�?Examples.tsx �?examples 数组中添加新条目：id=5, title=AI 教学 PPT 生成�?,
         "添加 repo 链接字段指向 https://github.com/lk19940215/ai-teaching-ppt",
-        "更新示例卡片组件，添加 GitHub 仓库链接按钮",
+        "更新示例卡片组件，添�?GitHub 仓库链接按钮",
         "Playwright MCP 访问 /examples 页面，验证新示例卡片和仓库链接可点击"
       ],
       "status": "done",
@@ -30,12 +30,12 @@
       "id": "feat-011",
       "category": "frontend",
       "priority": 11,
-      "description": "优化样式和文案（深色模式+动画+摸鱼主题）",
+      "description": "优化样式和文案（深色模式+动画+摸鱼主题�?,
       "steps": [
-        "更新 HeroSection.tsx 文案：副标题改为'摸鱼神器'，描述添加'AI加班你摸鱼'主题",
-        "在 global.css 添加新动画：fadeInUp、blink、gradientFlow",
-        "在 global.css 添加新配色变量：--fish-gold、--lazy-cyan、.text-glow 类",
-        "Playwright MCP 访问首页，验证动画效果流畅、文字在深色背景下清晰可见"
+        "更新 HeroSection.tsx 文案：副标题改为'摸鱼神器'，描述添�?AI加班你摸�?主题",
+        "�?global.css 添加新动画：fadeInUp、blink、gradientFlow",
+        "�?global.css 添加新配色变量：--fish-gold�?-lazy-cyan�?text-glow �?,
+        "Playwright MCP 访问首页，验证动画效果流畅、文字在深色背景下清晰可�?
       ],
       "status": "done",
       "depends_on": ["feat-007"]
@@ -46,10 +46,10 @@
       "priority": 12,
       "description": "编写端到端测试用例到 tests.json",
       "steps": [
-        "【规则】阅读 .claude-coder/assets/test_rule.md",
-        "创建 .claude-coder/tests.json，添加 Happy Path 测试用例（HP-001 至 HP-007）",
-        "添加 Unhappy Path 测试用例（UP-001、UP-002）和探索性测试用例",
-        "Playwright MCP 执行关键测试用例，验证 GitHub 链接正确、Footer 单一、文字可读"
+        "【规则】阅�?.claude-coder/assets/test_rule.md",
+        "创建 .claude-coder/tests.json，添�?Happy Path 测试用例（HP-001 �?HP-007�?,
+        "添加 Unhappy Path 测试用例（UP-001、UP-002）和探索性测试用�?,
+        "Playwright MCP 执行关键测试用例，验�?GitHub 链接正确、Footer 单一、文字可�?
       ],
       "status": "done",
       "depends_on": ["feat-008", "feat-009", "feat-010", "feat-011"]
@@ -60,10 +60,10 @@
       "priority": 13,
       "description": "创建 ParticleContainer 粒子容器组件",
       "steps": [
-        "创建 src/components/common/ParticleContainer.tsx，实现自动触发+点击触发混合模式",
-        "添加粒子数量控制（默认18个）、颜色配置（默认['var(--fish-gold)', 'var(--lazy-cyan)']）",
+        "创建 src/components/common/ParticleContainer.tsx，实现自动触�?点击触发混合模式",
+        "添加粒子数量控制（默�?8个）、颜色配置（默认['var(--fish-gold)', 'var(--lazy-cyan)']�?,
         "实现 IntersectionObserver 检测视口、requestAnimationFrame 优化动画性能",
-        "Playwright MCP 访问首页，滚动到标语位置验证粒子自动触发，点击验证交互触发"
+        "Playwright MCP 访问首页，滚动到标语位置验证粒子自动触发，点击验证交互触�?
       ],
       "status": "done",
       "depends_on": ["feat-011"]
@@ -72,11 +72,11 @@
       "id": "feat-014",
       "category": "frontend",
       "priority": 14,
-      "description": "在 global.css 添加动画和导航样式",
+      "description": "�?global.css 添加动画和导航样�?,
       "steps": [
-        "添加 .animate-float、.animate-micro-shake、.animate-float-delay-0/1/2 浮动动画",
-        "添加 .particle-container、.particle、.particle-fly 粒子系统样式",
-        "添加 .nav-item、.nav-item:hover、.nav-item.active 导航项样式",
+        "添加 .animate-float�?animate-micro-shake�?animate-float-delay-0/1/2 浮动动画",
+        "添加 .particle-container�?particle�?particle-fly 粒子系统样式",
+        "添加 .nav-item�?nav-item:hover�?nav-item.active 导航项样�?,
         "Playwright MCP 验证样式文件编译成功，无 CSS 语法错误"
       ],
       "status": "done",
@@ -86,12 +86,12 @@
       "id": "feat-015",
       "category": "frontend",
       "priority": 15,
-      "description": "优化 HeroSection 动画和粒子效果",
+      "description": "优化 HeroSection 动画和粒子效�?,
       "steps": [
-        "更新 HeroSection.tsx 第14行，为'摸鱼神器'添加 animate-float 浮动动画类",
-        "包裹第17-19行标语文本为 ParticleContainer，配置 autoTrigger=true triggerDelay=500",
-        "添加微抖动动画类到标语文本",
-        "Playwright MCP 访问首页，验证标题浮动、标语微抖动、粒子自动+点击触发正常"
+        "更新 HeroSection.tsx �?4行，�?摸鱼神器'添加 animate-float 浮动动画�?,
+        "包裹�?7-19行标语文本为 ParticleContainer，配�?autoTrigger=true triggerDelay=500",
+        "添加微抖动动画类到标语文�?,
+        "Playwright MCP 访问首页，验证标题浮动、标语微抖动、粒子自�?点击触发正常"
       ],
       "status": "done",
       "depends_on": ["feat-013", "feat-014"]
@@ -100,12 +100,12 @@
       "id": "feat-016",
       "category": "frontend",
       "priority": 16,
-      "description": "优化 FeaturesSection 动画和配色",
+      "description": "优化 FeaturesSection 动画和配�?,
       "steps": [
-        "更新 FeaturesSection.tsx，为6个模块分别添加 animate-float-delay-0/1/2 交替浮动动画",
+        "更新 FeaturesSection.tsx，为6个模块分别添�?animate-float-delay-0/1/2 交替浮动动画",
         "将所有图标渐变色统一改为 from-[var(--fish-gold)] to-[var(--lazy-cyan)]",
-        "包裹第40-47行标题为 ParticleContainer，配置 autoTrigger=true triggerDelay=300",
-        "Playwright MCP 访问首页，验证6个模块交替起伏、配色统一、标题粒子自动触发"
+        "包裹�?0-47行标题为 ParticleContainer，配�?autoTrigger=true triggerDelay=300",
+        "Playwright MCP 访问首页，验�?个模块交替起伏、配色统一、标题粒子自动触�?
       ],
       "status": "done",
       "depends_on": ["feat-013", "feat-014"]
@@ -114,14 +114,14 @@
       "id": "feat-017",
       "category": "frontend",
       "priority": 17,
-      "description": "优化 HowItWorks 动画和配色",
+      "description": "优化 HowItWorks 动画和配�?,
       "steps": [
-        "更新 HowItWorks.tsx，为4个步骤分别添加 animate-float-delay-0/1 交替浮动动画",
+        "更新 HowItWorks.tsx，为4个步骤分别添�?animate-float-delay-0/1 交替浮动动画",
         "将所有步骤圆圈渐变色统一改为 from-[var(--fish-gold)] to-[var(--lazy-cyan)]",
-        "包裹第30-37行标题为 ParticleContainer，配置 autoTrigger=true triggerDelay=300",
-        "Playwright MCP 访问首页，验证4个步骤交替起伏、配色统一、标题粒子自动触发"
+        "包裹�?0-37行标题为 ParticleContainer，配�?autoTrigger=true triggerDelay=300",
+        "Playwright MCP 访问首页，验�?个步骤交替起伏、配色统一、标题粒子自动触�?
       ],
-      "status": "pending",
+      "status": "done",
       "depends_on": ["feat-013", "feat-014"]
     },
     {
@@ -130,12 +130,13 @@
       "priority": 18,
       "description": "修复导航栏文本对比度问题",
       "steps": [
-        "验证 Features.tsx 和 Docs.tsx 第28行已使用 nav-item class（样式已在 feat-014 添加）",
-        "测试深色模式下导航文本清晰可见，悬停和激活状态样式正常",
-        "Playwright MCP 访问 /features 和 /docs，验证左侧导航栏文字颜色对比度达标"
+        "验证 Features.tsx �?Docs.tsx �?8行已使用 nav-item class（样式已�?feat-014 添加�?,
+        "测试深色模式下导航文本清晰可见，悬停和激活状态样式正�?,
+        "Playwright MCP 访问 /features �?/docs，验证左侧导航栏文字颜色对比度达�?
       ],
       "status": "pending",
       "depends_on": ["feat-014"]
     }
   ]
 }
+
