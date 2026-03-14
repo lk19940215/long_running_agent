@@ -148,6 +148,40 @@
       "taskId": "unknown",
       "statusAfter": "done",
       "notes": "Session 8 完成 feat-012：编写端到端测试用例到 tests.json。执行了 4 个关键 P0/P1 测试用例：HP-001（首页核心元素渲染）、HP-002（导航菜单跳转）、HP-007（GitHub 外链正确性）、UP-002（页面刷新测试/Hash 路由）。所有测试通过。已更新 tests.json 中测试用例状态为 pass，last_run_session=8。测试验证要点：1) 首页显示'摸鱼神器 🐟'副标题和'AI 加班你摸鱼'描述；2) 导航菜单所有链接可正常跳转到对应页面；3) 所有 GitHub 链接指向正确仓库 lk19940215/claude-coder；4) 在子页面刷新后 URL 保持不变，Hash 路由工作正常。"
+    },
+    {
+      "session": 1,
+      "timestamp": "2026-03-14T02:21:53.151Z",
+      "result": "success",
+      "taskId": "feat-013",
+      "statusAfter": "done",
+      "notes": "成功创建 ParticleContainer 粒子容器组件，实现自动触发+点击触发混合模式，粒子数量/颜色可配置，使用 IntersectionObserver 和 requestAnimationFrame 优化性能。TypeScript 编译通过，生产构建成功（827ms）。下一个任务是 feat-014（在 global.css 添加动画和导航样式），需要添加 .animate-float、.particle 等样式类。"
+    },
+    {
+      "session": 2,
+      "timestamp": "2026-03-14T02:27:45.710Z",
+      "result": "success",
+      "cost": 2.1846775000000007,
+      "taskId": "feat-014",
+      "statusAfter": "done",
+      "notes": "成功完成 feat-014 和 feat-015 两个任务。feat-014 在 global.css 添加了浮动动画（animate-float, animate-float-delay-0/1/2）、微抖动动画（animate-micro-shake）、粒子系统样式（particle-container, particle, particle-fly）、导航项样式（nav-item, nav-item:hover, nav-item.active）。feat-015 优化了 HeroSection，为'摸鱼神器'添加浮动动画，标语文本包裹 ParticleContainer 实现自动触发粒子效果（autoTrigger=true, triggerDelay=500）。TypeScript 编译通过，生产构建成功（962ms），Playwright MCP 验证所有动画类正确应用。进度：5/9 done。下一个任务是 feat-016（优化 FeaturesSection 动画和配色）。"
+    },
+    {
+      "session": 3,
+      "timestamp": "2026-03-14T02:31:16.887Z",
+      "result": "success",
+      "cost": 1.0089465,
+      "taskId": "feat-016",
+      "statusAfter": "done",
+      "notes": "成功完成 feat-016：优化 FeaturesSection 动画和配色。为6个特性卡片添加了交替浮动动画（animate-float-delay-0/1/2 循环），图标渐变色统一改为 fish-gold → lazy-cyan，标题区域包裹 ParticleContainer 支持自动触发粒子效果。Playwright MCP 验证通过：6个卡片动画类正确、配色统一、ParticleContainer 存在。进度：7/9 done。下一个任务：feat-017 优化 HowItWorks 动画和配色。"
+    },
+    {
+      "session": 4,
+      "timestamp": "2026-03-14T02:41:23.970Z",
+      "result": "success",
+      "taskId": "feat-017",
+      "statusAfter": "done",
+      "notes": "成功完成 feat-017：优化 HowItWorks 动画和配色。为4个步骤卡片添加了交替浮动动画（animate-float-delay-0/1 循环），圆圈渐变色统一改为 fish-gold → lazy-cyan，标题区域包裹 ParticleContainer 支持自动触发粒子。Playwright MCP 验证通过：4个卡片动画类正确、圆圈渐变色正确、粒子容器存在。进度：8/9 done，剩余 feat-018。"
     }
   ]
 }

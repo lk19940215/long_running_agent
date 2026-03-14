@@ -136,7 +136,6 @@ const ParticleContainer: React.FC<ParticleContainerProps> = ({
       ref={containerRef}
       className={`particle-container relative inline-block ${className}`}
       onClick={handleClick}
-      style={{ cursor: 'pointer' }}
     >
       {children}
 
