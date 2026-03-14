@@ -65,7 +65,7 @@
         "实现 IntersectionObserver 检测视口、requestAnimationFrame 优化动画性能",
         "Playwright MCP 访问首页，滚动到标语位置验证粒子自动触发，点击验证交互触发"
       ],
-      "status": "pending",
+      "status": "done",
       "depends_on": ["feat-011"]
     },
     {
