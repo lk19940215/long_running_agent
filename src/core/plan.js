@@ -249,8 +249,11 @@ async function promptAutoRun() {
 async function run(input, opts = {}) {
   let instruction = input || '';
 
+  assets.ensureDirs();
+  const projectRoot = assets.projectRoot;
+
   if (opts.readFile) {
-    const reqPath = path.resolve(opts.readFile);
+    const reqPath = path.resolve(projectRoot, opts.readFile);
     if (!fs.existsSync(reqPath)) {
       log('error', `文件不存在: ${reqPath}`);
       process.exit(1);
@@ -264,10 +267,8 @@ async function run(input, opts = {}) {
     process.exit(1);
   }
 
-  assets.ensureDirs();
-  const projectRoot = assets.projectRoot;
-
   const config = loadConfig();
+  // if opts.model is not set, use the default opus model or default model, make sure the model is set.
   if (!opts.model) {
     if (config.defaultOpus) {
       opts.model = config.defaultOpus;
@@ -287,15 +288,15 @@ async function run(input, opts = {}) {
     process.exit(1);
   }
 
+  let shouldAutoRun = false;
+  if (!opts.planOnly) {
+    shouldAutoRun = await promptAutoRun();
+  }
+
   const result = await runPlanSession(instruction, { projectRoot, ...opts });
 
   if (result.success) {
     printStats();
-
-    let shouldAutoRun = false;
-    if (!opts.planOnly) {
-      shouldAutoRun = await promptAutoRun();
-    }
 
     if (shouldAutoRun) {
       console.log('');

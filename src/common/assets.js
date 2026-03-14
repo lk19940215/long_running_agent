@@ -13,13 +13,13 @@ const REGISTRY = new Map([
   // System Prompt Templates (per session type)
   ['coreProtocol',   { file: 'coreProtocol.md',            kind: 'template' }],
   ['codingSystem',   { file: 'codingSystem.md',            kind: 'template' }],
+  ['planSystem',     { file: 'planSystem.md',              kind: 'template' }],
   ['scanSystem',     { file: 'scanSystem.md',              kind: 'template' }],
 
   // User Prompt Templates
   ['codingUser',     { file: 'codingUser.md',              kind: 'template' }],
   ['scanUser',       { file: 'scanUser.md',                kind: 'template' }],
   ['addUser',        { file: 'addUser.md',                 kind: 'template' }],
-  ['addGuide',       { file: 'addGuide.md',                kind: 'template' }],
 
   // Other Templates
   ['testRule',       { file: 'test_rule.md',               kind: 'template' }],

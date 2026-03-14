@@ -38,6 +38,9 @@ async function runSession(type, config) {
       ...result,
     };
   } catch (err) {
+    if (config.onError) {
+      try { config.onError(err, ctx); } catch { /* ignore callback errors */ }
+    }
     if (!config.externalCtx) {
       ctx.errorFinish(err);
     }

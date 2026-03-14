@@ -71,6 +71,7 @@ function loadConfig() {
     raw: env,
   };
 
+  // 以下是兼容deepseek最实惠的而改写的配置，不一定正确。只是多次调用后得出的结果。
   if (config.baseUrl && config.baseUrl.includes('deepseek') && config.model === 'deepseek-chat') {
     config.model = 'claude-3-haiku-20240307';
     config.defaultOpus = 'claude-3-haiku-20240307';

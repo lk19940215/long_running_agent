@@ -154,37 +154,23 @@ function buildScanPrompt(projectType) {
 // --------------- Plan Session ---------------
 
 function buildPlanSystemPrompt() {
-  return '你是一个任务分解专家，擅长将模糊需求拆解为结构化、可执行的原子任务。你只分析需求和分解任务，不实现任何代码。';
+  return assets.read('planSystem') || '';
 }
 
 function buildPlanPrompt(planPath) {
   const projectRoot = assets.projectRoot;
-  const addGuide = assets.read('addGuide');
-
-  let profileContext = '';
-  const profile = assets.readJson('profile', null);
-  if (profile) {
-    const stack = profile.tech_stack || {};
-    const parts = [];
-    if (stack.backend?.framework) parts.push(`后端: ${stack.backend.framework}`);
-    if (stack.frontend?.framework) parts.push(`前端: ${stack.frontend.framework}`);
-    if (stack.backend?.language) parts.push(`语言: ${stack.backend.language}`);
-    if (parts.length) profileContext = `项目技术栈: ${parts.join(', ')}`;
-  }
 
   let taskContext = '';
   let recentExamples = '';
   try {
     const taskData = loadTasks();
     if (taskData) {
-      const stats = getStats(taskData);
       const features = taskData.features || [];
       const state = loadState();
       const nextId = `feat-${String(state.next_task_id).padStart(3, '0')}`;
       const categories = [...new Set(features.map(f => f.category))].join(', ');
 
-      taskContext = `已有 ${stats.total} 个任务（${stats.done} done, ${stats.pending} pending, ${stats.failed} failed）。` +
-        `新任务 ID 从 ${nextId} 开始，priority 从 ${state.next_priority} 开始。已有 category: ${categories}。`;
+      taskContext = `新任务 ID 从 ${nextId} 开始，priority 从 ${state.next_priority} 开始。已有 category: ${categories || '无'}。`;
 
       const recent = features.slice(-3);
       if (recent.length) {
@@ -197,15 +183,14 @@ function buildPlanPrompt(planPath) {
   let testRuleHint = '';
   if (assets.exists('testRule') && assets.exists('mcpConfig')) {
     testRuleHint = '【Playwright 测试规则】项目已配置 Playwright MCP（.mcp.json），' +
-      '`.claude-coder/assets/test_rule.md` 包含测试规范（Smart Snapshot、等待策略、步骤模板等）。端到端测试任务请参考 test_rule.md。';
+      '`.claude-coder/assets/test_rule.md` 包含测试规范（Smart Snapshot、等待策略、步骤模板等）。' +
+      'test 类任务 steps 首步加入 `【规则】阅读 .claude-coder/test_rule.md`。';
   }
 
   return assets.render('addUser', {
-    profileContext,
     taskContext,
     recentExamples,
     projectRoot,
-    addGuide,
     testRuleHint,
     planPath,
   });
