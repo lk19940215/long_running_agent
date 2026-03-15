@@ -28,13 +28,16 @@ function hasCodeFiles(projectRoot) {
  * 构建 SDK query 选项
  */
 function buildQueryOptions(config, opts = {}) {
+  const mode = opts.permissionMode || 'bypassPermissions';
   const base = {
-    permissionMode: 'bypassPermissions',
-    allowDangerouslySkipPermissions: true,
+    permissionMode: mode,
     cwd: opts.projectRoot || assets.projectRoot,
     env: buildEnvVars(config),
     settingSources: ['project'],
   };
+  if (mode === 'bypassPermissions') {
+    base.allowDangerouslySkipPermissions = true;
+  }
   if (config.maxTurns > 0) base.maxTurns = config.maxTurns;
   if (opts.model) base.model = opts.model;
   else if (config.model) base.model = config.model;

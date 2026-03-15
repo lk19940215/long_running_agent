@@ -19,7 +19,7 @@ const REGISTRY = new Map([
   // User Prompt Templates
   ['codingUser',     { file: 'codingUser.md',              kind: 'template' }],
   ['scanUser',       { file: 'scanUser.md',                kind: 'template' }],
-  ['addUser',        { file: 'addUser.md',                 kind: 'template' }],
+  ['planUser',       { file: 'planUser.md',                kind: 'template' }],
 
   // Other Templates
   ['testRule',       { file: 'test_rule.md',               kind: 'template' }],

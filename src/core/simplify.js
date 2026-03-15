@@ -17,7 +17,7 @@ async function _runSimplifySession(n = 3, focus = null, opts = {}) {
 
   const focusLine = focus ? `\n审查聚焦方向：${focus}` : '';
   const prompt = `/simplify\n\n审查范围：最近 ${n} 个 commit${focusLine}\n\n${diff.slice(0, 50000)}`;
-  const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  const dateStr = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 12);
 
   return runSession('simplify', {
     opts,

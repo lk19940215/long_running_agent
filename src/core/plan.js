@@ -16,15 +16,27 @@ const { syncAfterPlan } = require('../common/state');
 const EXIT_TIMEOUT_MS = 300000;
 const PLANS_DIR = path.join(os.homedir(), '.claude', 'plans');
 
-function buildPlanOnlyPrompt(userInput, interactive = false) {
-  return `${userInput}
+function buildPlanOnlyPrompt(instruction, opts = {}) {
+  const interactive = opts.interactive || false;
+  const reqFile = opts.reqFile || null;
 
-【工作流程】
+  const inputSection = reqFile
+    ? `需求文件路径: ${reqFile}\n先读取该文件，理解用户需求和约束。`
+    : `用户需求:\n${instruction}`;
+
+  const interactionRule = interactive
+    ? '如有不确定的关键决策点，向用户提问对话确认方案。'
+    : '不要提问，默认使用最佳推荐方案。';
+
+  return `你是一个资深技术架构师。根据以下需求，探索项目代码库后输出完整的技术方案文档。
+
+${inputSection}
+
+【流程】
 1. 探索项目代码库，理解结构和技术栈
-2. ${interactive ? '【约束】如果有不确定的关键决策点，请使用 AskUserQuestion 工具向用户提问。' : '【约束】不要提问，默认使用最佳推荐方案。'}
+2. ${interactionRule}
 3. 使用 Write 工具将完整计划写入 ~/.claude/plans/ 目录（.md 格式）
-4. 写入计划文件后，输出以下标记（独占一行）：
-   PLAN_FILE_PATH: <计划文件绝对路径>
+4. 写入后输出标记（独占一行）：PLAN_FILE_PATH: <计划文件绝对路径>
 5. 简要总结计划要点
 `;
 }
@@ -130,15 +142,14 @@ function copyPlanToProject(generatedPath) {
   }
 }
 
-async function _executePlanGen(sdk, ctx, userInput, opts = {}) {
-  const interactive = opts.interactive || false;
-  const prompt = buildPlanOnlyPrompt(userInput, interactive);
+async function _executePlanGen(sdk, ctx, instruction, opts = {}) {
+  const prompt = buildPlanOnlyPrompt(instruction, opts);
   const queryOpts = {
     permissionMode: 'plan',
     cwd: opts.projectRoot || assets.projectRoot,
     hooks: ctx.hooks,
   };
-  if (!interactive) {
+  if (!opts.interactive) {
     queryOpts.disallowedTools = ['askUserQuestion'];
   }
   if (opts.model) queryOpts.model = opts.model;
@@ -193,7 +204,7 @@ async function runPlanSession(instruction, opts = {}) {
   const planOnly = opts.planOnly || false;
   const interactive = opts.interactive || false;
   const ts = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 12);
-  const label = planOnly ? 'plan only' : 'plan tasks';
+  const label = planOnly ? 'plan_only' : 'plan_tasks';
   const hookType = interactive ? 'plan_interactive' : 'plan';
 
   return runSession(hookType, {
@@ -247,7 +258,7 @@ async function promptAutoRun() {
 }
 
 async function run(input, opts = {}) {
-  let instruction = input || '';
+  const instruction = input || '';
 
   assets.ensureDirs();
   const projectRoot = assets.projectRoot;
@@ -258,11 +269,15 @@ async function run(input, opts = {}) {
       log('error', `文件不存在: ${reqPath}`);
       process.exit(1);
     }
-    instruction = fs.readFileSync(reqPath, 'utf8');
-    console.log(`已读取需求文件: ${reqPath}`);
+    opts.reqFile = reqPath;
+    if (instruction) {
+      log('info', `-r 模式下忽略文本输入，使用需求文件: ${reqPath}`);
+    } else {
+      console.log(`需求文件: ${reqPath}`);
+    }
   }
 
-  if (!instruction) {
+  if (!instruction && !opts.reqFile) {
     log('error', '用法: claude-coder plan "需求内容"  或  claude-coder plan -r [requirements.md]');
     process.exit(1);
   }

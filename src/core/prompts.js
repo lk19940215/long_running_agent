@@ -184,15 +184,15 @@ function buildPlanPrompt(planPath) {
   if (assets.exists('testRule') && assets.exists('mcpConfig')) {
     testRuleHint = '【Playwright 测试规则】项目已配置 Playwright MCP（.mcp.json），' +
       '`.claude-coder/assets/test_rule.md` 包含测试规范（Smart Snapshot、等待策略、步骤模板等）。' +
-      'test 类任务 steps 首步加入 `【规则】阅读 .claude-coder/test_rule.md`。';
+      '前端页面 test 类任务 steps 首步加入 `【规则】阅读 .claude-coder/assets/test_rule.md`。';
   }
 
-  return assets.render('addUser', {
+  return assets.render('planUser', {
     taskContext,
     recentExamples,
     projectRoot,
-    testRuleHint,
     planPath,
+    testRuleHint,
   });
 }
 
