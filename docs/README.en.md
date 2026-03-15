@@ -40,6 +40,9 @@ claude-coder run "Implement user registration and login"
 | `claude-coder plan -r [file]` | Generate plan from requirements file |
 | `claude-coder plan --planOnly` | Generate plan only, no task decomposition |
 | `claude-coder plan -i "requirement"` | Interactive mode, allow model to ask questions |
+| `claude-coder go` | AI-driven interactive requirement assembly |
+| `claude-coder go "requirement"` | AI auto-analyzes and assembles solution |
+| `claude-coder go -r file` | Read requirement from file and auto-assemble |
 | `claude-coder run [requirement]` | Auto-coding loop |
 | `claude-coder run --max 1` | Single session |
 | `claude-coder run --dry-run` | Preview mode (view task queue) |
@@ -78,6 +81,7 @@ After each session, Harness validates `session_result.json` + git progress. If J
 | [Architecture](../design/ARCHITECTURE.md) | Core design rules, Harness class responsibilities, module relations, prompt injection |
 | [Hook Injection Mechanism](../design/hook-mechanism.md) | SDK Hook research, GuidanceInjector matching pipeline, config format, side effects |
 | [Session Guard](../design/session-guard.md) | Abort strategy, countdown activity detection, tool running state, anti-flooding |
+| [Go Command Flow](../design/go-flow.md) | AI-driven requirement assembly, recipe system, plan handoff |
 | [Playwright Credentials](PLAYWRIGHT_CREDENTIALS.md) | Test cookies and API key management |
 | [SDK Guide](CLAUDE_AGENT_SDK_GUIDE.md) | Claude Agent SDK API reference |
 
@@ -120,6 +124,8 @@ your-project/
     session_result.json     # Last session result
     progress.json           # Session history + costs
     test.env                # Test credentials (optional)
+    go/                     # Go command output files
+    recipes/                # Recipe library (deployed from built-in templates on init)
     .runtime/
       harness_state.json    # Harness state (session count, etc.)
       logs/                 # Per-session logs

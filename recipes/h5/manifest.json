@@ -1,0 +1,21 @@
+{
+  "id": "h5",
+  "name": "H5 活动页",
+  "description": "移动端 H5 活动页面开发（轮播、倒计时、分享、动画等营销场景）",
+  "base": "base.md",
+  "components": [
+    { "id": "swiper",    "label": "轮播",     "description": "图片/卡片轮播、自动播放、指示器", "file": "components/swiper.md",    "default": true },
+    { "id": "countdown", "label": "倒计时",   "description": "活动倒计时、服务端时间同步",     "file": "components/countdown.md", "default": false },
+    { "id": "share",     "label": "分享",     "description": "微信/浏览器分享、海报生成",      "file": "components/share.md",     "default": true },
+    { "id": "animation", "label": "动画效果", "description": "入场动画、滚动动画、交互动效",   "file": "components/animation.md", "default": false }
+  ],
+  "test": {
+    "file": "test/h5-e2e.md",
+    "defaultEnabled": true
+  },
+  "defaults": {
+    "components": ["swiper", "share"],
+    "role": "developer",
+    "test": true
+  }
+}

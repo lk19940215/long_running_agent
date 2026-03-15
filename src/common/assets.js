@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 
 const BUNDLED_DIR = path.join(__dirname, '..', '..', 'templates');
+const BUNDLED_RECIPES_DIR = path.join(__dirname, '..', '..', 'recipes');
 
 // kind: 'template' — 双目录解析（用户 assets → 内置 bundled），有缓存
 // kind: 'data'     — .claude-coder/ 目录，无缓存
@@ -15,6 +16,7 @@ const REGISTRY = new Map([
   ['codingSystem',   { file: 'codingSystem.md',            kind: 'template' }],
   ['planSystem',     { file: 'planSystem.md',              kind: 'template' }],
   ['scanSystem',     { file: 'scanSystem.md',              kind: 'template' }],
+  ['goSystem',       { file: 'goSystem.md',                kind: 'template' }],
 
   // User Prompt Templates
   ['codingUser',     { file: 'codingUser.md',              kind: 'template' }],
@@ -193,6 +195,34 @@ class AssetManager {
         deployed.push(file);
       } catch { /* skip */ }
     }
+    return deployed;
+  }
+
+  deployRecipes() {
+    this._ensureInit();
+    const destDir = path.join(this.loopDir, 'recipes');
+    if (!fs.existsSync(BUNDLED_RECIPES_DIR)) return [];
+    if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
+
+    const deployed = [];
+    const walk = (srcBase, destBase) => {
+      const entries = fs.readdirSync(srcBase, { withFileTypes: true });
+      for (const entry of entries) {
+        const srcPath = path.join(srcBase, entry.name);
+        const destPath = path.join(destBase, entry.name);
+        if (entry.isDirectory()) {
+          if (!fs.existsSync(destPath)) fs.mkdirSync(destPath, { recursive: true });
+          walk(srcPath, destPath);
+        } else {
+          if (fs.existsSync(destPath)) continue;
+          try {
+            fs.copyFileSync(srcPath, destPath);
+            deployed.push(path.relative(destDir, destPath));
+          } catch { /* skip */ }
+        }
+      }
+    };
+    walk(BUNDLED_RECIPES_DIR, destDir);
     return deployed;
   }
 

@@ -20,6 +20,24 @@
       }
     },
     {
+      "name": "frontend-component",
+      "matcher": "^(Edit|MultiEdit|Write)$",
+      "condition": {
+        "any": [
+          { "field": "tool_input.file_path", "pattern": "\\.(tsx|jsx|vue|svelte)$" },
+          { "field": "tool_input.path",      "pattern": "\\.(tsx|jsx|vue|svelte)$" }
+        ]
+      },
+      "toolTips": {
+        "injectOnce": false,
+        "items": {
+          "Edit": "编辑前端组件前，先 Grep 搜索项目中同类组件的写法，保持代码风格一致。",
+          "Write": "新建组件时，遵循项目现有的目录结构和命名规范（如 PascalCase 组件名）。",
+          "MultiEdit": "批量编辑组件时，确认所有改动保持一致的代码风格。"
+        }
+      }
+    },
+    {
       "name": "bash-process",
       "matcher": "Bash",
       "file": {

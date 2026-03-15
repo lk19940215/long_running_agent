@@ -9,6 +9,7 @@ bin/cli.js  parseArgs(argv) → main()
 ├── init     → init()                              → [scan 展开]
 ├── simplify → simplify(focus, { n })              → [simplify 展开]
 ├── setup    → setup.setup()                       → provider/mcp/safety 交互
+├── go       → go.run(input, opts)                  → [go-flow.md]
 ├── auth     → auth(url)                           → Playwright 登录态导出
 └── status   → tasks.showStatus()                  → 进度 + 成本
 ```
@@ -242,6 +243,7 @@ createHooks(type, indicator, logStream, options)    ← src/core/hooks.js
 │   coding:           [guidance, editGuard, completion, stall]
 │   plan:             [stall]
 │   plan_interactive: [stall, interaction]
+│   go:               [stall, interaction]
 │   scan/simplify:    [stall]
 │   repair:           [stall]
 │

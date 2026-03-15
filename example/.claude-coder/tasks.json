@@ -28,6 +28,183 @@
       ],
       "status": "done",
       "depends_on": ["feat-014"]
+    },
+    {
+      "id": "feat-019",
+      "category": "infra",
+      "priority": 19,
+      "description": "安装双11活动页依赖并创建目录结构",
+      "steps": [
+        "npm install swiper html2canvas weixin-js-sdk @types/weixin-js-sdk",
+        "创建目录: src/pages/ActivityPage/, src/components/activity/SwiperCarousel/, src/components/activity/ShareButton/, src/components/common/Loading/, src/utils/share/",
+        "验证 package.json 新增依赖，目录结构符合方案文档设计",
+        "验证: npm list swiper html2canvas weixin-js-sdk 检查依赖安装成功"
+      ],
+      "status": "pending",
+      "depends_on": []
+    },
+    {
+      "id": "feat-020",
+      "category": "frontend",
+      "priority": 20,
+      "description": "开发轮播组件 SwiperCarousel",
+      "steps": [
+        "创建 src/components/activity/SwiperCarousel/types.ts 定义 Props 接口（images, autoplayInterval, lazy, height, onSlideChange）",
+        "创建 src/components/activity/SwiperCarousel/index.tsx 实现组件（自动播放、触摸暂停、懒加载、指示器）",
+        "组件样式使用 Tailwind CSS + CSS 变量（深色主题适配）",
+        "验证: 在 Storybook 或测试页面渲染组件，确认轮播正常自动播放（3秒间隔）且触摸滑动流畅"
+      ],
+      "status": "pending",
+      "depends_on": ["feat-019"]
+    },
+    {
+      "id": "feat-021",
+      "category": "frontend",
+      "priority": 21,
+      "description": "开发分享按钮组件 ShareButton",
+      "steps": [
+        "创建 src/components/activity/ShareButton/types.ts 定义 ShareConfig 和 Props 接口",
+        "创建 src/components/activity/ShareButton/index.tsx（Web Share API 检测、微信分享触发、海报生成按钮）",
+        "集成 weixin-js-sdk 初始化逻辑（调用后端签名接口获取配置）",
+        "验证: 组件渲染正常，按钮点击触发分享逻辑，非微信环境提示使用 Web Share API"
+      ],
+      "status": "pending",
+      "depends_on": ["feat-019"]
+    },
+    {
+      "id": "feat-022",
+      "category": "frontend",
+      "priority": 22,
+      "description": "实现微信分享工具函数",
+      "steps": [
+        "创建 src/utils/share/wechat.ts（getWechatSignature、initWechatShare）",
+        "实现微信签名获取接口调用（POST /api/wechat/signature）",
+        "配置微信 JS-SDK（updateAppMessageShareData、updateTimelineShareData）",
+        "添加错误处理和日志记录",
+        "验证: 模拟微信环境测试分享配置成功（控制台无错误）"
+      ],
+      "status": "pending",
+      "depends_on": ["feat-021"]
+    },
+    {
+      "id": "feat-023",
+      "category": "frontend",
+      "priority": 23,
+      "description": "实现海报生成工具函数",
+      "steps": [
+        "创建 src/utils/share/poster.ts（generatePoster、downloadPoster）",
+        "使用 html2canvas 将 DOM 转为图片（活动标题、图片、二维码）",
+        "实现海报下载功能（blob 触发下载）",
+        "添加加载状态管理（使用 Loading 组件）",
+        "验证: 调用 generatePoster 生成 data URL，downloadPoster 触发浏览器下载"
+      ],
+      "status": "pending",
+      "depends_on": ["feat-019"]
+    },
+    {
+      "id": "feat-024",
+      "category": "frontend",
+      "priority": 24,
+      "description": "实现分享统计埋点和移动端适配工具",
+      "steps": [
+        "创建 src/utils/share/shareStats.ts（trackShare 函数，POST /api/share-stats）",
+        "创建 src/utils/mobile.ts（isMobile、getScreenSize、setRem、preventScroll）",
+        "添加移动端 viewport 设置和触摸优化",
+        "验证: trackShare 上报数据格式正确，移动端工具函数返回预期结果"
+      ],
+      "status": "pending",
+      "depends_on": ["feat-019"]
+    },
+    {
+      "id": "feat-025",
+      "category": "frontend",
+      "priority": 25,
+      "description": "创建加载组件 Loading 和活动页类型定义",
+      "steps": [
+        "创建 src/components/common/Loading/index.tsx（spinner 动画）",
+        "创建 src/types/activity.ts（活动相关类型定义）",
+        "Loading 组件支持自定义尺寸和颜色（复用 CSS 变量）",
+        "验证: Loading 组件渲染正常，类型定义无 TypeScript 错误"
+      ],
+      "status": "pending",
+      "depends_on": ["feat-019"]
+    },
+    {
+      "id": "feat-026",
+      "category": "frontend",
+      "priority": 26,
+      "description": "开发活动页主组件 ActivityPage",
+      "steps": [
+        "创建 src/pages/ActivityPage/index.tsx（整合轮播、内容区域、分享按钮）",
+        "实现微信环境检测（navigator.userAgent 判断）",
+        "配置分享信息（标题、描述、图片、链接）",
+        "添加移动端样式（固定底部分享栏、响应式布局）",
+        "验证: 页面渲染正常，轮播和分享组件工作，移动端触摸体验流畅"
+      ],
+      "status": "pending",
+      "depends_on": ["feat-020", "feat-021", "feat-022", "feat-023", "feat-024", "feat-025"]
+    },
+    {
+      "id": "feat-027",
+      "category": "frontend",
+      "priority": 27,
+      "description": "配置活动页路由并添加导航链接",
+      "steps": [
+        "修改 src/router/index.tsx 添加 /activity 路由（使用 Suspense + lazy load）",
+        "可选: 在 Header 组件添加活动页导航链接",
+        "验证: 访问 http://localhost:5173/#/activity 路由正常加载活动页"
+      ],
+      "status": "pending",
+      "depends_on": ["feat-026"]
+    },
+    {
+      "id": "feat-028",
+      "category": "test",
+      "priority": 28,
+      "description": "编写轮播组件和分享组件单元测试",
+      "steps": [
+        "【规则】阅读 .claude-coder/assets/test_rule.md",
+        "【P0】创建 SwiperCarousel.test.tsx（测试图片渲染、自动播放、触摸滑动）",
+        "【P0】创建 ShareButton.test.tsx（测试分享触发、成功/失败回调）",
+        "【P1】创建工具函数测试（wechat.test.ts, poster.test.ts, shareStats.test.ts）",
+        "验证: npm test 运行测试，覆盖率 >80%"
+      ],
+      "status": "pending",
+      "depends_on": ["feat-020", "feat-021", "feat-022", "feat-023", "feat-024"]
+    },
+    {
+      "id": "feat-029",
+      "category": "test",
+      "priority": 29,
+      "description": "编写活动页 Playwright 端到端测试",
+      "steps": [
+        "【规则】阅读 .claude-coder/assets/test_rule.md",
+        "【环境】npm run dev 启动开发服务器，curl http://localhost:5173/#/activity",
+        "【P0】Playwright MCP 访问活动页，snapshot 确认页面加载成功",
+        "【P0】验证轮播组件存在，使用 browser_wait_for 等待自动播放切换（3.1秒）",
+        "【P0】模拟触摸滑动（browser_click），验证轮播切换到下一张",
+        "【P0】点击分享按钮，验证分享弹窗/操作触发",
+        "【P0】测试海报生成功能（点击生成按钮，验证海报预览出现）",
+        "【P1】移动端适配测试（browser_resize 375x812，验证布局正常）",
+        "【记录】测试结果写入 .claude-coder/record/activity-e2e-report.md",
+        "验证: 所有 P0 测试通过，控制台无错误"
+      ],
+      "status": "pending",
+      "depends_on": ["feat-027", "feat-028"]
+    },
+    {
+      "id": "feat-030",
+      "category": "frontend",
+      "priority": 30,
+      "description": "性能优化和构建配置",
+      "steps": [
+        "修改 vite.config.ts 添加代码分割（swiper、html2canvas、weixin-js-sdk 手动分块）",
+        "优化图片资源（压缩活动图片，添加懒加载属性）",
+        "添加 TypeScript 类型检查（tsc --noEmit 验证无错误）",
+        "验证: npm run build 构建成功，bundle 分析确认代码分割生效"
+      ],
+      "status": "pending",
+      "depends_on": ["feat-027"]
     }
   ]
 }

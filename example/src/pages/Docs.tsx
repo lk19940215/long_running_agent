@@ -104,7 +104,9 @@ const Docs: React.FC = () => {
                   <div className="space-y-3">
                     {[
                       { cmd: 'setup', desc: '交互式配置（模型、MCP、安全限制、自动审查）' },
-                      { cmd: 'init', desc: '初始化项目（扫描技术栈、生成 profile）' },
+                      { cmd: 'init', desc: '初始化项目（扫描技术栈、生成 profile、部署食谱）' },
+                      { cmd: 'go', desc: 'AI 对话式需求收集与方案组装' },
+                      { cmd: 'go "需求"', desc: 'AI 自动分析需求并组装方案' },
                       { cmd: 'plan "需求"', desc: '生成任务计划方案' },
                       { cmd: 'run "需求"', desc: '启动自动编码循环' },
                       { cmd: 'simplify', desc: '代码审查和简化' },

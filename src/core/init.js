@@ -59,6 +59,13 @@ function deployAssets() {
   }
 }
 
+function deployRecipes() {
+  const deployed = assets.deployRecipes();
+  if (deployed.length > 0) {
+    log('ok', `已部署 ${deployed.length} 个食谱文件 → .claude-coder/recipes/`);
+  }
+}
+
 async function init() {
   assets.ensureDirs();
   const projectRoot = assets.projectRoot;
@@ -76,6 +83,7 @@ async function init() {
   let stepCount = 0;
 
   deployAssets();
+  deployRecipes();
 
   const envSetup = profile.env_setup || {};
   if (envSetup.python_env && envSetup.python_env !== 'system' && envSetup.python_env !== 'none') {

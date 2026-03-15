@@ -11,6 +11,7 @@ const COMMANDS = {
   simplify:  { desc: '代码审查和简化',           usage: 'claude-coder simplify [focus]' },
   auth:      { desc: '导出 Playwright 登录状态', usage: 'claude-coder auth [url]' },
   status:    { desc: '查看任务进度和成本',       usage: 'claude-coder status' },
+  go:        { desc: 'AI 驱动的需求组装',        usage: 'claude-coder go ["需求"] [-r file] [--reset]' },
 };
 
 function showHelp() {
@@ -32,6 +33,10 @@ function showHelp() {
   console.log('  claude-coder run --dry-run            预览模式');
   console.log('  claude-coder simplify               代码审查和简化');
   console.log('  claude-coder simplify "内存效率"     聚焦特定领域审查');
+  console.log('  claude-coder go                      对话式需求收集和方案组装');
+  console.log('  claude-coder go "用户管理页面"        AI 自动分析需求并组装方案');
+  console.log('  claude-coder go -r requirements.md   从文件读取需求并自动组装');
+  console.log('  claude-coder go --reset              重置 Go 记忆');
   console.log('  claude-coder auth                    导出 Playwright 登录状态');
   console.log('  claude-coder auth http://localhost:8080   指定登录 URL'); 
   console.log('  claude-coder status                  查看进度和成本');
@@ -74,6 +79,9 @@ function parseArgs(argv) {
       }
       case '--planOnly':
         opts.planOnly = true;
+        break;
+      case '--reset':
+        opts.reset = true;
         break;
       case '-i':
       case '--interactive':
@@ -138,6 +146,11 @@ async function main() {
     case 'auth': {
       const { auth } = require('../src/commands/auth');
       await auth(positional[0] || null);
+      break;
+    }
+    case 'go': {
+      const { run: goRun } = require('../src/core/go');
+      await goRun(positional[0] || '', opts);
       break;
     }
     case 'status': {

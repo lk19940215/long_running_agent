@@ -1,0 +1,24 @@
+{
+  "id": "console",
+  "name": "管理后台",
+  "description": "企业级管理后台页面开发（搜索、列表、分页、弹窗等 CRUD 场景）",
+  "base": "base.md",
+  "components": [
+    { "id": "search",     "label": "搜索框",     "description": "关键词搜索、筛选条件、防抖",         "file": "components/search.md",     "default": true },
+    { "id": "table",      "label": "数据表格",   "description": "列定义、排序、行选择、批量操作",     "file": "components/table-list.md",  "default": true },
+    { "id": "pagination", "label": "分页",       "description": "分页导航、每页条数、总数显示",       "file": "components/pagination.md",  "default": true },
+    { "id": "modal",      "label": "弹窗/表单",  "description": "新建/编辑弹窗、表单校验、提交回填",   "file": "components/modal-form.md",  "default": true },
+    { "id": "upload",     "label": "文件上传",   "description": "文件类型限制、大小限制、上传进度",   "file": "components/upload.md",      "default": false },
+    { "id": "tree",       "label": "树形结构",   "description": "树形数据展示、懒加载、展开折叠",     "file": "components/tree.md",        "default": false },
+    { "id": "tabs",       "label": "标签页",     "description": "多标签切换、路由联动、懒加载",       "file": "components/tabs.md",        "default": false }
+  ],
+  "test": {
+    "file": "test/crud-e2e.md",
+    "defaultEnabled": true
+  },
+  "defaults": {
+    "components": ["search", "table", "pagination", "modal"],
+    "role": "developer",
+    "test": true
+  }
+}

@@ -434,6 +434,7 @@ const FEATURE_MAP = {
   scan: [FEATURES.STALL],
   add: [FEATURES.STALL],
   simplify: [FEATURES.STALL, FEATURES.INTERACTION],
+  go: [FEATURES.STALL, FEATURES.INTERACTION],
   custom: null
 };
 

@@ -1,0 +1,20 @@
+{
+  "id": "backend",
+  "name": "后端服务",
+  "description": "后端 API 服务开发（RESTful CRUD、认证鉴权、文件服务等）",
+  "base": "base.md",
+  "components": [
+    { "id": "crud-api",     "label": "CRUD API",  "description": "RESTful 增删改查接口 + 分页 + 过滤", "file": "components/crud-api.md",     "default": true },
+    { "id": "auth",         "label": "认证鉴权",  "description": "登录注册、JWT/Session、角色权限",   "file": "components/auth.md",         "default": false },
+    { "id": "file-service", "label": "文件服务",  "description": "文件上传下载、存储、类型校验",      "file": "components/file-service.md", "default": false }
+  ],
+  "test": {
+    "file": "test/api-test.md",
+    "defaultEnabled": true
+  },
+  "defaults": {
+    "components": ["crud-api"],
+    "role": "developer",
+    "test": true
+  }
+}
