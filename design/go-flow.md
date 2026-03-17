@@ -9,7 +9,7 @@
 
 ```
 bin/cli.js  parseArgs(argv) → main()
-└── go → go.run(input, opts)
+└── go → main() → go.executeGo(config, input, opts)
 
 参数：
   go                       对话模式 — AI 通过 askUserQuestion 逐步收集需求
@@ -23,11 +23,7 @@ bin/cli.js  parseArgs(argv) → main()
 ## 二、go.run — 主流程
 
 ```
-go.run(input, opts)                                ← src/core/go.js
-├── assets.ensureDirs()
-├── loadConfig() → 确定模型
-│
-├── 校验: .claude-coder/recipes/ 不存在 → 提示 init → exit(1)
+executeGo(config, input, opts)                     ← src/core/go.js
 │
 ├── [--reset] → saveGoState({}) → return
 │
@@ -66,21 +62,21 @@ go.run(input, opts)                                ← src/core/go.js
 
 ```
 _executeGoSession(instruction, opts)
-└── runSession('go', { execute })                   ← core/session.js
+└── Session.run('go', config, { execute })          ← core/session.js
     │
-    ├── SessionContext.initHooks('go')
-    │   └── FEATURE_MAP.go = [STALL, INTERACTION]
+    ├── Session._initHooks('go')
+    │   └── FEATURE_MAP.go = [STOP, STALL, INTERACTION]
     │       ├── createStallModule()     → 无活动超时中断
     │       └── createAskUserQuestionHook() → 对话模式交互
     │
-    └── execute(sdk, ctx):
+    └── execute(session):
         ├── buildGoPrompt(instruction, opts)
         │   ├── inputSection:  需求文本 / 文件路径 / "使用对话模式收集"
         │   ├── modeSection:   【自动模式】 / 【对话模式】
-        │   ├── recipesPath:   .claude-coder/recipes/ 绝对路径
+        │   ├── recipesPath:   assets.recipesDir()   ← 先查项目级，再查 bundled
         │   └── memorySection: 上次使用记录（仅供参考）
         │
-        ├── buildQueryOptions(config, opts)
+        ├── session.buildQueryOptions(opts)
         │   └── permissionMode: 'plan'              ← 允许 Read/LS/Glob
         │
         ├── buildSystemPrompt('go')
@@ -88,7 +84,7 @@ _executeGoSession(instruction, opts)
         │
         ├── [自动模式] disallowedTools: ['askUserQuestion']
         │
-        └── ctx.runQuery(sdk, prompt, queryOpts)
+        └── session.runQuery(prompt, queryOpts)
             └── AI 扫描 recipes/ → 分析/对话 → GO_CONTENT 标记输出
 ```
 
@@ -98,8 +94,7 @@ _executeGoSession(instruction, opts)
 
 ### 4.1 目录结构
 
-食谱在 `claude-coder init` 时从内置 `recipes/` 目录复制到项目的 `.claude-coder/recipes/`。
-用户可在项目中修改或新增食谱，不影响其他项目。
+食谱默认从内置 `recipes/` 目录读取。使用 `claude-coder init --deploy-templates` 可复制到项目的 `.claude-coder/recipes/`，用户可在项目中修改或新增食谱。`assets.recipesDir()` 自动优先查找项目级食谱。
 
 ```
 .claude-coder/recipes/              ← init 时从内置 recipes/ 部署
@@ -171,13 +166,13 @@ AI 扫描时：`LS .claude-coder/recipes/` → 发现领域目录 → `Read mani
 ### 4.5 部署机制
 
 ```
-claude-coder init
-├── deployAssets()   → templates/ → .claude-coder/assets/
+claude-coder init --deploy-templates
+├── deployAll()      → templates/ → .claude-coder/assets/
 └── deployRecipes()  → recipes/   → .claude-coder/recipes/
     └── 递归复制，跳过已存在的文件（保留用户自定义）
 ```
 
-`assets.deployRecipes()` 使用递归目录遍历，逐文件复制。已存在的文件不会被覆盖，确保用户对食谱的修改得到保留。
+部署是可选的（`--deploy-templates` 标志）。默认情况下 `go.js` 通过 `assets.recipesDir()` 直接读取内置食谱，无需部署。部署后可自定义修改，已存在的文件不会被覆盖。
 
 ---
 

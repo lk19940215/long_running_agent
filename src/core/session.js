@@ -8,9 +8,54 @@ const { logMessage: baseLogMessage, extractResult, writeSessionSeparator } = req
 const { createHooks } = require('./hooks');
 const { assets } = require('../common/assets');
 
+/**
+ * @typedef {Object} SessionRunOptions
+ * @property {string} logFileName - 日志文件名
+ * @property {import('fs').WriteStream} [logStream] - 外部日志流（与 logFileName 二选一）
+ * @property {number} [sessionNum=0] - 会话编号
+ * @property {string} [label=''] - 会话标签
+ * @property {(session: Session) => Promise<Object>} execute - 执行回调，接收 session 实例
+ */
+
+/**
+ * @typedef {Object} QueryResult
+ * @property {Array<Object>} messages - 所有 SDK 消息
+ * @property {boolean} success - 是否成功完成
+ * @property {string|null} subtype - 结果子类型
+ * @property {number|null} cost - 美元费用
+ * @property {Object|null} usage - token 用量 { input_tokens, output_tokens }
+ * @property {number|null} turns - 对话轮次
+ */
+
+/**
+ * @typedef {Object} RunQueryOpts
+ * @property {(message: Object, messages: Array<Object>) => void|'break'} [onMessage] - 每条消息的回调，返回 'break' 中断
+ */
+
+/**
+ * SDK 会话管理类。通过 Session.run() 创建和管理一次完整的 AI 会话生命周期。
+ *
+ * 使用方式：
+ * ```js
+ * const result = await Session.run('coding', config, {
+ *   logFileName: 'coding.log',
+ *   async execute(session) {
+ *     const queryOpts = session.buildQueryOptions();
+ *     const { messages, success } = await session.runQuery(prompt, queryOpts);
+ *     return { success };
+ *   },
+ * });
+ * ```
+ */
 class Session {
+  /** @type {Object|null} SDK 单例 */
   static _sdk = null;
 
+  /**
+   * 确保 SDK 已加载（懒加载单例）
+   * @param {Object} config - 项目配置
+   * @returns {Promise<Object>} SDK 实例
+   */
   static async ensureSDK(config) {
     if (!Session._sdk) {
       Object.assign(process.env, buildEnvVars(config));
@@ -20,6 +65,13 @@ class Session {
     return Session._sdk;
   }
 
+  /**
+   * 创建 Session 实例并执行回调，自动管理生命周期（日志、hooks、indicator）
+   * @param {string} type - 会话类型（coding | plan | scan | go | simplify | repair 等）
+   * @param {Object} config - 项目配置
+   * @param {SessionRunOptions} options - 运行选项
+   * @returns {Promise<Object>} 包含 exitCode、logFile、stalled 以及 execute 返回值
+   */
   static async run(type, config, { logFileName, logStream, sessionNum = 0, label = '', execute }) {
     await Session.ensureSDK(config);
     const session = new Session(type, config, { logFileName, logStream, sessionNum, label });
@@ -38,13 +90,26 @@ class Session {
     }
   }
 
+  /**
+   * @param {string} type - 会话类型
+   * @param {Object} config - 项目配置
+   * @param {Object} options
+   * @param {string} options.logFileName - 日志文件名
+   * @param {import('fs').WriteStream} [options.logStream] - 外部日志流
+   * @param {number} [options.sessionNum=0]
+   * @param {string} [options.label='']
+   */
   constructor(type, config, { logFileName, logStream, sessionNum = 0, label = '' }) {
     this.config = config;
     this.type = type;
     this.indicator = new Indicator();
+    /** @type {import('fs').WriteStream|null} */
     this.logStream = null;
+    /** @type {string|null} */
     this.logFile = null;
+    /** @type {Object|null} */
     this.hooks = null;
+    /** @type {Function|null} */
     this.cleanup = null;
     this._isStalled = () => false;
     this.abortController = new AbortController();
@@ -56,6 +121,11 @@ class Session {
     this._startIndicator(sessionNum, stallTimeoutMin);
   }
 
+  /**
+   * 构建 SDK query 选项，自动附加 hooks、abortController、权限模式
+   * @param {Object} [overrides={}] - 覆盖选项（permissionMode, projectRoot, model 等）
+   * @returns {Object} SDK query options
+   */
   buildQueryOptions(overrides = {}) {
     const mode = overrides.permissionMode || 'bypassPermissions';
     const base = {
@@ -75,6 +145,13 @@ class Session {
     return base;
   }
 
+  /**
+   * 执行一次 SDK 查询，遍历消息流并收集结果
+   * @param {string} prompt - 用户提示
+   * @param {Object} queryOpts - SDK query 选项（通常来自 buildQueryOptions）
+   * @param {RunQueryOpts} [opts={}] - 额外选项（onMessage 回调）
+   * @returns {Promise<QueryResult>}
+   */
   async runQuery(prompt, queryOpts, opts = {}) {
     const sdk = Session._sdk;
     const messages = [];
@@ -123,10 +200,12 @@ class Session {
     };
   }
 
+  /** 检查会话是否因停顿超时 */
   isStalled() {
     return this._isStalled();
   }
 
+  /** 结束会话：清理 hooks、关闭日志流、停止 indicator */
   finish() {
     if (this.cleanup) this.cleanup();
     if (this.logStream && !this._externalLogStream) this.logStream.end();

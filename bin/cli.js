@@ -6,7 +6,7 @@ const pkg = require('../package.json');
 const COMMANDS = {
   run:       { desc: '自动编码循环',             usage: 'claude-coder run [--max N] [--pause N] [--dry-run]' },
   setup:     { desc: '交互式模型配置',           usage: 'claude-coder setup' },
-  init:      { desc: '初始化项目环境',           usage: 'claude-coder init' },
+  init:      { desc: '初始化项目环境',           usage: 'claude-coder init [--deploy-templates]' },
   plan:      { desc: '生成计划方案',             usage: 'claude-coder plan "需求" | plan -r requirements.md [--planOnly] [-i]' },
   simplify:  { desc: '代码审查和简化',           usage: 'claude-coder simplify [focus]' },
   auth:      { desc: '导出 Playwright 登录状态', usage: 'claude-coder auth [url]' },
@@ -31,6 +31,7 @@ function showHelp() {
   console.log('  claude-coder run --max 1             单次执行');
   console.log('  claude-coder run --max 5 --pause 5   每 5 个 session 暂停确认');
   console.log('  claude-coder run --dry-run            预览模式');
+  console.log('  claude-coder init --deploy-templates  部署模板和食谱到项目目录（可自定义）');
   console.log('  claude-coder simplify               代码审查和简化');
   console.log('  claude-coder simplify "内存效率"     聚焦特定领域审查');
   console.log('  claude-coder go                      对话式需求收集和方案组装');
@@ -86,6 +87,9 @@ function parseArgs(argv) {
       case '-i':
       case '--interactive':
         opts.interactive = true;
+        break;
+      case '--deploy-templates':
+        opts.deployTemplates = true;
         break;
       case '--help':
       case '-h':

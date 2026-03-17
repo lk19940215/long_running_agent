@@ -10,7 +10,7 @@
 本项目通过 SDK 的 Hook 回调机制实现四类核心能力：**提示语注入**、**安全防护**、**活跃度监控**、**生命周期管理**。
 
 ```
-SessionContext.initHooks(type)
+Session._initHooks(type)
         │
         ▼
   createHooks(type, indicator, logStream, options)

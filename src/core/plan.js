@@ -7,7 +7,6 @@ const readline = require('readline');
 const { buildSystemPrompt, buildPlanPrompt } = require('./prompts');
 const { log } = require('../common/config');
 const { assets } = require('../common/assets');
-const { extractResultText } = require('../common/logging');
 const { printStats } = require('../common/tasks');
 const { syncAfterPlan } = require('./state');
 const { Session } = require('./session');
@@ -39,76 +38,6 @@ ${inputSection}
 `;
 }
 
-function extractPlanPath(text) {
-  if (!text) return null;
-
-  const tagMatch = text.match(/PLAN_FILE_PATH:\s*(\S+\.md)/);
-  if (tagMatch) return tagMatch[1];
-
-  const plansMatch = text.match(/([^\s`'"(]*\.claude\/plans\/[^\s`'"()]+\.md)/);
-  if (plansMatch) return plansMatch[1];
-
-  const backtickMatch = text.match(/`([^`]+\.md)`/);
-  if (backtickMatch) return backtickMatch[1];
-
-  const absMatch = text.match(/(\/[^\s`'"]+\.md)/);
-  if (absMatch) return absMatch[1];
-
-  return null;
-}
-
-function extractPlanPathFromMessages(messages, startTime) {
-  for (const msg of messages) {
-    if (msg.type !== 'assistant' || !msg.message?.content) continue;
-    for (const block of msg.message.content) {
-      if (block.type === 'tool_use' && block.name === 'Write') {
-        const target = block.input?.file_path || block.input?.path || '';
-        if (target.includes('.claude/plans/') && target.endsWith('.md')) {
-          if (fs.existsSync(target)) return target;
-        }
-      }
-    }
-  }
-
-  let fullText = '';
-  for (const msg of messages) {
-    if (msg.type === 'assistant' && msg.message?.content) {
-      for (const block of msg.message.content) {
-        if (block.type === 'text' && block.text) fullText += block.text;
-      }
-    }
-  }
-  if (fullText) {
-    const p = extractPlanPath(fullText);
-    if (p && fs.existsSync(p)) return p;
-  }
-
-  const resultText = extractResultText(messages);
-  if (resultText) {
-    const p = extractPlanPath(resultText);
-    if (p && fs.existsSync(p)) return p;
-  }
-
-  if (fs.existsSync(PLANS_DIR)) {
-    try {
-      const files = fs.readdirSync(PLANS_DIR)
-        .filter(f => f.endsWith('.md'))
-        .map(f => {
-          const fp = path.join(PLANS_DIR, f);
-          return { path: fp, mtime: fs.statSync(fp).mtimeMs };
-        })
-        .filter(f => f.mtime >= startTime)
-        .sort((a, b) => b.mtime - a.mtime);
-      if (files.length > 0) {
-        log('info', `从 plans 目录发现新文件: ${path.basename(files[0].path)}`);
-        return files[0].path;
-      }
-    } catch { /* ignore */ }
-  }
-
-  return null;
-}
-
 function copyPlanToProject(generatedPath) {
   const filename = path.basename(generatedPath);
   const targetDir = path.join(assets.projectRoot, '.claude-coder', 'plan');
@@ -138,18 +67,29 @@ async function _executePlanGen(session, instruction, opts = {}) {
   }
   if (opts.model) queryOpts.model = opts.model;
 
-  const startTime = Date.now();
-  const { messages, success } = await session.runQuery(prompt, queryOpts);
+  let capturedPlanPath = null;
+
+  const { success } = await session.runQuery(prompt, queryOpts, {
+    onMessage(message) {
+      if (message.type !== 'assistant' || !message.message?.content) return;
+      for (const block of message.message.content) {
+        if (block.type === 'tool_use' && block.name === 'Write') {
+          const target = block.input?.file_path || block.input?.path || '';
+          if (target.includes('.claude/plans/') && target.endsWith('.md')) {
+            capturedPlanPath = target;
+          }
+        }
+      }
+    },
+  });
 
   if (!success) {
     log('warn', '计划生成查询未正常结束');
   }
 
-  const planPath = extractPlanPathFromMessages(messages, startTime);
-
-  if (planPath) {
-    const targetPath = copyPlanToProject(planPath);
-    return { success: true, targetPath, generatedPath: planPath };
+  if (capturedPlanPath && fs.existsSync(capturedPlanPath)) {
+    const targetPath = copyPlanToProject(capturedPlanPath);
+    return { success: true, targetPath, generatedPath: capturedPlanPath };
   }
 
   log('warn', '无法从输出中提取计划路径');

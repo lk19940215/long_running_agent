@@ -5,6 +5,9 @@ const { localTimestamp, truncatePath, truncateCommand } = require('./utils');
 
 const SPINNERS = ['⠋', '⠙', '⠸', '⠴', '⠦', '⠇'];
 
+/**
+ * 终端实时状态指示器。在 session 执行期间渲染 spinner、阶段、工具状态等信息到 stderr。
+ */
 class Indicator {
   constructor() {
     this.phase = 'thinking';
@@ -25,6 +28,12 @@ class Indicator {
     this.projectRoot = '';
   }
 
+  /**
+   * 启动 indicator 渲染循环
+   * @param {number} sessionNum - 会话编号
+   * @param {number} stallTimeoutMin - 停顿超时（分钟）
+   * @param {string} projectRoot - 项目根目录
+   */
   start(sessionNum, stallTimeoutMin, projectRoot) {
     this.sessionNum = sessionNum;
     this.startTime = Date.now();
@@ -34,6 +43,7 @@ class Indicator {
     this.timer = setInterval(() => this._render(), 1000);
   }
 
+  /** 停止渲染循环并清除终端行 */
   stop() {
     if (this.timer) {
       clearInterval(this.timer);
@@ -42,15 +52,26 @@ class Indicator {
     process.stderr.write('\r\x1b[K');
   }
 
+  /** @param {'thinking'|'coding'} phase */
   updatePhase(phase) { this.phase = phase; }
+  /** @param {string} step */
   updateStep(step) { this.step = step; }
 
+  /**
+   * 记录最近的工具活动摘要
+   * @param {string} toolName
+   * @param {string} summary
+   */
   appendActivity(toolName, summary) {
     this.lastActivity = `${toolName}: ${summary}`;
   }
 
   updateActivity() { this.lastActivityTime = Date.now(); }
 
+  /**
+   * 标记工具开始执行
+   * @param {string} name - 工具名称
+   */
   startTool(name) {
     this.toolRunning = true;
     this.toolStartTime = Date.now();
@@ -58,6 +79,7 @@ class Indicator {
     this.lastActivityTime = Date.now();
   }
 
+  /** 标记工具执行结束 */
   endTool() {
     if (!this.toolRunning) return;
     this.toolRunning = false;
@@ -67,6 +89,7 @@ class Indicator {
   pauseRendering() { this._paused = true; }
   resumeRendering() { this._paused = false; }
 
+  /** 生成当前状态行文本（含 spinner、时间、阶段、工具信息）@returns {string} */
   getStatusLine() {
     const cols = process.stderr.columns || 120;
     const clock = localTimestamp();
@@ -187,6 +210,12 @@ function extractBashTarget(cmd) {
   return clean;
 }
 
+/**
+ * 根据工具名称和输入推断当前阶段和步骤，更新 indicator 状态
+ * @param {Indicator} indicator
+ * @param {string} toolName - SDK 工具名称（Write, Bash, Read 等）
+ * @param {Object|string} toolInput - 工具输入参数
+ */
 function inferPhaseStep(indicator, toolName, toolInput) {
   const name = (toolName || '').toLowerCase();
   const projectRoot = indicator.projectRoot || '';

@@ -6,22 +6,23 @@ const { loadConfig, log } = require('./common/config');
 const { assets } = require('./common/assets');
 const { Session } = require('./core/session');
 
+/** @typedef {{ max?: number, pause?: number, dryRun?: boolean, readFile?: string, model?: string, n?: number, planOnly?: boolean, interactive?: boolean, reset?: boolean, deployTemplates?: boolean, projectRoot?: string, reqFile?: string }} MainOpts */
+
 function checkReady(command) {
   if (['init', 'scan'].includes(command)) return;
 
-  const missing = [];
-  if (!assets.exists('profile')) missing.push('project_profile.json');
-
-  const recipesDir = path.join(assets.projectRoot, '.claude-coder', 'recipes');
-  if (!fs.existsSync(recipesDir) || fs.readdirSync(recipesDir).length === 0) {
-    missing.push('recipes/');
-  }
-
-  if (missing.length > 0) {
-    throw new Error(`文件缺失: ${missing.join(', ')}，请运行 claude-coder init 初始化项目`);
+  if (!assets.exists('profile')) {
+    throw new Error('文件缺失: project_profile.json，请运行 claude-coder init 初始化项目');
   }
 }
 
+/**
+ * 应用入口：初始化资产、加载配置、分发命令
+ * @param {string} command - 命令名称（init | scan | plan | run | go | simplify）
+ * @param {string} input - 位置参数（需求文本等）
+ * @param {MainOpts} [opts={}] - CLI 选项
+ * @returns {Promise<Object|void>}
+ */
 async function main(command, input, opts = {}) {
   assets.init(opts.projectRoot || process.cwd());
   assets.ensureDirs();

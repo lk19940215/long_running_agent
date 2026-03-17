@@ -17,7 +17,7 @@
 | `error_during_execution` | 执行过程中出错 |
 | `error_max_budget_usd` | 超过预算限制 |
 
-`runQuery()` 返回结构化结果 `{ messages, success, subtype, cost, usage, turns }`，由 `SessionContext` 内聚处理。
+`session.runQuery()` 返回结构化结果 `{ messages, success, subtype, cost, usage, turns }`，由 `Session` 内聚处理。
 
 ### 1.2 Stop Hook（per-turn 日志）
 
@@ -59,32 +59,38 @@ createStallModule()
 
 ---
 
-## 三、SessionContext 生命周期
+## 三、Session 生命周期
 
 ```
-constructor(type, opts) → init({...}) → [runQuery() ...] → finish()
+Session.run(type, config, { execute })
+├── Session.ensureSDK(config)
+├── new Session(type, config, { logFileName, sessionNum, label })
+│   ├── _initLogging()
+│   ├── writeSessionSeparator()
+│   ├── _initHooks(type)
+│   └── _startIndicator()
+├── execute(session)
+│   ├── session.buildQueryOptions()
+│   └── session.runQuery(prompt, queryOpts, { onMessage })
+└── session.finish()
 ```
 
-### 3.1 init() 统一初始化
+### 3.1 Session.run() 模板方法
 
-`init()` 完成所有初始化：loadSDK → logging → hooks → indicator。之后 `this.sdk` 可用，`runQuery()` 就绪。
+所有命令（coding/scan/simplify/repair/plan/go）统一使用 `Session.run()`，自动管理 try/catch + finish() 调用。
 
-### 3.2 static run() 模板方法
+### 3.2 多查询门控示例
 
-对于单查询场景（coding/scan/simplify/repair），`SessionContext.run()` 提供便捷的 try/catch 包装。
-
-对于多查询场景（plan），调用方可直接使用 `init() → runQuery() → finish()` 模式，通过 `runQuery().success` 做查询间门控。
-
-### 3.3 多查询门控示例
+对于多查询场景（plan），`execute(session)` 内可多次调用 `session.runQuery()`，通过返回值做查询间门控：
 
 ```javascript
-const planResult = await ctx.runQuery(planPrompt, queryOpts);
-if (!planResult.success) {
-  // Phase 1 未正常结束，不继续 Phase 2
-  return { success: false };
+async execute(session) {
+  const planResult = await session.runQuery(planPrompt, queryOpts);
+  if (!planResult.success) {
+    return { success: false };
+  }
+  await session.runQuery(tasksPrompt, queryOpts);
 }
-// Phase 2
-await ctx.runQuery(tasksPrompt, queryOpts);
 ```
 
 ---
@@ -129,7 +135,7 @@ tool_result       → updateActivity()    PostToolUseFailure → endTool()
 ### 5.2 防刷屏
 
 1. `_render()` 定时器：每秒执行，`\r\x1b[K` 覆盖同一行
-2. `contentKey` 去重（`context.js`）：`phase|step|toolTarget` 不变时不输出新状态行
+2. `contentKey` 去重（`session.js` 的 `_logMessage`）：`phase|step|toolTarget` 不变时不输出新状态行
 3. `pauseRendering`：文本输出期间暂停定时器，避免 stdout/stderr 交叉
 4. `getStatusLine()` 动态内容：工具耗时由 `_render()` 覆盖，不产生新行
 
@@ -139,7 +145,7 @@ tool_result       → updateActivity()    PostToolUseFailure → endTool()
 
 | 文件 | 职责 |
 |------|------|
-| `src/core/context.js` | `SessionContext` 类：`init()`、`runQuery()`（结构化结果）、`static run()` 模板方法 |
+| `src/core/session.js` | `Session` 类：`ensureSDK()`、`run()`、`buildQueryOptions()`、`runQuery()`（结构化结果）、`finish()` |
 | `src/core/hooks.js` | `createStopHook()`（per-turn 日志）、`createStallModule()`、`createEndToolHook()` |
 | `src/common/indicator.js` | Indicator 类、`inferPhaseStep()`、工具分类 |
 | `src/common/logging.js` | `extractResult()`、`logMessage()`、`writeSessionSeparator()` |

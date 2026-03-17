@@ -5,9 +5,11 @@
   "bin": {
     "claude-coder": "bin/cli.js"
   },
+  "types": "types/index.d.ts",
   "files": [
     "bin/",
     "src/",
+    "types/",
     "recipes/",
     "templates/"
   ],

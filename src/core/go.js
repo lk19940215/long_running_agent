@@ -28,7 +28,7 @@ function saveGoState(goData) {
 // ─── Prompt Builder ───────────────────────────────────────
 
 function buildGoPrompt(instruction, opts = {}) {
-  const recipesAbsPath = path.join(assets.projectRoot, '.claude-coder', 'recipes');
+  const recipesAbsPath = assets.recipesDir();
   const goState = loadGoState();
 
   const inputSection = opts.reqFile

@@ -27,8 +27,9 @@ SDK.query({
 ### 入口
 
 ```
-cli.js → runner.run(opts) → for loop → runCodingSession(session, opts)
-         → coding.js → execute(sdk, ctx)
+cli.js → main() → runner.executeRun(config, opts) → for loop
+         → coding.executeCoding(config, session, opts)
+         → Session.run('coding', config, { execute(session) })
 ```
 
 ### System Prompt 组装
@@ -93,16 +94,15 @@ buildCodingContext(sessionNum, opts)
 ### SDK 选项
 
 ```
-buildQueryOptions(config, opts)
+session.buildQueryOptions(opts)
 ├── permissionMode: 'bypassPermissions'
 ├── cwd: projectRoot
 ├── env: buildEnvVars(config)    ← API Key、BaseURL、Model 等环境变量
 ├── settingSources: ['project']  ← 自动加载 .claude/CLAUDE.md
 ├── model: config.model          ← 条件: config 中有指定
-└── maxTurns: config.maxTurns    ← 条件: > 0 时注入
-
-额外设置:
-├── hooks: ctx.hooks             ← createHooks('coding', ...) 产生
+├── maxTurns: config.maxTurns    ← 条件: > 0 时注入
+├── hooks: session.hooks         ← createHooks('coding', ...) 产生
+├── abortController: session.abortController
 └── disallowedTools: ['askUserQuestion']
 ```
 
@@ -115,7 +115,7 @@ createHooks('coding', ...)
 │   │                                 + 按工具名注入 toolTips
 │   └── matcher: "Bash", condition: kill/pkill → 注入 bash-process.md（仅一次）
 ├── editGuard    ← 60s 滑动窗口内编辑超阈值 → deny
-├── completion   ← 检测 session_result.json 写入 → 标记完成
+├── stop         ← per-turn 日志记录
 └── stall        ← 空闲超时 → abort
 ```
 
@@ -126,8 +126,8 @@ createHooks('coding', ...)
 ### 入口
 
 ```
-cli.js → plan.run(input, opts) → runPlanSession(instruction, opts)
-         → plan.js → execute(sdk, ctx)
+cli.js → main() → plan.executePlan(config, input, opts)
+         → Session.run('plan', config, { execute(session) })
 ```
 
 ### Phase 1：计划生成（permissionMode: 'plan'）
@@ -140,7 +140,7 @@ User Prompt:   buildPlanOnlyPrompt(userInput, interactive)
 
 SDK 选项:
 ├── permissionMode: 'plan'       ← 只读模式，只能读代码不能改
-├── hooks: ctx.hooks             ← createHooks('plan', ...) → 仅 stall 模块
+├── hooks: session.hooks          ← createHooks('plan', ...) → 仅 stall 模块
 └── disallowedTools: ['askUserQuestion']  ← 非交互模式时禁用
 ```
 
@@ -151,7 +151,7 @@ buildSystemPrompt('plan')
 └── planSystem.md + coreProtocol.md
 
 buildPlanPrompt(planPath)
-└── assets.render('addUser', vars)       ← templates/addUser.md
+└── assets.render('planUser', vars)       ← templates/planUser.md
     │
     ├── {{profileContext}}               ← profile.tech_stack
     │   读取: .claude-coder/project_profile.json
@@ -178,10 +178,10 @@ buildPlanPrompt(planPath)
 SDK 选项:
 ├── permissionMode: 'bypassPermissions'
 ├── systemPrompt: buildSystemPrompt('plan')
-└── hooks: ctx.hooks
+└── hooks: session.hooks
 
 后处理:
-└── syncAfterPlan()                     ← core/harness 同步 harness_state.json 的 next_task_id
+└── syncAfterPlan()                     ← core/state 同步 harness_state.json 的 next_task_id
 ```
 
 ---
@@ -191,8 +191,8 @@ SDK 选项:
 ### 入口
 
 ```
-cli.js → init() → scan({ projectRoot })
-         → scan.js → _runScanSession(opts) → execute(sdk, ctx)
+cli.js → main() → scan.executeScan(config, opts)
+         → Session.run('scan', config, { execute(session) })
 ```
 
 ### System Prompt 组装
@@ -221,7 +221,7 @@ buildScanPrompt(projectType)
 buildQueryOptions(config, opts)
 ├── permissionMode: 'bypassPermissions'
 ├── settingSources: ['project']
-└── hooks: createHooks('scan', ...) → 仅 stall 模块
+└── hooks: session.hooks ← createHooks('scan', ...) → stop + stall 模块
 ```
 
 ---
@@ -231,7 +231,8 @@ buildQueryOptions(config, opts)
 ### 入口
 
 ```
-cli.js → simplify(focus, { n }) → _runSimplifySession(n, focus, opts)
+cli.js → main() → simplify.executeSimplify(config, focus, opts)
+         → Session.run('simplify', config, { execute(session) })
 ```
 
 ### Prompt 组装
@@ -239,13 +240,17 @@ cli.js → simplify(focus, { n }) → _runSimplifySession(n, focus, opts)
 ```
 System Prompt: 无（内联在 user prompt 中）
 User Prompt:   内联构建
-├── git diff HEAD~n..HEAD           ← 最近 n 个 commit 的 diff
+├── getSmartDiffRange()             ← 智能范围：优先查找上次 "style: auto simplify" 以来的 diff
+│   └── fallback: git diff HEAD~n..HEAD
 ├── focus                           ← 用户指定的审查焦点（可选）
 └── 审查指令（简化代码、消除重复等）
 
 SDK 选项:
 ├── permissionMode: 'bypassPermissions'
-└── hooks: createHooks('simplify', ...) → 仅 stall 模块
+└── hooks: session.hooks ← createHooks('simplify', ...) → stop + stall 模块
+
+后处理:
+└── commitIfDirty()                 ← 自动提交审查结果 "style: auto simplify"
 ```
 
 ---

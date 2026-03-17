@@ -226,6 +226,15 @@ class AssetManager {
     return deployed;
   }
 
+  recipesDir() {
+    this._ensureInit();
+    const projectRecipes = path.join(this.loopDir, 'recipes');
+    if (fs.existsSync(projectRecipes) && fs.readdirSync(projectRecipes).length > 0) {
+      return projectRecipes;
+    }
+    return BUNDLED_RECIPES_DIR;
+  }
+
   clearCache() {
     this.cache.clear();
   }

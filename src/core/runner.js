@@ -333,22 +333,12 @@ function needsFinalSimplify(config) {
   return state.last_simplify_session < state.session_count;
 }
 
-function commitIfDirty(projectRoot, message) {
-  try {
-    execSync('git diff --quiet HEAD', { cwd: projectRoot, stdio: 'pipe' });
-  } catch {
-    execSync(`git add -A && git commit -m "${message}"`, { cwd: projectRoot, stdio: 'pipe' });
-    log('ok', '代码优化已提交');
-  }
-}
-
-async function tryRunSimplify(config, msg, commitMsg) {
+async function tryRunSimplify(config, msg) {
   log('info', msg || `每 ${config.simplifyInterval} 个成功 session 运行代码审查...`);
   try {
     const { executeSimplify } = require('./simplify');
     await executeSimplify(config, null, { n: config.simplifyCommits });
     markSimplifyDone();
-    commitIfDirty(assets.projectRoot, commitMsg || 'style: simplify optimization');
   } catch (err) {
     log('warn', `代码审查失败，跳过: ${err.message}`);
   }
@@ -401,7 +391,7 @@ async function executeRun(config, opts = {}) {
     if (isAllDone(taskData)) {
       if (!dryRun) {
         if (needsFinalSimplify(config)) {
-          await tryRunSimplify(config, '所有任务完成，运行最终代码审查...', 'style: final simplify');
+          await tryRunSimplify(config, '所有任务完成，运行最终代码审查...');
         }
         tryPush(projectRoot);
       }

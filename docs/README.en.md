@@ -6,7 +6,7 @@ A **long-running autonomous coding Agent Harness**: built on Claude Agent SDK, u
 
 ### Highlights
 
-- **Harness Lifecycle Management**: Unified Harness class encapsulating environment setup, task scheduling, validation, rollback, and push — with AI-driven JSON self-healing repair
+- **Session Lifecycle Management**: Session class encapsulating SDK management, query execution, hooks, and indicator — with AI-driven JSON self-healing repair in the runner loop
 - **Hook Prompt Injection**: JSON-configured rules inject contextual guidance during tool calls — extend rules without code changes ([mechanism details](../design/hook-mechanism.md))
 - **Long-running Auto-coding Loop**: Multi-session orchestration + countdown activity monitoring + git rollback & retry — Agent codes continuously for hours ([guard details](../design/session-guard.md))
 - **Configuration-driven**: Supports Claude official, Coding Plan multi-model routing, DeepSeek, or any Anthropic-compatible API
@@ -36,6 +36,7 @@ claude-coder run "Implement user registration and login"
 |---------|-------------|
 | `claude-coder setup` | Interactive configuration (model, MCP, safety limits, auto-review) |
 | `claude-coder init` | Initialize project environment (scan tech stack, generate profile) |
+| `claude-coder init --deploy-templates` | Deploy templates and recipes to project directory (customizable) |
 | `claude-coder plan "requirement"` | Generate plan document |
 | `claude-coder plan -r [file]` | Generate plan from requirements file |
 | `claude-coder plan --planOnly` | Generate plan only, no task decomposition |
@@ -63,7 +64,7 @@ Requirement ─→ Project scan ─→ Task decomposition ─→ Coding loop
                                                  │  3-step flow│
                                                  └─────┬─────┘
                                                        │
-                                                  Harness validate
+                                                  Runner validate
                                                   (with AI repair)
                                                        │
                                              Pass → simplify? → push → next task
@@ -72,13 +73,13 @@ Requirement ─→ Project scan ─→ Task decomposition ─→ Coding loop
 
 Each session, the agent autonomously follows 3 steps: **implement** (task context injected by harness, code the feature) → **verify** (lightweight tests by category) → **wrap up** (git commit + write session_result.json).
 
-After each session, Harness validates `session_result.json` + git progress. If JSON is corrupted, AI auto-repairs it via `repair.js`. If validation fails, code is rolled back and retried.
+After each session, the runner validates `session_result.json` + git progress. If JSON is corrupted, AI auto-repairs it via `repair.js`. If validation fails, code is rolled back and retried.
 
 ## Documentation
 
 | Document | Description |
 |----------|-------------|
-| [Architecture](../design/ARCHITECTURE.md) | Core design rules, Harness class responsibilities, module relations, prompt injection |
+| [Architecture](../design/ARCHITECTURE.md) | Core design rules, Session class responsibilities, module relations, prompt injection |
 | [Hook Injection Mechanism](../design/hook-mechanism.md) | SDK Hook research, GuidanceInjector matching pipeline, config format, side effects |
 | [Session Guard](../design/session-guard.md) | Abort strategy, countdown activity detection, tool running state, anti-flooding |
 | [Go Command Flow](../design/go-flow.md) | AI-driven requirement assembly, recipe system, plan handoff |
@@ -125,9 +126,9 @@ your-project/
     progress.json           # Session history + costs
     test.env                # Test credentials (optional)
     go/                     # Go command output files
-    recipes/                # Recipe library (deployed from built-in templates on init)
+    recipes/                # Recipe library (deployed with --deploy-templates, optional)
     .runtime/
-      harness_state.json    # Harness state (session count, etc.)
+      harness_state.json    # Runtime state (session count, etc.)
       logs/                 # Per-session logs
 ```
 
@@ -137,7 +138,7 @@ your-project/
 
 **Resume after interruption**: Just re-run `claude-coder run` — it picks up where it left off.
 
-**Long idle periods**: The model may have extended thinking intervals on complex tasks (indicator shows yellow "tool running" or red "no response"). The harness auto-interrupts and retries after the threshold. Adjust via `claude-coder setup` safety limits or `SESSION_STALL_TIMEOUT=seconds` in `.env`.
+**Long idle periods**: The model may have extended thinking intervals on complex tasks (indicator shows yellow "tool running" or red "no response"). Auto-interrupts and retries after the threshold. Adjust via `claude-coder setup` safety limits or `SESSION_STALL_TIMEOUT=seconds` in `.env`.
 
 ## References
 

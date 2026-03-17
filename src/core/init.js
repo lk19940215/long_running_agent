@@ -126,9 +126,11 @@ async function executeInit(config, opts = {}) {
     throw new Error('project_profile.json 读取失败或已损坏');
   }
 
-  for (const file of assets.deployAll()) log('ok', `已部署 → .claude-coder/assets/${file}`);
-  const recipes = assets.deployRecipes();
-  if (recipes.length > 0) log('ok', `已部署 ${recipes.length} 个食谱文件 → .claude-coder/recipes/`);
+  if (opts.deployTemplates) {
+    for (const file of assets.deployAll()) log('ok', `已部署 → .claude-coder/assets/${file}`);
+    const recipes = assets.deployRecipes();
+    if (recipes.length > 0) log('ok', `已部署 ${recipes.length} 个食谱文件 → .claude-coder/recipes/`);
+  }
 
   const envSteps = buildEnvSteps(profile, projectRoot);
   let stepCount = 0;
