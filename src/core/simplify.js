@@ -1,12 +1,11 @@
 'use strict';
 
-const { runSession } = require('./session');
-const { buildQueryOptions } = require('./query');
 const { log } = require('../common/config');
 const { assets } = require('../common/assets');
 const { execSync } = require('child_process');
 
-async function _runSimplifySession(n = 3, focus = null, opts = {}) {
+async function executeSimplify(engine, focus = null, opts = {}) {
+  const n = opts.n || 3;
   const projectRoot = assets.projectRoot;
   let diff = '';
   try {
@@ -19,21 +18,19 @@ async function _runSimplifySession(n = 3, focus = null, opts = {}) {
   const prompt = `/simplify\n\n审查范围：最近 ${n} 个 commit${focusLine}\n\n${diff.slice(0, 50000)}`;
   const dateStr = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 12);
 
-  return runSession('simplify', {
-    opts,
-    sessionNum: 0,
+  return engine.runSession('simplify', {
     logFileName: `simplify_${dateStr}.log`,
     label: 'simplify',
 
-    async execute(sdk, ctx) {
+    async execute(session) {
       log('info', `正在审查最近 ${n} 个 commit 的代码变更...`);
 
-      const queryOpts = buildQueryOptions(ctx.config, opts);
-      queryOpts.hooks = ctx.hooks;
-      queryOpts.abortController = ctx.abortController;
+      const queryOpts = engine.buildQueryOptions(opts);
+      queryOpts.hooks = session.hooks;
+      queryOpts.abortController = session.abortController;
       queryOpts.disallowedTools = ['askUserQuestion'];
 
-      await ctx.runQuery(sdk, prompt, queryOpts);
+      await session.runQuery(prompt, queryOpts);
       log('ok', '代码审查完成');
 
       return {};
@@ -41,13 +38,4 @@ async function _runSimplifySession(n = 3, focus = null, opts = {}) {
   });
 }
 
-async function simplify(focus = null, opts = {}) {
-  assets.ensureDirs();
-  const n = opts.n || 3;
-  return _runSimplifySession(n, focus, opts);
-}
-
-module.exports = {
-  simplify,
-  _runSimplifySession,
-};
+module.exports = { executeSimplify };

@@ -77,10 +77,9 @@ function showCurrentConfig(existing) {
   console.log(`  BASE_URL:   ${existing.ANTHROPIC_BASE_URL || '默认'}`);
   console.log(`  模型:       ${existing.ANTHROPIC_MODEL || '默认'}`);
   console.log(`  MCP:        ${existing.MCP_PLAYWRIGHT === 'true' ? `已启用 (${existing.MCP_PLAYWRIGHT_MODE || 'persistent'})` : '未启用'}`);
-  const compTimeout = existing.SESSION_COMPLETION_TIMEOUT || '300';
   const turns = existing.SESSION_MAX_TURNS || '0';
   console.log(`  停顿超时:   ${existing.SESSION_STALL_TIMEOUT || '600'} 秒`);
-  console.log(`  完成检测:   ${compTimeout} 秒`);
+  console.log(`  完成检测:   Stop hook（SDK 原生）`);
   console.log(`  工具轮次:   ${turns === '0' ? '无限制' : turns}`);
   const simplifyInterval = existing.SIMPLIFY_INTERVAL ?? '5';
   const simplifyCommits = existing.SIMPLIFY_COMMITS ?? '5';

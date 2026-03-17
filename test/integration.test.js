@@ -18,8 +18,8 @@ function initTestEnv() {
 
   const { loadConfig, buildEnvVars, log, parseEnvFile } = require('../src/common/config');
   const { assets } = require('../src/common/assets');
-  const { scan, validateProfile } = require('../src/core/scan');
-  const { init } = require('../src/core/init');
+  const { executeScan, validateProfile } = require('../src/core/scan');
+  const { executeInit } = require('../src/core/init');
 
   assets.init(process.cwd());
   assets.ensureDirs();
@@ -30,9 +30,9 @@ function initTestEnv() {
     loadConfig,
     buildEnvVars,
     parseEnvFile,
-    scan,
+    executeScan,
     validateProfile,
-    init,
+    executeInit,
   };
 }
 
@@ -80,7 +80,7 @@ console.log('\nPhase 2: Init');
 
 test('init.js 导入 scan 正确', () => {
   const initModule = require('../src/core/init');
-  assert(typeof initModule.init === 'function');
+  assert(typeof initModule.executeInit === 'function');
 });
 
 test('scan.js validateProfile 检测不存在的 profile', () => {
@@ -126,13 +126,12 @@ test('plan 无 profile 时应该抛出错误', () => {
   initTestEnv();
 
   const plan = require('../src/core/plan');
-  assert(typeof plan.run === 'function');
+  assert(typeof plan.executePlan === 'function');
 });
 
 test('plan.js 模块加载正常', () => {
   const plan = require('../src/core/plan');
-  assert(typeof plan.run === 'function');
-  assert(typeof plan.runPlanSession === 'function');
+  assert(typeof plan.executePlan === 'function');
 });
 
 // ========== Phase 4: Run ==========
@@ -140,8 +139,8 @@ console.log('\nPhase 4: Run');
 
 test('run 无 profile 应该报错', () => {
   cleanup();
-  const { run } = require('../src/core/runner');
-  assert(typeof run === 'function');
+  const { executeRun } = require('../src/core/runner');
+  assert(typeof executeRun === 'function');
 });
 
 test('run 无 tasks.json 应该报错', () => {
@@ -166,8 +165,8 @@ test('simplify ensureDirs 被调用', () => {
   cleanup();
   initTestEnv();
 
-  const { simplify } = require('../src/core/simplify');
-  assert(typeof simplify === 'function');
+  const { executeSimplify } = require('../src/core/simplify');
+  assert(typeof executeSimplify === 'function');
 });
 
 // ========== Phase 6: 配置验证 ==========
@@ -223,7 +222,8 @@ test('loadTasks 正确加载任务', () => {
   fs.mkdirSync(path.dirname(tasksPath), { recursive: true });
   fs.writeFileSync(tasksPath, JSON.stringify(tasksData));
 
-  const { loadTasks, getStats, findNextTask } = require('../src/common/tasks');
+  const { loadTasks, getStats } = require('../src/common/tasks');
+  const { selectNextTask } = require('../src/core/state');
 
   const data = loadTasks();
   assert(data !== null);
@@ -236,7 +236,7 @@ test('loadTasks 正确加载任务', () => {
   assert.strictEqual(stats.done, 1);
   assert.strictEqual(stats.failed, 1);
 
-  const nextTask = findNextTask(data);
+  const nextTask = selectNextTask(data);
   assert(nextTask !== null);
   assert.strictEqual(nextTask.status, 'failed');
   assert.strictEqual(nextTask.id, '4');

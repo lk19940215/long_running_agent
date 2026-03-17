@@ -268,31 +268,31 @@ async function testResetClearsLoaded() {
   assert(injector.loaded === false, `reset() 后 loaded=false（可重新加载 guidance.json）`);
 }
 
-// ─── Test 6: isSessionResultWrite 处理 Shell 工具名 ───
+// ─── Test 6: createStopHook per-turn 日志 ───
 
-async function testSessionResultShell() {
+async function testStopHook() {
   console.log('\n══════════════════════════════════════════');
-  console.log('  Test 6: isSessionResultWrite 支持 Shell');
+  console.log('  Test 6: createStopHook per-turn 日志');
   console.log('══════════════════════════════════════════');
 
-  const { isSessionResultWrite } = require('../src/core/hooks');
+  const { createStopHook } = require('../src/core/hooks');
+  const { Writable } = require('stream');
+  const logs = [];
+  const mockLogStream = new Writable({
+    write(chunk, _enc, cb) { logs.push(chunk.toString()); cb(); }
+  });
+  Object.defineProperty(mockLogStream, 'writable', { get: () => true });
 
-  assert(
-    isSessionResultWrite('Write', { file_path: '/tmp/loop/session_result.json' }),
-    `Write 工具检测 session_result.json`
-  );
-  assert(
-    isSessionResultWrite('Bash', { command: 'echo \'{"session_result":"success"}\' > /tmp/session_result.json' }),
-    `Bash 工具检测 session_result 重定向`
-  );
-  assert(
-    isSessionResultWrite('Shell', { command: 'echo \'{"session_result":"success"}\' > /tmp/session_result.json' }),
-    `Shell 工具检测 session_result 重定向`
-  );
-  assert(
-    !isSessionResultWrite('Read', { file_path: '/tmp/session_result.json' }),
-    `Read 工具不触发检测`
-  );
+  const hook = createStopHook(mockLogStream);
+
+  const result = await hook({ hook_event_name: 'Stop' });
+  assert(typeof result === 'object', 'hook returns object');
+  assert(Object.keys(result).length === 0, 'hook returns empty object (allow stop)');
+  assert(logs.some(l => l.includes('STOP')), 'per-turn stop logged');
+
+  await hook({ hook_event_name: 'Stop' });
+  const stopLogs = logs.filter(l => l.includes('STOP'));
+  assert(stopLogs.length === 2, 'multiple turns produce multiple log entries');
 }
 
 // ─── Test 7: editGuard 时间窗口衰减 ───
@@ -370,7 +370,7 @@ async function main() {
     await testSingletonLeak();
     await testCallbackSignature();
     await testResetClearsLoaded();
-    await testSessionResultShell();
+    await testStopHook();
     await testEditGuardDecay();
     await testRegexPrecompile();
   } catch (err) {

@@ -1,12 +1,30 @@
 'use strict';
 
+const fs = require('fs');
+const path = require('path');
 const { log } = require('../common/config');
 const { assets } = require('../common/assets');
-const { runSession } = require('./session');
-const { buildQueryOptions, hasCodeFiles } = require('./query');
 const { buildSystemPrompt, buildScanPrompt } = require('./prompts');
-const { extractResult } = require('../common/logging');
 const { RETRY } = require('../common/constants');
+
+/**
+ * 检查项目是否包含代码文件
+ */
+function hasCodeFiles(projectRoot) {
+  const markers = [
+    'package.json', 'pyproject.toml', 'requirements.txt', 'setup.py',
+    'Cargo.toml', 'go.mod', 'pom.xml', 'build.gradle',
+    'Makefile', 'Dockerfile', 'docker-compose.yml',
+    'README.md', 'main.py', 'app.py', 'index.js', 'index.ts',
+  ];
+  for (const m of markers) {
+    if (fs.existsSync(path.join(projectRoot, m))) return true;
+  }
+  for (const d of ['src', 'lib', 'app', 'backend', 'frontend', 'web', 'server', 'client']) {
+    if (fs.existsSync(path.join(projectRoot, d)) && fs.statSync(path.join(projectRoot, d)).isDirectory()) return true;
+  }
+  return false;
+}
 
 function validateProfile() {
   if (!assets.exists('profile')) return { valid: false, issues: ['profile 不存在'] };
@@ -28,41 +46,32 @@ function validateProfile() {
   return { valid: issues.length === 0, issues };
 }
 
-async function _runScanSession(opts = {}) {
-  const projectType = hasCodeFiles(opts.projectRoot || assets.projectRoot) ? 'existing' : 'new';
-  const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-
-  return runSession('scan', {
-    opts,
-    sessionNum: 0,
-    logFileName: `scan_${dateStr}.log`,
-    label: `scan (${projectType})`,
-
-    async execute(sdk, ctx) {
-      log('info', `正在调用 Claude Code 执行项目扫描（${projectType}项目）...`);
-
-      const prompt = buildScanPrompt(projectType);
-      const queryOpts = buildQueryOptions(ctx.config, opts);
-      queryOpts.systemPrompt = buildSystemPrompt('scan');
-      queryOpts.hooks = ctx.hooks;
-      queryOpts.abortController = ctx.abortController;
-
-      const collected = await ctx.runQuery(sdk, prompt, queryOpts);
-      const result = extractResult(collected);
-
-      return { cost: result?.total_cost_usd ?? null };
-    },
-  });
-}
-
-async function scan(opts = {}) {
-  assets.ensureDirs();
-
+async function executeScan(engine, opts = {}) {
   const maxAttempts = RETRY.SCAN_ATTEMPTS;
+
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     log('info', `初始化尝试 ${attempt} / ${maxAttempts} ...`);
 
-    const result = await _runScanSession(opts);
+    const projectType = hasCodeFiles(opts.projectRoot || assets.projectRoot) ? 'existing' : 'new';
+    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+
+    const result = await engine.runSession('scan', {
+      logFileName: `scan_${dateStr}.log`,
+      label: `scan (${projectType})`,
+
+      async execute(session) {
+        log('info', `正在调用 Claude Code 执行项目扫描（${projectType}项目）...`);
+
+        const prompt = buildScanPrompt(projectType);
+        const queryOpts = engine.buildQueryOptions(opts);
+        queryOpts.systemPrompt = buildSystemPrompt('scan');
+        queryOpts.hooks = session.hooks;
+        queryOpts.abortController = session.abortController;
+
+        const { cost } = await session.runQuery(prompt, queryOpts);
+        return { cost };
+      },
+    });
 
     if (assets.exists('profile')) {
       const profileCheck = validateProfile();
@@ -83,7 +92,6 @@ async function scan(opts = {}) {
 }
 
 module.exports = {
-  scan,
+  executeScan,
   validateProfile,
-  _runScanSession,
 };

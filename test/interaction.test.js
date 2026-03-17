@@ -215,16 +215,15 @@ test('plan_interactive hook 正确拦截 AskUserQuestion', async () => {
 // ========== 6. plan.js 逻辑测试 ==========
 console.log('\n6. plan.js 逻辑测试');
 
-test('plan.js 模块导出 runPlanSession', () => {
-  const { runPlanSession, run } = require('../src/core/plan');
-  assert.strictEqual(typeof runPlanSession, 'function');
-  assert.strictEqual(typeof run, 'function');
+test('plan.js 模块导出 executePlan', () => {
+  const { executePlan } = require('../src/core/plan');
+  assert.strictEqual(typeof executePlan, 'function');
 });
 
-test('buildPlanOnlyPrompt 非交互模式包含不要提问', () => {
+test('plan.js 模块可重复加载', () => {
   delete require.cache[require.resolve('../src/core/plan')];
   const planModule = require('../src/core/plan');
-  assert(typeof planModule.runPlanSession === 'function');
+  assert(typeof planModule.executePlan === 'function');
 });
 
 // ========== 7. CLI 参数解析测试 ==========
@@ -586,8 +585,8 @@ test('prompts.js 不再导出内部 hint 函数', () => {
   for (const fn of internalFns) {
     assert(prompts[fn] === undefined, `不应导出内部函数 ${fn}`);
   }
-  const publicFns = ['buildSystemPrompt', 'buildCodingPrompt', 'buildScanPrompt',
-    'buildPlanSystemPrompt', 'buildPlanPrompt'];
+  const publicFns = ['buildSystemPrompt', 'buildCodingContext', 'buildScanPrompt',
+    'buildPlanPrompt'];
   for (const fn of publicFns) {
     assert(typeof prompts[fn] === 'function', `应导出 ${fn}`);
   }

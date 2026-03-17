@@ -45,8 +45,8 @@
 
 **Step 3 — 收尾（必须执行）**
 1. 根据 prompt 提示管理后台服务
-2. `git add -A && git commit -m "feat(task-id): 描述"`
-3. 写 session_result.json：notes 只写未解决问题
+2. 写 session_result.json：notes 只写未解决问题
+3. `git add -A && git commit -m "feat(task-id): 描述"`
 
 ## 工具规范
 

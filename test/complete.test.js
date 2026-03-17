@@ -79,7 +79,7 @@ console.log('\n2. Init 流程测试');
 
 test('init.js 导入 scan 模块正确', () => {
   const initModule = require('../src/core/init');
-  assert(typeof initModule.init === 'function');
+  assert(typeof initModule.executeInit === 'function');
 });
 
 test('init profile 不存在时会调用 scan', () => {
@@ -263,15 +263,14 @@ test('run --max 参数限制 session 数量', () => {
 console.log('\n5. Simplify 流程测试');
 
 test('simplify 模块导出正确', () => {
-  const { simplify, _runSimplifySession } = require('../src/core/simplify');
-  assert(typeof simplify === 'function');
-  assert(typeof _runSimplifySession === 'function');
+  const { executeSimplify } = require('../src/core/simplify');
+  assert(typeof executeSimplify === 'function');
 });
 
-test('simplify ensureDirs 被调用', () => {
+test('simplify 模块加载正常', () => {
   cleanup();
-  const { simplify } = require('../src/core/simplify');
-  assert(typeof simplify === 'function');
+  const { executeSimplify } = require('../src/core/simplify');
+  assert(typeof executeSimplify === 'function');
 });
 
 // ========== 6. Status 命令测试 ==========
@@ -318,7 +317,7 @@ test('auth 模块导出正确', () => {
 // ========== 8. 任务状态测试 ==========
 console.log('\n8. 任务状态测试');
 
-test('findNextTask 优先返回 failed 任务', () => {
+test('selectNextTask 优先返回 failed 任务', () => {
   cleanup();
   ensureDir();
 
@@ -331,15 +330,16 @@ test('findNextTask 优先返回 failed 任务', () => {
     ]
   }));
 
-  const { findNextTask, loadTasks } = require('../src/common/tasks');
+  const { selectNextTask } = require('../src/core/state');
+  const { loadTasks } = require('../src/common/tasks');
   const data = loadTasks();
-  const next = findNextTask(data);
+  const next = selectNextTask(data);
 
   assert.strictEqual(next.status, 'failed');
   assert.strictEqual(next.id, '2');
 });
 
-test('findNextTask pending 无依赖时返回', () => {
+test('selectNextTask pending 无依赖时返回', () => {
   cleanup();
   ensureDir();
 
@@ -351,15 +351,16 @@ test('findNextTask pending 无依赖时返回', () => {
     ]
   }));
 
-  const { findNextTask, loadTasks } = require('../src/common/tasks');
+  const { selectNextTask } = require('../src/core/state');
+  const { loadTasks } = require('../src/common/tasks');
   const data = loadTasks();
-  const next = findNextTask(data);
+  const next = selectNextTask(data);
 
   assert.strictEqual(next.status, 'pending');
   assert.strictEqual(next.id, '1');
 });
 
-test('findNextTask pending 有依赖时跳过', () => {
+test('selectNextTask pending 有依赖时跳过', () => {
   cleanup();
   ensureDir();
 
@@ -371,9 +372,10 @@ test('findNextTask pending 有依赖时跳过', () => {
     ]
   }));
 
-  const { findNextTask, loadTasks } = require('../src/common/tasks');
+  const { selectNextTask } = require('../src/core/state');
+  const { loadTasks } = require('../src/common/tasks');
   const data = loadTasks();
-  const next = findNextTask(data);
+  const next = selectNextTask(data);
 
   assert.strictEqual(next.id, '2');
 });

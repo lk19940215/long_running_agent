@@ -1,7 +1,7 @@
 'use strict';
 
 const { COLOR } = require('./config');
-const { localTimestamp, truncatePath } = require('./utils');
+const { localTimestamp, truncatePath, truncateCommand } = require('./utils');
 
 const SPINNERS = ['⠋', '⠙', '⠸', '⠴', '⠦', '⠇'];
 
@@ -18,18 +18,19 @@ class Indicator {
     this.sessionNum = 0;
     this.startTime = Date.now();
     this.stallTimeoutMin = 30;
-    this.completionTimeoutMin = null;
     this.toolRunning = false;
     this.toolStartTime = 0;
     this.currentToolName = '';
     this._paused = false;
+    this.projectRoot = '';
   }
 
-  start(sessionNum, stallTimeoutMin) {
+  start(sessionNum, stallTimeoutMin, projectRoot) {
     this.sessionNum = sessionNum;
     this.startTime = Date.now();
     this.lastActivityTime = Date.now();
     if (stallTimeoutMin > 0) this.stallTimeoutMin = stallTimeoutMin;
+    if (projectRoot) this.projectRoot = projectRoot;
     this.timer = setInterval(() => this._render(), 1000);
   }
 
@@ -41,25 +42,14 @@ class Indicator {
     process.stderr.write('\r\x1b[K');
   }
 
-  updatePhase(phase) {
-    this.phase = phase;
-  }
-
-  updateStep(step) {
-    this.step = step;
-  }
+  updatePhase(phase) { this.phase = phase; }
+  updateStep(step) { this.step = step; }
 
   appendActivity(toolName, summary) {
     this.lastActivity = `${toolName}: ${summary}`;
   }
 
-  setCompletionDetected(timeoutMin) {
-    this.completionTimeoutMin = timeoutMin;
-  }
-
-  updateActivity() {
-    this.lastActivityTime = Date.now();
-  }
+  updateActivity() { this.lastActivityTime = Date.now(); }
 
   startTool(name) {
     this.toolRunning = true;
@@ -78,6 +68,7 @@ class Indicator {
   resumeRendering() { this._paused = false; }
 
   getStatusLine() {
+    const cols = process.stderr.columns || 120;
     const clock = localTimestamp();
     const elapsed = Math.floor((Date.now() - this.startTime) / 1000);
     const mm = String(Math.floor(elapsed / 60)).padStart(2, '0');
@@ -91,31 +82,28 @@ class Indicator {
     const idleMs = Date.now() - this.lastActivityTime;
     const idleMin = Math.floor(idleMs / 60000);
 
-    let line = `${spinner} [Session ${this.sessionNum}] ${clock} ${phaseLabel} ${mm}:${ss}`;
+    let line = `${spinner} ${clock} S${this.sessionNum} ${mm}:${ss} ${phaseLabel}`;
+
     if (idleMin >= 2) {
       if (this.toolRunning) {
         const toolSec = Math.floor((Date.now() - this.toolStartTime) / 1000);
         const toolMm = Math.floor(toolSec / 60);
         const toolSs = toolSec % 60;
-        line += ` | ${COLOR.yellow}工具执行中 ${toolMm}:${String(toolSs).padStart(2, '0')}${COLOR.reset}`;
-      } else if (this.completionTimeoutMin) {
-        line += ` | ${COLOR.red}${idleMin}分无响应（session_result 已写入, ${this.completionTimeoutMin}分钟超时自动中断）${COLOR.reset}`;
+        line += ` ${COLOR.yellow}工具执行中 ${toolMm}:${String(toolSs).padStart(2, '0')}${COLOR.reset}`;
       } else {
-        line += ` | ${COLOR.red}${idleMin}分无响应（等待模型响应, ${this.stallTimeoutMin}分钟超时自动中断）${COLOR.reset}`;
+        line += ` ${COLOR.red}${idleMin}分无响应(${this.stallTimeoutMin}分钟超时自动中断)${COLOR.reset}`;
       }
-    }
-    if (this.step) {
-      line += ` | ${this.step}`;
+    } else if (this.step) {
+      line += ` ${this.step}`;
       if (this.toolTarget) {
-        // 动态获取终端宽度，默认 120 适配现代终端
-        const cols = process.stderr.columns || 120;
-        const usedWidth = line.replace(/\x1b\[[^m]*m/g, '').length;
-        const availWidth = Math.max(20, cols - usedWidth - 4);
+        const visLen = stripAnsi(line).length;
+        const availWidth = Math.max(10, cols - visLen - 3);
         const target = truncatePath(this.toolTarget, availWidth);
         line += `: ${target}`;
       }
     }
-    return line;
+
+    return clampLine(line, cols);
   }
 
   _render() {
@@ -125,22 +113,58 @@ class Indicator {
   }
 }
 
-function extractFileTarget(toolInput) {
+function stripAnsi(str) {
+  return str.replace(/\x1b\[[^m]*m/g, '');
+}
+
+function clampLine(line, cols) {
+  const maxVisible = cols - 1;
+  const visible = stripAnsi(line);
+  if (visible.length <= maxVisible) return line;
+
+  let visCount = 0;
+  let cutIdx = 0;
+  let inEsc = false;
+  for (let i = 0; i < line.length; i++) {
+    if (line[i] === '\x1b') { inEsc = true; }
+    if (inEsc) {
+      if (line[i] === 'm') inEsc = false;
+      continue;
+    }
+    visCount++;
+    if (visCount >= maxVisible) { cutIdx = i; break; }
+  }
+  return line.slice(0, cutIdx) + '…' + COLOR.reset;
+}
+
+function extractFileTarget(toolInput, projectRoot) {
   const raw = typeof toolInput === 'object'
     ? (toolInput.file_path || toolInput.path || '')
     : '';
   if (!raw) return '';
+  if (projectRoot && raw.startsWith(projectRoot)) {
+    const rel = raw.slice(projectRoot.length);
+    return rel.startsWith('/') ? rel.slice(1) : rel;
+  }
   return raw.split('/').slice(-2).join('/');
 }
 
 function extractBashLabel(cmd) {
-  if (cmd.includes('git ')) return 'Git 操作';
-  if (cmd.includes('npm ') || cmd.includes('pip ') || cmd.includes('pnpm ') || cmd.includes('yarn ')) return '安装依赖';
-  if (/\b(sleep|Start-Sleep|timeout\s+\/t)\b/i.test(cmd)) return '等待就绪';
-  if (cmd.includes('curl')) return '网络请求';
-  if (cmd.includes('pytest') || cmd.includes('jest') || /\btest\b/.test(cmd)) return '测试验证';
-  if (cmd.includes('python ') || cmd.includes('node ')) return '执行脚本';
-  return '执行命令';
+  if (cmd.includes('git ')) return 'Git';
+  if (cmd.includes('pip ')) return 'pip';
+  if (cmd.includes('npm ')) return 'npm';
+  if (cmd.includes('pnpm ')) return 'pnpm';
+  if (cmd.includes('yarn ')) return 'yarn';
+  if (/\b(sleep|Start-Sleep|timeout\s+\/t)\b/i.test(cmd)) return '等待';
+  if (cmd.includes('curl')) return '网络';
+  if (cmd.includes('pytest') || cmd.includes('jest') || /\btest\b/.test(cmd)) return '测试';
+  if (cmd.includes('python ') || cmd.includes('node ')) return '执行';
+  return '执行';
+}
+
+function extractCurlUrl(cmd) {
+  const match = cmd.match(/curl\s+(?:-[^\s]+\s+)*['"]?(https?:\/\/\S+)/);
+  return match ? match[1].replace(/['"]$/, '') : null;
 }
 
 function extractMcpTarget(toolInput) {
@@ -148,54 +172,54 @@ function extractMcpTarget(toolInput) {
   return String(toolInput.url || toolInput.text || toolInput.element || '').slice(0, 60);
 }
 
-/**
- * 提取 Bash 命令的主体部分（移除管道、重定向等）
- * 正确处理引号内的内容，不会错误分割引号内的分隔符
- */
 function extractBashTarget(cmd) {
-  // 移除开头的 cd xxx && 部分
-  let clean = cmd.replace(/^(?:cd\s+\S+\s*&&\s*)+/g, '').trim();
+  let clean = cmd.replace(/^(?:(?:cd|source|export)\s+\S+\s*&&\s*)+/g, '').trim();
 
-  // 临时替换引号内的分隔符为占位符
   const unescape = (s) => s.replace(/\x00/g, ';');
   clean = clean.replace(/"[^"]*"/g, m => m.replace(/[;|&]/g, '\x00'));
   clean = clean.replace(/'[^']*'/g, m => m.replace(/[;|&]/g, '\x00'));
 
-  // 分割并取第一部分
   clean = clean.split(/\s*(?:\|\|?|;|&&|2>&1|2>\/dev\/null|>\s*\/dev\/null)\s*/)[0];
+  clean = unescape(clean).trim();
 
-  // 还原占位符
-  return unescape(clean).trim();
+  clean = clean.replace(/\s*<<\s*['"]?\w+['"]?\s*$/, '');
+
+  return clean;
 }
 
 function inferPhaseStep(indicator, toolName, toolInput) {
   const name = (toolName || '').toLowerCase();
+  const projectRoot = indicator.projectRoot || '';
 
   indicator.startTool(toolName);
 
   if (name === 'write' || name === 'edit' || name === 'multiedit' || name === 'str_replace_editor' || name === 'strreplace') {
     indicator.updatePhase('coding');
-    indicator.updateStep('编辑文件');
-    indicator.toolTarget = extractFileTarget(toolInput);
+    indicator.updateStep('编辑');
+    indicator.toolTarget = extractFileTarget(toolInput, projectRoot);
   } else if (name === 'bash' || name === 'shell') {
     const cmd = typeof toolInput === 'object' ? (toolInput.command || '') : String(toolInput || '');
     const label = extractBashLabel(cmd);
     indicator.updateStep(label);
-    indicator.toolTarget = extractBashTarget(cmd);
-    if (label === '测试验证' || label === '执行脚本' || label === '执行命令') {
+    if (label === '网络') {
+      indicator.toolTarget = extractCurlUrl(cmd) || truncateCommand(extractBashTarget(cmd), 50);
+    } else {
+      indicator.toolTarget = truncateCommand(extractBashTarget(cmd), 60);
+    }
+    if (['测试', '执行'].includes(label)) {
       indicator.updatePhase('coding');
     }
   } else if (name === 'read' || name === 'glob' || name === 'grep' || name === 'ls') {
     indicator.updatePhase('thinking');
-    indicator.updateStep('读取文件');
-    indicator.toolTarget = extractFileTarget(toolInput);
+    indicator.updateStep('读取');
+    indicator.toolTarget = extractFileTarget(toolInput, projectRoot);
   } else if (name === 'task') {
     indicator.updatePhase('thinking');
-    indicator.updateStep('子 Agent 搜索');
+    indicator.updateStep('Agent');
     indicator.toolTarget = '';
   } else if (name === 'websearch' || name === 'webfetch') {
     indicator.updatePhase('thinking');
-    indicator.updateStep('查阅文档');
+    indicator.updateStep('查阅');
     indicator.toolTarget = '';
   } else if (name.startsWith('mcp__')) {
     indicator.updatePhase('coding');
@@ -203,7 +227,7 @@ function inferPhaseStep(indicator, toolName, toolInput) {
     indicator.updateStep(`浏览器: ${action}`);
     indicator.toolTarget = extractMcpTarget(toolInput);
   } else {
-    indicator.updateStep('工具调用');
+    indicator.updateStep('工具');
     indicator.toolTarget = '';
   }
 

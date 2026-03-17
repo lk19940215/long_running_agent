@@ -159,6 +159,10 @@ test('run 无 tasks.json 时应该报错并提示运行 plan', () => {
     existing_docs: ['README.md']
   }));
 
+  const recipesDir = path.join(path.dirname(profilePath), 'recipes');
+  fs.mkdirSync(recipesDir, { recursive: true });
+  fs.writeFileSync(path.join(recipesDir, 'placeholder.md'), '');
+
   if (fs.existsSync(tasksPath)) fs.unlinkSync(tasksPath);
 
   try {
@@ -175,30 +179,28 @@ console.log('\nPhase 5: 模块导出测试');
 
 test('scan.js 应该导出正确的函数', () => {
   const scan = require('../src/core/scan');
-  assert(typeof scan.scan === 'function');
+  assert(typeof scan.executeScan === 'function');
   assert(typeof scan.validateProfile === 'function');
 });
 
-test('init.js 应该导出 init 函数', () => {
-  const { init } = require('../src/core/init');
-  assert(typeof init === 'function');
+test('init.js 应该导出 executeInit 函数', () => {
+  const { executeInit } = require('../src/core/init');
+  assert(typeof executeInit === 'function');
 });
 
 test('plan.js 应该导出正确的函数', () => {
   const plan = require('../src/core/plan');
-  assert(typeof plan.run === 'function');
-  assert(typeof plan.runPlanSession === 'function');
+  assert(typeof plan.executePlan === 'function');
 });
 
-test('runner.js 应该导出 run 函数', () => {
-  const { run } = require('../src/core/runner');
-  assert(typeof run === 'function');
+test('runner.js 应该导出 executeRun 函数', () => {
+  const { executeRun } = require('../src/core/runner');
+  assert(typeof executeRun === 'function');
 });
 
 test('simplify.js 应该导出正确的函数', () => {
   const simplify = require('../src/core/simplify');
-  assert(typeof simplify.simplify === 'function');
-  assert(typeof simplify._runSimplifySession === 'function');
+  assert(typeof simplify.executeSimplify === 'function');
 });
 
 // Phase 6: 任务模块测试

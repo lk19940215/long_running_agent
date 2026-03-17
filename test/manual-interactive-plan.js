@@ -11,13 +11,9 @@
  * 然后通过 interaction.js 的 Hook 拦截并在终端展示问题。
  */
 
-const { runPlanSession } = require('../src/core/plan');
-const { log } = require('../src/common/config');
-const { assets } = require('../src/common/assets');
+const { Engine } = require('../src');
 
 async function main() {
-  assets.ensureDirs();
-
   const userInput = process.argv[2] || '优化这个项目的整体架构';
 
   console.log('╔══════════════════════════════════════════════╗');
@@ -31,21 +27,23 @@ async function main() {
   console.log('请输入数字选择选项，或直接输入自定义内容。');
   console.log('');
 
-  const result = await runPlanSession(userInput, {
+  const engine = new Engine('plan', { projectRoot: process.cwd() });
+
+  const result = await engine.plan(userInput, {
     projectRoot: process.cwd(),
     interactive: true,
     planOnly: true,
   });
 
   console.log('\n========== RESULT ==========');
-  console.log('success:', result.success);
-  if (result.targetPath || result.planPath) {
-    console.log('planPath:', result.targetPath || result.planPath);
+  console.log('success:', result?.success);
+  if (result?.planPath) {
+    console.log('planPath:', result.planPath);
   }
-  if (result.reason) {
+  if (result?.reason) {
     console.log('reason:', result.reason);
   }
-  if (result.error) {
+  if (result?.error) {
     console.log('error:', result.error);
   }
 }

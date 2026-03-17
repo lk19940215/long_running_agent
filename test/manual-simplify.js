@@ -1,26 +1,29 @@
 #!/usr/bin/env node
 'use strict';
 
-const { runPlanSession } = require('../src/core/plan');
+const { Engine } = require('../src');
 
 async function main() {
   const userInput = '创建一个 hello world 函数。';
 
-  console.log('Testing runPlanSession...\n');
+  console.log('Testing engine.plan()...\n');
 
-  const result = await runPlanSession(userInput, {
-    projectRoot: process.cwd()
+  const engine = new Engine('plan', { projectRoot: process.cwd() });
+
+  const result = await engine.plan(userInput, {
+    projectRoot: process.cwd(),
+    planOnly: true,
   });
 
   console.log('\n========== RESULT ==========');
-  console.log('success:', result.success);
-  if (result.targetPath) {
-    console.log('targetPath:', result.targetPath);
+  console.log('success:', result?.success);
+  if (result?.planPath) {
+    console.log('planPath:', result.planPath);
   }
-  if (result.reason) {
+  if (result?.reason) {
     console.log('reason:', result.reason);
   }
-  if (result.error) {
+  if (result?.error) {
     console.log('error:', result.error);
   }
 }

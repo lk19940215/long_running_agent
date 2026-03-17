@@ -7,7 +7,7 @@
 
 ## 一、总览
 
-本项目通过 SDK 的 Hook 回调机制实现三类核心能力：**提示语注入**、**安全防护**、**活跃度监控**。
+本项目通过 SDK 的 Hook 回调机制实现四类核心能力：**提示语注入**、**安全防护**、**活跃度监控**、**生命周期管理**。
 
 ```
 SessionContext.initHooks(type)
@@ -17,16 +17,20 @@ SessionContext.initHooks(type)
         │
         ├─ createGuidanceModule()     → JSON 配置驱动的提示注入
         ├─ createEditGuardModule()    → 编辑频率防护（滑动窗口）
-        ├─ createCompletionModule()   → session_result 写入检测
-        ├─ createStallModule()        → 无活动 / 完成超时中断
+        ├─ createStopHook()           → per-turn 日志记录
+        ├─ createStallModule()        → 无活动超时中断（安全兜底）
+        ├─ createEndToolHook()        → 工具完成后重置状态
         ├─ createLoggingHook()        → 工具调用日志 + 状态指示器
-        └─ createFailureHook()        → 工具失败后倒计时重置
+        ├─ createFailureHook()        → 工具失败后倒计时重置
+        └─ SessionStart (内联)        → 查询生命周期日志
         │
         ▼
   hooks = {
     PreToolUse:          [logging, editGuard, guidance, interaction]
-    PostToolUse:         [completion]
+    PostToolUse:         [endToolHook]
     PostToolUseFailure:  [failureHook]
+    Stop:                [stopHook]
+    SessionStart:        [sessionStartHook]
   }
         │
         ▼
@@ -39,21 +43,24 @@ SessionContext.initHooks(type)
 |------|-----------|------|-------------|
 | `guidance` | PreToolUse | 按 JSON 规则注入提示文本 | coding |
 | `editGuard` | PreToolUse | 同文件编辑超阈值则 deny | coding |
-| `completion` | PostToolUse | 检测 session_result 写入 + endTool | coding |
-| `stall` | setInterval (非 hook) | 无活动 / 完成超时中断 | all |
+| `stop` | Stop | SDK 原生会话结束检测，替代 session_result 写入检测 | all (含 stop) |
+| `stall` | setInterval (非 hook) | 无活动超时中断（安全兜底） | all |
+| `endTool` | PostToolUse | 重置工具运行状态 + activity timer | all |
 | `logging` | PreToolUse | 记录工具调用 + inferPhaseStep | all |
 | `failure` | PostToolUseFailure | endTool 防 toolRunning 卡住 | all |
 | `interaction` | PreToolUse | 人机交互 (askUserQuestion) | plan_interactive, simplify |
+| `sessionStart` | SessionStart | 重置 per-query 状态（stop module、activity） | all |
 
 ### Session 类型与功能映射
 
 ```javascript
 FEATURE_MAP = {
-  coding:           [guidance, editGuard, completion, stall]
-  plan:             [stall]
-  plan_interactive: [stall, interaction]
-  scan:             [stall]
-  simplify:         [stall, interaction]
+  coding:           [guidance, editGuard, stop, stall]
+  plan:             [stop, stall]
+  plan_interactive: [stop, stall, interaction]
+  scan:             [stop, stall]
+  simplify:         [stop, stall, interaction]
+  go:               [stop, stall, interaction]
 }
 ```
 
@@ -125,14 +132,14 @@ interface HookOutput {
 | `PreToolUse` | ✅ | ✅ | ✅ | — |
 | `PostToolUse` | ✅ | ✅ | ✅ | — |
 | `PostToolUseFailure` | ✅ | ✅ | ✅ | 已用于 endTool，可扩展错误引导 |
+| `Stop` | ✅ | ✅ | ✅ | 会话结束检测，替代 session_result 写入检测 |
+| `SessionStart` | ❌ | ✅ | ✅ | per-query 状态重置，多查询场景隔离 |
 | `UserPromptSubmit` | ✅ | ✅ | ❌ | session 级引导注入 |
-| `Stop` | ✅ | ✅ | ❌ | 完成度校验 |
 | `SubagentStart` | ✅ | ✅ | ❌ | 子代理追踪 |
 | `SubagentStop` | ✅ | ✅ | ❌ | 子代理结果聚合 |
 | `PreCompact` | ✅ | ✅ | ❌ | 压缩前保留关键上下文 |
 | `Notification` | ✅ | ✅ | ❌ | 外部通知 |
 | `PermissionRequest` | ✅ | ✅ | ❌ | bypassPermissions 下不触发 |
-| `SessionStart` | ❌ | ✅ | ❌ | 初始化上下文 |
 | `SessionEnd` | ❌ | ✅ | ❌ | 清理/统计 |
 | `Setup` | ❌ | ✅ | ❌ | 初始化任务 |
 | `TeammateIdle` | ❌ | ✅ | ❌ | 重新分配任务 |
@@ -262,11 +269,14 @@ interface HookOutput {
 
 ```
 PreToolUse:          [loggingHook, editGuardHook?, guidanceHook?, interactionHook?]
-PostToolUse:         [completionHook 或 fallback endTool]
+PostToolUse:         [endToolHook]
 PostToolUseFailure:  [failureHook (endTool)]
+Stop:                [stopHook?]
+SessionStart:        [sessionStartHook]
 ```
 
-所有 hook 使用 `matcher: '*'`，细粒度过滤在回调内部完成。
+- PreToolUse/PostToolUse/PostToolUseFailure 使用 `matcher: '*'`，细粒度过滤在回调内部完成
+- Stop/SessionStart 不需要 matcher（非工具事件）
 
 ### 4.7 Hook 交互规则
 
@@ -285,7 +295,7 @@ PostToolUseFailure:  [failureHook (endTool)]
 | **方案可行性** | ✅ 可行 | Hook 是 SDK 官方支持的扩展点 |
 | **实现正确性** | ✅ 正确 | 已修复所有已知 Bug（见下方清单） |
 | **设计合理性** | ✅ 良好 | 模块化、配置驱动、类型区分 |
-| **覆盖完整性** | 🔸 待扩展 | 已用 Pre/Post/Failure，其他事件可渐进引入 |
+| **覆盖完整性** | ✅ 良好 | 已用 Pre/Post/Failure/Stop/SessionStart，覆盖完整生命周期 |
 
 ### 5.2 副作用
 
@@ -306,27 +316,43 @@ PostToolUseFailure:  [failureHook (endTool)]
 
 ---
 
-## 六、扩展方向
+## 六、已实现的生命周期 Hook
 
-### 6.1 `UserPromptSubmit` — Session 级引导
+### 6.1 `Stop` — per-turn 日志（已实现）
+
+通过 `createStopHook()` 在每次模型响应 turn 结束时记录日志。
+
+> **重要**：Stop hook 在每个 model response turn 都会触发（不仅在会话结束时），因此**不能**作为会话完成信号。会话完成检测使用 `SDKResultMessage.subtype`（由 `runQuery()` 内聚处理）。
+
+- **触发时机**：每次模型响应结束后（per-turn，一次 `sdk.query()` 中可触发多次）
+- **输出**：始终返回 `{}`
+- **用途**：per-turn 日志记录
+
+### 6.2 `SessionStart` — 查询生命周期日志（已实现）
+
+内联在 `createHooks()` 中，每次 `sdk.query()` 启动时触发。
+
+- **触发时机**：新会话启动时（`source: 'startup' | 'resume' | 'clear' | 'compact'`）
+- **功能**：刷新 activity timer、记录查询生命周期日志
+- **价值**：多查询流程的生命周期追踪
+
+## 七、待扩展方向
+
+### 7.1 `UserPromptSubmit` — Session 级引导
 
 在 prompt 提交时注入 session 级引导，替代 PreToolUse 中的重复注入。
 
-### 6.2 `Stop` — 完成度校验
-
-Agent 停止前校验 `session_result.json` 是否已写入，替代部分 stall 定时器逻辑。
-
-### 6.3 `PreCompact` — 压缩前保留关键引导
+### 7.2 `PreCompact` — 压缩前保留关键引导
 
 context 压缩时用 `systemMessage` 重新注入关键约束。
 
-### 6.4 `PostToolUseFailure` — 错误引导
+### 7.3 `PostToolUseFailure` — 错误引导
 
 当前仅用于 `endTool()`，可扩展为注入修复建议。
 
 ---
 
-## 七、验证记录
+## 八、验证记录
 
 - `test/test-hook-format.js` — 30/30 passed
 - `test/flow.test.js` — 15/15 passed

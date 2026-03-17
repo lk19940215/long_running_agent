@@ -56,6 +56,17 @@ function truncatePath(path, maxLen) {
   return truncatedDir + '/' + fileName;
 }
 
+/**
+ * 命令字符串截断：保留头部，超长时截断
+ * @param {string} cmd - 命令字符串
+ * @param {number} maxLen - 最大长度
+ * @returns {string}
+ */
+function truncateCommand(cmd, maxLen) {
+  if (!cmd || cmd.length <= maxLen) return cmd || '';
+  return cmd.slice(0, maxLen - 1) + '…';
+}
+
 // ─────────────────────────────────────────────────────────────
 // Git 工具
 // ─────────────────────────────────────────────────────────────
@@ -112,12 +123,17 @@ function appendGitignore(projectRoot, entry) {
 }
 
 /**
- * 确保 .gitignore 包含 claude-coder 的敏感文件条目
+ * 确保 .gitignore 包含 claude-coder 的忽略规则
+ * 使用通配符忽略整个目录，仅白名单放行需要版本控制的文件
  * @param {string} projectRoot - 项目根目录
  * @returns {boolean} 是否有新增
  */
 function ensureGitignore(projectRoot) {
-  const patterns = ['.claude-coder/.env', '.claude-coder/.runtime/'];
+  const patterns = [
+    '.claude-coder/*',
+    '!.claude-coder/tasks.json',
+    '!.claude-coder/project_profile.json',
+  ];
   let added = false;
   for (const p of patterns) {
     if (appendGitignore(projectRoot, p)) added = true;
@@ -153,6 +169,7 @@ function localTimestamp() {
 module.exports = {
   truncateMiddle,
   truncatePath,
+  truncateCommand,
   getGitHead,
   isGitRepo,
   appendGitignore,

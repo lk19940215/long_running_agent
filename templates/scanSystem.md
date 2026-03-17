@@ -115,6 +115,6 @@
 ```
 
 **注意**：
-- `existing_docs`：列出项目中所有可读文档路径
+- `existing_docs`：列出项目中重要的可读文档路径，比如 README.md、API 文档、架构文档等。
 - `services` 的 `command` 必须来自实际配置文件或标准命令
 - `mcp_tools`：检查 `.claude-coder/.env` 中的变量，不存在则全部设为 `false`

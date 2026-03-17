@@ -8,3 +8,4 @@ node_modules/
 .claude/
 .playwright-mcp/
 .claude-coder/.runtime/browser-profile
+.claude-coder/.env

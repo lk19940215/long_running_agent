@@ -3,18 +3,16 @@
 const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
-const { runSession } = require('./session');
-const { buildQueryOptions } = require('./query');
 const { buildSystemPrompt } = require('./prompts');
-const { log, loadConfig } = require('../common/config');
+const { log } = require('../common/config');
 const { assets } = require('../common/assets');
 const { extractResultText } = require('../common/logging');
-const { loadState } = require('./harness');
+const { loadState, saveState } = require('./state');
 
 const GO_DIR_NAME = 'go';
 
 function getRecipesDir() {
-  return path.join(assets.projectRoot || process.cwd(), '.claude-coder', 'recipes');
+  return path.join(assets.projectRoot, '.claude-coder', 'recipes');
 }
 
 // ─── Go State (harness_state.json → go section) ──────────
@@ -27,7 +25,7 @@ function loadGoState() {
 function saveGoState(goData) {
   const state = loadState();
   state.go = { ...state.go, ...goData };
-  assets.writeJson('harnessState', state);
+  saveState(state);
 }
 
 // ─── Prompt Builder ───────────────────────────────────────
@@ -173,70 +171,20 @@ function writeGoFile(content) {
   return filePath;
 }
 
-// ─── Session Execution ───────────────────────────────────
-
-async function _executeGoSession(instruction, opts = {}) {
-  const isAutoMode = !!(instruction || opts.reqFile);
-  const ts = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 12);
-
-  return runSession('go', {
-    opts,
-    sessionNum: 0,
-    logFileName: `go_${ts}.log`,
-    label: isAutoMode ? 'go_auto' : 'go_dialogue',
-
-    async execute(sdk, ctx) {
-      log('info', isAutoMode ? '正在分析需求并组装方案...' : '正在启动对话式需求收集...');
-
-      const prompt = buildGoPrompt(instruction, opts);
-      const queryOpts = buildQueryOptions(ctx.config, opts);
-      queryOpts.systemPrompt = buildSystemPrompt('go');
-      queryOpts.permissionMode = 'plan';
-      queryOpts.hooks = ctx.hooks;
-      queryOpts.abortController = ctx.abortController;
-
-      if (isAutoMode) {
-        queryOpts.disallowedTools = ['askUserQuestion'];
-      }
-
-      const collected = await ctx.runQuery(sdk, prompt, queryOpts);
-      const content = extractGoContent(collected);
-
-      return { content, collected };
-    },
-  });
-}
-
 // ─── Main Entry ──────────────────────────────────────────
 
-async function run(input, opts = {}) {
+async function executeGo(engine, input, opts = {}) {
   const instruction = input || '';
 
-  assets.ensureDirs();
+  const displayModel = opts.model || engine.config.model || '(default)';
+  log('ok', `模型配置已加载: ${engine.config.provider || 'claude'} (go 使用: ${displayModel})`);
 
-  const config = loadConfig();
-  if (!opts.model) {
-    opts.model = config.defaultOpus || config.model;
-  }
-
-  const displayModel = opts.model || config.model || '(default)';
-  log('ok', `模型配置已加载: ${config.provider || 'claude'} (go 使用: ${displayModel})`);
-
-  const recipesDir = getRecipesDir();
-  if (!fs.existsSync(recipesDir) || fs.readdirSync(recipesDir).length === 0) {
-    log('error', `食谱目录为空或不存在: ${recipesDir}`);
-    log('info', '请先运行 claude-coder init 初始化项目（会自动部署食谱）');
-    process.exit(1);
-  }
-
-  // --reset: 清空 go 记忆
   if (opts.reset) {
     saveGoState({});
     log('ok', 'Go 记忆已重置');
     return;
   }
 
-  // -r: 读取需求文件，自动模式
   if (opts.readFile) {
     const reqPath = path.resolve(assets.projectRoot, opts.readFile);
     if (!fs.existsSync(reqPath)) {
@@ -247,12 +195,36 @@ async function run(input, opts = {}) {
     log('info', `需求文件: ${reqPath}`);
   }
 
-  // 确定模式
-  const mode = (instruction || opts.reqFile) ? '自动' : '对话';
+  const isAutoMode = !!(instruction || opts.reqFile);
+  const mode = isAutoMode ? '自动' : '对话';
   log('info', `Go 模式: ${mode}`);
 
-  // 执行 go session
-  const result = await _executeGoSession(instruction, opts);
+  const ts = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 12);
+
+  const result = await engine.runSession('go', {
+    logFileName: `go_${ts}.log`,
+    label: isAutoMode ? 'go_auto' : 'go_dialogue',
+
+    async execute(session) {
+      log('info', isAutoMode ? '正在分析需求并组装方案...' : '正在启动对话式需求收集...');
+
+      const prompt = buildGoPrompt(instruction, opts);
+      const queryOpts = engine.buildQueryOptions(opts);
+      queryOpts.systemPrompt = buildSystemPrompt('go');
+      queryOpts.permissionMode = 'plan';
+      queryOpts.hooks = session.hooks;
+      queryOpts.abortController = session.abortController;
+
+      if (isAutoMode) {
+        queryOpts.disallowedTools = ['askUserQuestion'];
+      }
+
+      const { messages } = await session.runQuery(prompt, queryOpts);
+      const content = extractGoContent(messages);
+
+      return { content, collected: messages };
+    },
+  });
 
   if (!result.content) {
     log('error', '无法从 AI 输出中提取方案内容');
@@ -260,7 +232,6 @@ async function run(input, opts = {}) {
     return;
   }
 
-  // 预览 + 确认 + 补充
   const { confirmed, supplement } = await previewAndConfirm(result.content);
   if (!confirmed) {
     log('info', '已取消');
@@ -272,11 +243,9 @@ async function run(input, opts = {}) {
     finalContent += `\n\n## 补充要求\n\n${supplement}`;
   }
 
-  // 写入 .claude-coder/go/
   const filePath = writeGoFile(finalContent);
   log('ok', `方案已保存: ${filePath}`);
 
-  // 保存记忆到 harness_state.json
   const domain = extractDomainFromContent(finalContent);
   const components = extractComponentsFromContent(finalContent);
   const history = (loadGoState().history || []).slice(-9);
@@ -295,16 +264,14 @@ async function run(input, opts = {}) {
     history,
   });
 
-  // 询问是否继续到 plan
   console.log('');
   const shouldPlan = await promptProceedToPlan();
   if (shouldPlan) {
     log('info', '开始生成计划并分解任务...');
-    const { run: planRun } = require('./plan');
-    await planRun('', { reqFile: filePath, ...opts });
+    await engine.plan('', { reqFile: filePath });
   } else {
     log('info', `方案已保存，稍后可使用: claude-coder plan -r ${filePath}`);
   }
 }
 
-module.exports = { run };
+module.exports = { executeGo };

@@ -1,55 +1,34 @@
-"use strict";
+'use strict';
 
-const { runSession } = require("./session");
-const { buildQueryOptions } = require("./query");
-const { buildSystemPrompt, buildCodingContext } = require("./prompts");
-const { extractResult } = require("../common/logging");
-const { log } = require("../common/config");
+const { buildSystemPrompt, buildCodingContext } = require('./prompts');
+const { log } = require('../common/config');
 
-/**
- * 内部：运行编码 Session
- */
-async function runCodingSession(sessionNum, opts = {}) {
-  const taskId = opts.taskId || "unknown";
+async function executeCoding(engine, sessionNum, opts = {}) {
+  const taskId = opts.taskId || 'unknown';
   const dateStr = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 12);
 
-  return runSession("coding", {
-    opts,
+  return engine.runSession('coding', {
     sessionNum,
     logFileName: `${taskId}_session_${sessionNum}_${dateStr}.log`,
     label: `coding task=${taskId}`,
 
-    async execute(sdk, ctx) {
+    async execute(session) {
       const prompt = buildCodingContext(sessionNum, opts);
-      const queryOpts = buildQueryOptions(ctx.config, opts);
+      const queryOpts = engine.buildQueryOptions(opts);
       queryOpts.systemPrompt = buildSystemPrompt('coding');
-      queryOpts.hooks = ctx.hooks;
-      queryOpts.abortController = ctx.abortController;
+      queryOpts.hooks = session.hooks;
+      queryOpts.abortController = session.abortController;
       queryOpts.disallowedTools = ['askUserQuestion'];
 
-      const collected = await ctx.runQuery(sdk, prompt, queryOpts);
-      const result = extractResult(collected);
-      const subtype = result?.subtype || "unknown";
+      const { subtype, cost, usage } = await session.runQuery(prompt, queryOpts);
 
-      if (subtype !== "success" && subtype !== "unknown") {
-        log(
-          "warn",
-          `session 结束原因: ${subtype} (turns: ${result?.num_turns ?? "?"})`,
-        );
-      }
-      if (ctx.logStream.writable) {
-        ctx.logStream.write(
-          `[${new Date().toISOString()}] SESSION_END subtype=${subtype} turns=${result?.num_turns ?? "?"} cost=${result?.total_cost_usd ?? "?"}\n`,
-        );
+      if (subtype && subtype !== 'success' && subtype !== 'unknown') {
+        log('warn', `session 结束原因: ${subtype}`);
       }
 
-      return {
-        cost: result?.total_cost_usd ?? null,
-        tokenUsage: result?.usage ?? null,
-        subtype,
-      };
+      return { cost, tokenUsage: usage, subtype: subtype || 'unknown' };
     },
   });
 }
 
-module.exports = { runCodingSession };
+module.exports = { executeCoding };

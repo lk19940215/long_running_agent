@@ -116,48 +116,45 @@ async function main() {
     process.exit(0);
   }
 
+  // 不需要 Engine 的命令
   switch (command) {
-    case 'run': {
-      const runner = require('../src/core/runner');
-      await runner.run(opts);
-      break;
-    }
     case 'setup': {
       const setup = require('../src/commands/setup');
       await setup.setup();
-      break;
-    }
-    case 'init': {
-      const { init } = require('../src/core/init');
-      await init();
-      break;
-    }
-    case 'plan': {
-      const { run: planRun } = require('../src/core/plan');
-      const input = positional[0] || '';
-      await planRun(input, opts);
-      break;
-    }
-    case 'simplify': {
-      const { simplify } = require('../src/core/simplify');
-      await simplify(positional[0] || null, { n: opts.n });
-      break;
+      return;
     }
     case 'auth': {
       const { auth } = require('../src/commands/auth');
       await auth(positional[0] || null);
-      break;
-    }
-    case 'go': {
-      const { run: goRun } = require('../src/core/go');
-      await goRun(positional[0] || '', opts);
-      break;
+      return;
     }
     case 'status': {
       const tasks = require('../src/common/tasks');
       tasks.showStatus();
-      break;
+      return;
     }
+  }
+
+  // 需要 Engine 的命令
+  const { Engine } = require('../src');
+  const engine = new Engine(command, opts);
+
+  switch (command) {
+    case 'run':
+      await engine.run(opts);
+      break;
+    case 'init':
+      await engine.initProject();
+      break;
+    case 'plan':
+      await engine.plan(positional[0] || '', opts);
+      break;
+    case 'simplify':
+      await engine.simplify(positional[0] || null, { n: opts.n });
+      break;
+    case 'go':
+      await engine.go(positional[0] || '', opts);
+      break;
     default:
       console.error(`未知命令: ${command}`);
       showHelp();

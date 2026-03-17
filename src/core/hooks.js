@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const { inferPhaseStep } = require('../common/indicator');
 const { log } = require('../common/config');
-const { EDIT_THRESHOLD, FILES } = require('../common/constants');
+const { EDIT_THRESHOLD } = require('../common/constants');
 const { createAskUserQuestionHook } = require('../common/interaction');
 const { assets } = require('../common/assets');
 const { localTimestamp } = require('../common/utils');
@@ -13,13 +13,12 @@ const { localTimestamp } = require('../common/utils');
 // ─────────────────────────────────────────────────────────────
 
 const DEFAULT_EDIT_THRESHOLD = EDIT_THRESHOLD;
-const SESSION_RESULT_FILENAME = FILES.SESSION_RESULT;
 
 // Feature name constants
 const FEATURES = Object.freeze({
   GUIDANCE: 'guidance',
   EDIT_GUARD: 'editGuard',
-  COMPLETION: 'completion',
+  STOP: 'stop',
   STALL: 'stall',
   INTERACTION: 'interaction',
 });
@@ -249,19 +248,6 @@ function logToolCall(logStream, input) {
   }
 }
 
-function isSessionResultWrite(toolName, toolInput) {
-  if (toolName === 'Write') {
-    const target = toolInput?.file_path || toolInput?.path || '';
-    return target.endsWith(SESSION_RESULT_FILENAME);
-  }
-  if (toolName === 'Bash' || toolName === 'Shell') {
-    const cmd = toolInput?.command || '';
-    if (!cmd.includes(SESSION_RESULT_FILENAME)) return false;
-    return />\s*[^\s]*session_result/.test(cmd);
-  }
-  return false;
-}
-
 // ─────────────────────────────────────────────────────────────
 // Module Factories
 // ─────────────────────────────────────────────────────────────
@@ -315,40 +301,18 @@ function createEditGuardModule(options) {
 }
 
 /**
- * Create stall detection module (includes completion timeout handling)
+ * Create stall detection module (idle timeout only)
  */
 function createStallModule(indicator, logStream, options) {
   let stallDetected = false;
   let stallChecker = null;
   const timeoutMs = options.stallTimeoutMs || 1200000;
-  const completionTimeoutMs = options.completionTimeoutMs || 300000;
   const abortController = options.abortController;
-  let completionDetectedAt = 0;
 
   const checkStall = () => {
     const now = Date.now();
     const idleMs = now - indicator.lastActivityTime;
 
-    // Priority: completion timeout
-    if (completionDetectedAt > 0) {
-      const sinceCompletion = now - completionDetectedAt;
-      if (sinceCompletion > completionTimeoutMs && !stallDetected) {
-        stallDetected = true;
-        const shortMin = Math.ceil(completionTimeoutMs / 60000);
-        const actualMin = Math.floor(sinceCompletion / 60000);
-        log('warn', `\nsession_result 已写入 ${actualMin} 分钟，超过 ${shortMin} 分钟上限，自动中断`);
-        if (logStream) {
-          logStream.write(`\n[${localTimestamp()}] STALL: session_result 写入后 ${actualMin} 分钟（上限 ${shortMin} 分钟），自动中断\n`);
-        }
-        if (abortController) {
-          abortController.abort();
-          log('warn', '\n已发送中断信号');
-        }
-      }
-      return;
-    }
-
-    // Normal stall detection
     if (idleMs > timeoutMs && !stallDetected) {
       stallDetected = true;
       const idleMin = Math.floor(idleMs / 60000);
@@ -366,39 +330,36 @@ function createStallModule(indicator, logStream, options) {
   stallChecker = setInterval(checkStall, 30000);
 
   return {
-    setCompletionDetected: () => { completionDetectedAt = Date.now(); },
-    onCompletionDetected: () => {
-      completionDetectedAt = Date.now();
-      const shortMin = Math.ceil(completionTimeoutMs / 60000);
-      indicator.setCompletionDetected(shortMin);
-      log('info', '');
-      log('info', `检测到 session_result 写入，${shortMin} 分钟内模型未终止将自动中断`);
-      if (logStream) {
-        logStream.write(`\n[${localTimestamp()}] COMPLETION_DETECTED: session_result.json written, ${shortMin}min grace period\n`);
-      }
-    },
     cleanup: () => { if (stallChecker) clearInterval(stallChecker); },
     isStalled: () => stallDetected
   };
 }
 
 /**
- * Create completion detection module (PostToolUse hook)
- * endTool() resets toolRunning and refreshes lastActivityTime (countdown reset)
+ * Create Stop hook — per-turn activity logger.
+ * Stop fires on EVERY model response turn (not just session end).
+ * For session completion detection, use the result message (SDKResultMessage.subtype).
  */
-function createCompletionModule(indicator, stallModule) {
-  return {
-    hook: async (input, _toolUseID, _context) => {
-      indicator.endTool();
-      indicator.updatePhase('thinking');
-      indicator.updateStep('');
-      indicator.toolTarget = '';
-
-      if (isSessionResultWrite(input.tool_name, input.tool_input)) {
-        stallModule.onCompletionDetected();
-      }
-      return {};
+function createStopHook(logStream) {
+  return async (_input) => {
+    if (logStream?.writable) {
+      logStream.write(`[${localTimestamp()}] STOP: turn completed\n`);
     }
+    return {};
+  };
+}
+
+/**
+ * Create PostToolUse hook — resets tool running state and activity timer.
+ * Unified for all session types (replaces the former createCompletionModule).
+ */
+function createEndToolHook(indicator) {
+  return async (_input, _toolUseID, _context) => {
+    indicator.endTool();
+    indicator.updatePhase('thinking');
+    indicator.updateStep('');
+    indicator.toolTarget = '';
+    return {};
   };
 }
 
@@ -428,13 +389,13 @@ function createLoggingHook(indicator, logStream) {
 // ─────────────────────────────────────────────────────────────
 
 const FEATURE_MAP = {
-  coding: [FEATURES.GUIDANCE, FEATURES.EDIT_GUARD, FEATURES.COMPLETION, FEATURES.STALL],
-  plan: [FEATURES.STALL],
-  plan_interactive: [FEATURES.STALL, FEATURES.INTERACTION],
-  scan: [FEATURES.STALL],
-  add: [FEATURES.STALL],
-  simplify: [FEATURES.STALL, FEATURES.INTERACTION],
-  go: [FEATURES.STALL, FEATURES.INTERACTION],
+  coding: [FEATURES.GUIDANCE, FEATURES.EDIT_GUARD, FEATURES.STOP, FEATURES.STALL],
+  plan: [FEATURES.STOP, FEATURES.STALL],
+  plan_interactive: [FEATURES.STOP, FEATURES.STALL, FEATURES.INTERACTION],
+  scan: [FEATURES.STOP, FEATURES.STALL],
+  add: [FEATURES.STOP, FEATURES.STALL],
+  simplify: [FEATURES.STOP, FEATURES.STALL, FEATURES.INTERACTION],
+  go: [FEATURES.STOP, FEATURES.STALL, FEATURES.INTERACTION],
   custom: null
 };
 
@@ -452,12 +413,12 @@ function createHooks(type, indicator, logStream, options = {}) {
     modules.stall = createStallModule(indicator, logStream, options);
   }
 
-  if (features.includes(FEATURES.EDIT_GUARD)) {
-    modules.editGuard = createEditGuardModule(options);
+  if (features.includes(FEATURES.STOP)) {
+    modules.stopHook = createStopHook(logStream);
   }
 
-  if (features.includes(FEATURES.COMPLETION) && modules.stall) {
-    modules.completion = createCompletionModule(indicator, modules.stall);
+  if (features.includes(FEATURES.EDIT_GUARD)) {
+    modules.editGuard = createEditGuardModule(options);
   }
 
   if (features.includes(FEATURES.GUIDANCE)) {
@@ -484,15 +445,10 @@ function createHooks(type, indicator, logStream, options = {}) {
     preToolUseHooks.push(modules.interaction.hook);
   }
 
-  // Assemble PostToolUse hooks (always include endTool for countdown reset)
-  const postToolUseHooks = [];
-  if (modules.completion) {
-    postToolUseHooks.push(modules.completion.hook);
-  } else {
-    postToolUseHooks.push(createFailureHook(indicator));
-  }
+  // PostToolUse: unified endTool for all session types
+  const endToolHook = createEndToolHook(indicator);
 
-  // PostToolUseFailure hook: ensure endTool even on tool errors
+  // PostToolUseFailure: ensure endTool even on tool errors
   const failureHook = createFailureHook(indicator);
 
   // Build hooks object
@@ -500,10 +456,23 @@ function createHooks(type, indicator, logStream, options = {}) {
   if (preToolUseHooks.length > 0) {
     hooks.PreToolUse = [{ matcher: '*', hooks: preToolUseHooks }];
   }
-  if (postToolUseHooks.length > 0) {
-    hooks.PostToolUse = [{ matcher: '*', hooks: postToolUseHooks }];
-  }
+  hooks.PostToolUse = [{ matcher: '*', hooks: [endToolHook] }];
   hooks.PostToolUseFailure = [{ matcher: '*', hooks: [failureHook] }];
+
+  // Stop hook: per-turn activity logger
+  if (modules.stopHook) {
+    hooks.Stop = [{ hooks: [modules.stopHook] }];
+  }
+
+  // SessionStart hook: log query lifecycle
+  const sessionStartHook = async (input) => {
+    indicator.updateActivity();
+    if (logStream?.writable) {
+      logStream.write(`[${localTimestamp()}] SESSION_START: source=${input.source || 'unknown'}\n`);
+    }
+    return {};
+  };
+  hooks.SessionStart = [{ hooks: [sessionStartHook] }];
 
   // Cleanup functions
   const cleanupFns = [];
@@ -514,7 +483,7 @@ function createHooks(type, indicator, logStream, options = {}) {
   return {
     hooks,
     cleanup: () => cleanupFns.forEach(fn => fn()),
-    isStalled: () => modules.stall?.isStalled() || false
+    isStalled: () => modules.stall?.isStalled() || false,
   };
 }
 
@@ -527,8 +496,8 @@ module.exports = {
   GuidanceInjector,
   createGuidanceModule,
   createEditGuardModule,
-  createCompletionModule,
+  createStopHook,
+  createEndToolHook,
   createStallModule,
   FEATURES,
-  isSessionResultWrite,
 };

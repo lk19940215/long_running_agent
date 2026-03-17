@@ -5,7 +5,7 @@ const path = require('path');
 const { loadConfig } = require('../common/config');
 const { assets } = require('../common/assets');
 const { loadTasks, getStats } = require('../common/tasks');
-const { loadState, selectNextTask } = require('./harness');
+const { loadState, selectNextTask } = require('./state');
 
 // --------------- System Prompt ---------------
 
@@ -77,21 +77,33 @@ function buildTaskContext(projectRoot, taskId) {
 
     if (!task) return '无待处理任务。';
 
-    const steps = (task.steps || [])
+    const { id, description, status, category, priority, depends_on, steps, ...rest } = task;
+
+    const stepLines = (steps || [])
       .map((s, i) => `  ${i + 1}. ${s}`)
       .join('\n');
 
-    const deps = (task.depends_on || []).length > 0
-      ? `depends_on: [${task.depends_on.join(', ')}]`
+    const deps = (depends_on || []).length > 0
+      ? `depends_on: [${depends_on.join(', ')}]`
       : '';
 
-    return [
-      `**${task.id}**: "${task.description}"`,
-      `状态: ${task.status}, category: ${task.category}, priority: ${task.priority || 'N/A'} ${deps}`,
-      `步骤:\n${steps}`,
+    const lines = [
+      `**${id}**: "${description}"`,
+      `状态: ${status}, category: ${category}, priority: ${priority || 'N/A'} ${deps}`,
+      `步骤:\n${stepLines}`,
       `进度: ${stats.done}/${stats.total} done, ${stats.failed} failed`,
       `项目路径: ${projectRoot}`,
-    ].join('\n');
+    ];
+
+    const extras = Object.entries(rest).filter(([, v]) => v != null && v !== '');
+    if (extras.length > 0) {
+      lines.push('补充信息:');
+      for (const [k, v] of extras) {
+        lines.push(`  ${k}: ${typeof v === 'object' ? JSON.stringify(v) : v}`);
+      }
+    }
+
+    return lines.join('\n');
   } catch {
     return '任务上下文加载失败，请读取 .claude-coder/tasks.json 自行确认。';
   }
