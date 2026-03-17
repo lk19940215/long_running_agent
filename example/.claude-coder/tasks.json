@@ -1,0 +1,281 @@
+{
+  "project": "Claude Coder Website - Non-Homepage Styling & Animation Optimization",
+  "created_at": "2026-03-17",
+  "features": [
+    {
+      "id": "feat-001",
+      "category": "frontend",
+      "priority": 1,
+      "description": "扩展全局样式系统 - 新增动画类、排版工具类、响应式辅助类",
+      "steps": [
+        "编辑 src/assets/styles/global.css",
+        "添加 staggered 动画类：fadeInStagger + animate-stagger-1 到 animate-stagger-5",
+        "添加 pulse glow 动画：pulseGlow + animate-pulse-glow",
+        "添加 slide-in 动画：slideInLeft/Right + animate-slide-in-left/right",
+        "扩展排版工具类：text-display、text-heading-1/2/3、text-body/caption/highlight",
+        "添加间距工具类：space-section/card/content、gap-section/card/grid、p-section/card/code",
+        "添加 card-hover-enhanced 悬停效果样式",
+        "添加 card-gradient-border 渐变边框样式",
+        "添加 step-number 摸鱼主题步骤数字样式",
+        "扩展移动端侧边栏样式：sidebar-mobile + sidebar-overlay",
+        "添加代码块响应式优化样式：code-block-responsive",
+        "验证: npm run dev && 查看控制台无 CSS 解析错误"
+      ],
+      "status": "pending",
+      "depends_on": []
+    },
+    {
+      "id": "feat-002",
+      "category": "frontend",
+      "priority": 2,
+      "description": "创建通用布局组件 - PageLayout、SectionCard、AnimatedTitle",
+      "steps": [
+        "创建 src/components/layout/PageLayout.tsx（统一页面布局包装器）",
+        "创建 src/components/ui/SectionCard.tsx（标准章节卡片组件）",
+        "创建 src/components/ui/AnimatedTitle.tsx（动画标题组件）",
+        "实现 PageLayout 的入场动画（motion.div + fadeInUp）",
+        "实现 SectionCard 的多种变体（default/primary/fish）",
+        "实现 AnimatedTitle 的渐变文字效果和自动动画",
+        "验证: TypeScript 编译通过，无类型错误"
+      ],
+      "status": "pending",
+      "depends_on": ["feat-001"]
+    },
+    {
+      "id": "feat-003",
+      "category": "frontend",
+      "priority": 3,
+      "description": "创建 UI 组件 - EnhancedCodeBlock、FishStepCard",
+      "steps": [
+        "创建 src/components/ui/EnhancedCodeBlock.tsx（增强版代码块）",
+        "实现代码复制功能（使用 navigator.clipboard）",
+        "添加语言标识显示",
+        "添加行号显示功能",
+        "创建 src/components/ui/FishStepCard.tsx（摸鱼主题步骤卡片）",
+        "实现渐变背景步骤数字（fish-gold + lazy-cyan）",
+        "添加自动 staggered 动画支持",
+        "验证: 组件支持所有 props，TypeScript 类型完整"
+      ],
+      "status": "pending",
+      "depends_on": ["feat-002"]
+    },
+    {
+      "id": "feat-004",
+      "category": "frontend",
+      "priority": 4,
+      "description": "创建工具 Hooks - useScrollAnimation、useMobileSidebar",
+      "steps": [
+        "创建 src/hooks/useScrollAnimation.ts（滚动触发动画）",
+        "实现 IntersectionObserver 监听元素进入视口",
+        "返回是否在视口中的状态",
+        "创建 src/hooks/useMobileSidebar.ts（移动端侧边栏管理）",
+        "实现 isOpen 状态管理",
+        "实现 toggle/open/close 方法",
+        "添加 ESC 键关闭监听",
+        "验证: Hooks 在组件中正常工作，无内存泄漏"
+      ],
+      "status": "pending",
+      "depends_on": ["feat-003"]
+    },
+    {
+      "id": "feat-005",
+      "category": "frontend",
+      "priority": 5,
+      "description": "重构 QuickStart 页面 - 使用新组件和动画",
+      "steps": [
+        "重构 src/pages/QuickStart.tsx",
+        "使用 PageLayout 包装整个页面",
+        "使用 FishStepCard 替换现有步骤卡片",
+        "为每个步骤添加 stagger-1 到 stagger-4 动画",
+        "使用 EnhancedCodeBlock 替换现有代码块",
+        "添加步骤之间的合理间距（space-section）",
+        "优化移动端响应式（max-w-4xl + px-4）",
+        "验证: 页面加载有流畅入场动画，移动端显示正常"
+      ],
+      "status": "pending",
+      "depends_on": ["feat-004"]
+    },
+    {
+      "id": "feat-006",
+      "category": "frontend",
+      "priority": 6,
+      "description": "重构 Features 页面 - 使用新组件和侧边栏优化",
+      "steps": [
+        "重构 src/pages/Features.tsx",
+        "使用 PageLayout 包装页面",
+        "重构侧边栏导航：使用 useMobileSidebar Hook",
+        "添加移动端汉堡菜单按钮",
+        "使用 SectionCard 重构每个功能区域",
+        "为功能列表添加 slide-in-left 动画",
+        "增强卡片悬停效果（card-hover-enhanced）",
+        "添加导航项激活状态样式（nav-item-active）",
+        "验证: 侧边栏在移动端可展开/收起，桌面端固定定位"
+      ],
+      "status": "pending",
+      "depends_on": ["feat-005"]
+    },
+    {
+      "id": "feat-007",
+      "category": "frontend",
+      "priority": 7,
+      "description": "重构 Docs 页面 - 使用新组件和代码块优化",
+      "steps": [
+        "读取 src/pages/Docs.tsx 了解当前结构",
+        "使用 PageLayout 包装页面",
+        "重构侧边栏导航（复用 Features 的逻辑）",
+        "使用 SectionCard 重构文档章节",
+        "使用 EnhancedCodeBlock 替换所有代码块",
+        "添加代码块复制功能",
+        "优化文档层次结构（使用 text-heading-2/3）",
+        "改善内容间距和留白（p-section + space-content）",
+        "验证: 所有代码块可复制，文档层次清晰"
+      ],
+      "status": "pending",
+      "depends_on": ["feat-006"]
+    },
+    {
+      "id": "feat-008",
+      "category": "frontend",
+      "priority": 8,
+      "description": "重构 Examples 页面 - 使用新组件和网格布局",
+      "steps": [
+        "读取 src/pages/Examples.tsx 了解当前结构",
+        "使用 PageLayout 包装页面",
+        "使用 SectionCard 展示每个示例",
+        "优化响应式网格布局（grid + gap-grid）",
+        "添加 GitHub 图标悬停动画",
+        "为示例卡片添加 staggered 动画",
+        "优化示例预览效果（card-gradient-border）",
+        "验证: 网格布局在各种屏幕尺寸下正常，动画流畅"
+      ],
+      "status": "pending",
+      "depends_on": ["feat-007"]
+    },
+    {
+      "id": "feat-009",
+      "category": "frontend",
+      "priority": 9,
+      "description": "交互动画增强 - 按钮、卡片、导航项",
+      "steps": [
+        "为所有主要按钮添加 animate-pulse-glow 效果",
+        "增强卡片悬停效果（scale-[1.02] + shadow-lg）",
+        "为链接添加下划线动画（hover:underline）",
+        "为导航项添加激活状态动画（border-gradient）",
+        "为页脚链接添加悬停效果",
+        "优化 Header 导航悬停反馈",
+        "验证: 所有交互动画流畅，无性能卡顿"
+      ],
+      "status": "pending",
+      "depends_on": ["feat-008"]
+    },
+    {
+      "id": "feat-010",
+      "category": "frontend",
+      "priority": 10,
+      "description": "粒子效果应用 - 侧边栏、标题、CTA 区域",
+      "steps": [
+        "在 Features 页面侧边栏添加 ParticleContainer（opacity-20）",
+        "在重要标题下方添加爱心飘散效果（particleType='heart'）",
+        "在 CTA 区域添加渐变粒子背景",
+        "调整粒子数量（particleCount=15-20）和大小（particleSize=2-3）",
+        "确保粒子效果不影响页面性能",
+        "验证: 粒子动画流畅，移动端性能不受影响"
+      ],
+      "status": "pending",
+      "depends_on": ["feat-009"]
+    },
+    {
+      "id": "feat-011",
+      "category": "frontend",
+      "priority": 11,
+      "description": "性能优化 - React.memo、useCallback、懒加载",
+      "steps": [
+        "使用 React.memo 优化 SectionCard、FishStepCard 等组件",
+        "使用 useCallback 优化事件处理器（handleNavClick 等）",
+        "使用 IntersectionObserver 懒加载动画",
+        "优化 ParticleContainer 性能（requestAnimationFrame）",
+        "添加 will-change 和 transform 优化动画性能",
+        "验证: Lighthouse Performance 评分 > 90"
+      ],
+      "status": "pending",
+      "depends_on": ["feat-010"]
+    },
+    {
+      "id": "feat-012",
+      "category": "test",
+      "priority": 12,
+      "description": "QuickStart 页面 Playwright E2E 测试",
+      "steps": [
+        "【规则】阅读 .claude-coder/assets/test_rule.md（如果有）",
+        "【P0】测试页面加载：检查标题 '快速上手' 存在",
+        "【P0】测试步骤卡片：检查 4 个步骤卡片渲染正常",
+        "【P0】测试代码块：检查所有代码块可显示",
+        "【P0】测试响应式：检查移动端 (375px) 显示正常",
+        "【P1】测试动画：检查页面加载时有 fade-in 动画",
+        "【P1】测试滚动：滚动到不同步骤检查高亮",
+        "【P2】测试主题切换：检查深色模式正常",
+        "验证: 所有 P0 测试通过，截图保存到 assets/screenshots/"
+      ],
+      "status": "pending",
+      "depends_on": ["feat-005"]
+    },
+    {
+      "id": "feat-013",
+      "category": "test",
+      "priority": 13,
+      "description": "Features 页面 Playwright E2E 测试",
+      "steps": [
+        "【规则】阅读 .claude-coder/assets/test_rule.md（如果有）",
+        "【P0】测试页面加载：检查标题 '功能特性' 存在",
+        "【P0】测试侧边栏：检查导航项渲染正常",
+        "【P0】测试内容区域：检查 4 个功能章节存在",
+        "【P0】测试响应式：检查移动端侧边栏可展开/收起",
+        "【P1】测试导航点击：点击导航项跳转到对应章节",
+        "【P1】测试悬停效果：检查卡片悬停有反馈",
+        "【P1】测试滚动激活：滚动时导航项激活状态变化",
+        "【P2】测试粒子效果：检查侧边栏粒子渲染",
+        "验证: 所有 P0 测试通过，截图保存到 assets/screenshots/"
+      ],
+      "status": "pending",
+      "depends_on": ["feat-006"]
+    },
+    {
+      "id": "feat-014",
+      "category": "test",
+      "priority": 14,
+      "description": "Docs 和 Examples 页面 Playwright E2E 测试",
+      "steps": [
+        "【规则】阅读 .claude-coder/assets/test_rule.md（如果有）",
+        "【P0】测试 Docs 页面：检查文档结构完整",
+        "【P0】测试代码块复制：检查复制按钮工作正常",
+        "【P0】测试 Examples 页面：检查示例卡片渲染",
+        "【P0】测试响应式：检查两个页面在移动端正常",
+        "【P1】测试导航：检查侧边栏导航功能",
+        "【P1】测试代码高亮：检查语法高亮正确",
+        "【P2】测试动画：检查 staggered 动画效果",
+        "验证: 所有 P0 测试通过，截图保存到 assets/screenshots/"
+      ],
+      "status": "pending",
+      "depends_on": ["feat-007", "feat-008"]
+    },
+    {
+      "id": "feat-015",
+      "category": "test",
+      "priority": 15,
+      "description": "跨浏览器和性能测试",
+      "steps": [
+        "【P0】Chrome 浏览器测试：检查所有页面正常显示",
+        "【P0】Firefox 浏览器测试：检查动画和样式正常",
+        "【P0】Safari 浏览器测试：检查兼容性",
+        "【P0】Lighthouse 性能测试：Performance > 90",
+        "【P0】Lighthouse 可访问性测试：Accessibility > 95",
+        "【P1】移动端真机测试：iPhone + Android",
+        "【P1】响应式断点测试：320px/375px/768px/1024px/1440px",
+        "【P1】键盘导航测试：Tab 键可访问所有交互元素",
+        "验证: 所有浏览器显示一致，性能指标达标"
+      ],
+      "status": "pending",
+      "depends_on": ["feat-011", "feat-012", "feat-013", "feat-014"]
+    }
+  ]
+}

@@ -186,6 +186,7 @@ class Session {
         parts.push(`tokens: ${inp}+${out}`);
       }
       const summary = parts.join(', ');
+      console.log('----- SESSION END -----');
       log('info', `session 统计: ${summary}`);
       if (this.logStream?.writable) {
         this.logStream.write(`[SESSION_STATS] ${summary}\n`);

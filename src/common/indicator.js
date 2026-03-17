@@ -105,7 +105,7 @@ class Indicator {
     const idleMs = Date.now() - this.lastActivityTime;
     const idleMin = Math.floor(idleMs / 60000);
 
-    let line = `${spinner} ${clock} S${this.sessionNum} ${mm}:${ss} ${phaseLabel}`;
+    let line = `${spinner} ${clock} S${this.sessionNum + 1} ${mm}:${ss} ${phaseLabel}`;
 
     if (idleMin >= 2) {
       if (this.toolRunning) {
