@@ -1,23 +1,22 @@
 'use strict';
 
 const { buildSystemPrompt, buildCodingContext } = require('./prompts');
+const { Session } = require('./session');
 const { log } = require('../common/config');
 
-async function executeCoding(engine, sessionNum, opts = {}) {
+async function executeCoding(config, sessionNum, opts = {}) {
   const taskId = opts.taskId || 'unknown';
   const dateStr = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 12);
 
-  return engine.runSession('coding', {
+  return Session.run('coding', config, {
     sessionNum,
     logFileName: `${taskId}_session_${sessionNum}_${dateStr}.log`,
     label: `coding task=${taskId}`,
 
     async execute(session) {
       const prompt = buildCodingContext(sessionNum, opts);
-      const queryOpts = engine.buildQueryOptions(opts);
+      const queryOpts = session.buildQueryOptions(opts);
       queryOpts.systemPrompt = buildSystemPrompt('coding');
-      queryOpts.hooks = session.hooks;
-      queryOpts.abortController = session.abortController;
       queryOpts.disallowedTools = ['askUserQuestion'];
 
       const { subtype, cost, usage } = await session.runQuery(prompt, queryOpts);

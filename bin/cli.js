@@ -103,7 +103,7 @@ function parseArgs(argv) {
   return { command, positional, opts };
 }
 
-async function main() {
+async function cliMain() {
   const { command, positional, opts } = parseArgs(process.argv);
 
   if (!command || command === '--help' || command === '-h') {
@@ -116,7 +116,6 @@ async function main() {
     process.exit(0);
   }
 
-  // 不需要 Engine 的命令
   switch (command) {
     case 'setup': {
       const setup = require('../src/commands/setup');
@@ -135,35 +134,13 @@ async function main() {
     }
   }
 
-  // 需要 Engine 的命令
-  const { Engine } = require('../src');
-  const engine = new Engine(command, opts);
-
-  switch (command) {
-    case 'run':
-      await engine.run(opts);
-      break;
-    case 'init':
-      await engine.initProject();
-      break;
-    case 'plan':
-      await engine.plan(positional[0] || '', opts);
-      break;
-    case 'simplify':
-      await engine.simplify(positional[0] || null, { n: opts.n });
-      break;
-    case 'go':
-      await engine.go(positional[0] || '', opts);
-      break;
-    default:
-      console.error(`未知命令: ${command}`);
-      showHelp();
-      process.exit(1);
-  }
+  const { main } = require('../src');
+  await main(command, positional[0] || '', opts);
 }
 
-main().catch(err => {
-  console.error(`\n错误: ${err.message}`);
+cliMain().catch(err => {
+  const { log } = require('../src/common/config');
+  log('error', err.message);
   if (process.env.DEBUG) console.error(err.stack);
   process.exit(1);
 });

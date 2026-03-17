@@ -5,7 +5,7 @@ const readline = require('readline');
 const { log } = require('../common/config');
 const { assets } = require('../common/assets');
 const { loadTasks, saveTasks, getFeatures, getStats, printStats } = require('../common/tasks');
-const { getGitHead, sleep } = require('../common/utils');
+const { getGitHead, sleep, tryPush, killServices } = require('../common/utils');
 const { RETRY } = require('../common/constants');
 const {
   loadState, saveState, selectNextTask, isAllDone,
@@ -156,16 +156,18 @@ function _inferFromTasks(taskId) {
   return task ? task.status : null;
 }
 
-async function validate(engine, headBefore, taskId) {
+async function validate(config, headBefore, taskId) {
+  const projectRoot = assets.projectRoot;
   log('info', '========== 开始校验 ==========');
 
   let srResult = _validateSessionResult();
-  const gitResult = _checkGitProgress(headBefore, engine.projectRoot);
+  const gitResult = _checkGitProgress(headBefore, projectRoot);
 
   if (!srResult.valid && srResult.rawContent) {
     const srPath = assets.path('sessionResult');
     if (srPath) {
-      await engine.repair(srPath);
+      const { executeRepair } = require('./repair');
+      await executeRepair(config, srPath);
       srResult = _validateSessionResult();
     }
   }
@@ -204,13 +206,13 @@ async function validate(engine, headBefore, taskId) {
 
 // ─── Lifecycle: Rollback ──────────────────────────────────
 
-async function rollback(engine, headBefore, reason) {
+async function rollback(headBefore, reason) {
   if (!headBefore || headBefore === 'none') return;
 
-  engine.killServices();
+  const projectRoot = assets.projectRoot;
+  killServices(projectRoot);
   if (process.platform === 'win32') await sleep(1500);
 
-  const cwd = engine.projectRoot;
   const gitEnv = { ...process.env, GIT_TERMINAL_PROMPT: '0' };
 
   log('warn', `回滚到 ${headBefore} ...`);
@@ -218,8 +220,8 @@ async function rollback(engine, headBefore, reason) {
   let success = false;
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
-      execSync(`git reset --hard ${headBefore}`, { cwd, stdio: 'pipe', env: gitEnv });
-      execSync('git clean -fd', { cwd, stdio: 'pipe', env: gitEnv });
+      execSync(`git reset --hard ${headBefore}`, { cwd: projectRoot, stdio: 'pipe', env: gitEnv });
+      execSync('git clean -fd', { cwd: projectRoot, stdio: 'pipe', env: gitEnv });
       log('ok', '回滚完成');
       success = true;
       break;
@@ -257,13 +259,13 @@ function _markTaskFailed(taskId) {
   }
 }
 
-async function _handleRetryOrSkip(engine, session, {
+async function _handleRetryOrSkip(session, {
   headBefore, taskId, sessionResult, consecutiveFailures, result, reason, lastFailMsg,
 }) {
   const newFailures = consecutiveFailures + 1;
   const exceeded = newFailures >= MAX_RETRY;
 
-  await rollback(engine, headBefore, reason);
+  await rollback(headBefore, reason);
 
   if (exceeded) {
     log('error', `连续失败 ${MAX_RETRY} 次，跳过当前任务`);
@@ -296,19 +298,19 @@ async function onSuccess(session, { taskId, sessionResult, validateResult }) {
   return { consecutiveFailures: 0, lastFailReason: '' };
 }
 
-async function onFailure(engine, session, { headBefore, taskId, sessionResult, validateResult, consecutiveFailures }) {
+async function onFailure(session, { headBefore, taskId, sessionResult, validateResult, consecutiveFailures }) {
   const reason = validateResult.reason || '校验失败';
   log('error', `Session ${session} 校验失败 (连续失败: ${consecutiveFailures + 1}/${MAX_RETRY})`);
-  return _handleRetryOrSkip(engine, session, {
+  return _handleRetryOrSkip(session, {
     headBefore, taskId, sessionResult, consecutiveFailures,
     result: 'fatal', reason,
     lastFailMsg: `上次校验失败: ${reason}，代码已回滚`,
   });
 }
 
-async function onStall(engine, session, { headBefore, taskId, sessionResult, consecutiveFailures }) {
+async function onStall(session, { headBefore, taskId, sessionResult, consecutiveFailures }) {
   log('warn', `Session ${session} 因停顿超时中断，跳过校验直接重试`);
-  return _handleRetryOrSkip(engine, session, {
+  return _handleRetryOrSkip(session, {
     headBefore, taskId, sessionResult, consecutiveFailures,
     result: 'stalled', reason: '停顿超时',
     lastFailMsg: '上次会话停顿超时，已回滚',
@@ -340,12 +342,13 @@ function commitIfDirty(projectRoot, message) {
   }
 }
 
-async function tryRunSimplify(engine, msg, commitMsg) {
-  log('info', msg || `每 ${engine.config.simplifyInterval} 个成功 session 运行代码审查...`);
+async function tryRunSimplify(config, msg, commitMsg) {
+  log('info', msg || `每 ${config.simplifyInterval} 个成功 session 运行代码审查...`);
   try {
-    await engine.simplify(null, { n: engine.config.simplifyCommits });
+    const { executeSimplify } = require('./simplify');
+    await executeSimplify(config, null, { n: config.simplifyCommits });
     markSimplifyDone();
-    commitIfDirty(engine.projectRoot, commitMsg || 'style: simplify optimization');
+    commitIfDirty(assets.projectRoot, commitMsg || 'style: simplify optimization');
   } catch (err) {
     log('warn', `代码审查失败，跳过: ${err.message}`);
   }
@@ -359,21 +362,17 @@ function _timestamp() {
 
 // ─── Main Orchestration Loop ──────────────────────────────
 
-async function executeRun(engine, opts = {}) {
+async function executeRun(config, opts = {}) {
   if (!assets.exists('tasks')) {
-    log('error', 'tasks.json 不存在，请先运行 claude-coder plan 生成任务');
-    process.exit(1);
+    throw new Error('tasks.json 不存在，请先运行 claude-coder plan 生成任务');
   }
 
+  const projectRoot = assets.projectRoot;
   const dryRun = opts.dryRun || false;
   const maxSessions = opts.max || 50;
   const pauseEvery = opts.pause ?? 0;
 
   printBanner(dryRun);
-
-  if (engine.config.provider !== 'claude' && engine.config.baseUrl) {
-    log('ok', `模型配置已加载: ${engine.config.provider}${engine.config.model ? ` (${engine.config.model})` : ''}`);
-  }
 
   printStats();
 
@@ -388,7 +387,10 @@ async function executeRun(engine, opts = {}) {
     let taskData = loadTasks();
     if (!taskData) {
       const tasksPath = assets.path('tasks');
-      if (tasksPath) await engine.repair(tasksPath);
+      if (tasksPath) {
+        const { executeRepair } = require('./repair');
+        await executeRepair(config, tasksPath);
+      }
       taskData = loadTasks();
       if (!taskData) {
         log('error', 'tasks.json 无法读取且修复失败，终止循环');
@@ -398,10 +400,10 @@ async function executeRun(engine, opts = {}) {
 
     if (isAllDone(taskData)) {
       if (!dryRun) {
-        if (needsFinalSimplify(engine.config)) {
-          await tryRunSimplify(engine, '所有任务完成，运行最终代码审查...', 'style: final simplify');
+        if (needsFinalSimplify(config)) {
+          await tryRunSimplify(config, '所有任务完成，运行最终代码审查...', 'style: final simplify');
         }
-        engine.tryPush();
+        tryPush(projectRoot);
       }
       console.log('');
       log('ok', '所有任务已完成！');
@@ -416,10 +418,11 @@ async function executeRun(engine, opts = {}) {
       break;
     }
 
-    const { headBefore, taskId } = snapshot(engine.projectRoot, taskData);
+    const { headBefore, taskId } = snapshot(projectRoot, taskData);
 
-    const sessionResult = await engine.coding(session, {
-      projectRoot: engine.projectRoot,
+    const { executeCoding } = require('./coding');
+    const sessionResult = await executeCoding(config, session, {
+      projectRoot,
       taskId,
       consecutiveFailures: state.consecutiveFailures,
       maxSessions,
@@ -427,24 +430,24 @@ async function executeRun(engine, opts = {}) {
     });
 
     if (sessionResult.stalled) {
-      state = await onStall(engine, session, { headBefore, taskId, sessionResult, ...state });
+      state = await onStall(session, { headBefore, taskId, sessionResult, ...state });
       continue;
     }
 
     log('info', '开始 harness 校验 ...');
-    const validateResult = await validate(engine, headBefore, taskId);
+    const validateResult = await validate(config, headBefore, taskId);
 
     if (!validateResult.fatal) {
       const level = validateResult.hasWarnings ? 'warn' : 'ok';
       log(level, `Session ${session} 校验通过${validateResult.hasWarnings ? ' (有警告)' : ''}`);
       state = await onSuccess(session, { taskId, sessionResult, validateResult });
 
-      if (shouldSimplify(engine.config)) {
-        await tryRunSimplify(engine);
+      if (shouldSimplify(config)) {
+        await tryRunSimplify(config);
       }
-      engine.tryPush();
+      tryPush(projectRoot);
     } else {
-      state = await onFailure(engine, session, { headBefore, taskId, sessionResult, validateResult, ...state });
+      state = await onFailure(session, { headBefore, taskId, sessionResult, validateResult, ...state });
     }
 
     if (pauseEvery > 0 && session % pauseEvery === 0) {
@@ -457,7 +460,7 @@ async function executeRun(engine, opts = {}) {
     }
   }
 
-  engine.killServices();
+  killServices(projectRoot);
   printEndBanner();
   printStats();
 }

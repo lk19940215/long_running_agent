@@ -5,11 +5,9 @@ const path = require('path');
 const { log } = require('../common/config');
 const { assets } = require('../common/assets');
 const { buildSystemPrompt, buildScanPrompt } = require('./prompts');
+const { Session } = require('./session');
 const { RETRY } = require('../common/constants');
 
-/**
- * 检查项目是否包含代码文件
- */
 function hasCodeFiles(projectRoot) {
   const markers = [
     'package.json', 'pyproject.toml', 'requirements.txt', 'setup.py',
@@ -46,7 +44,7 @@ function validateProfile() {
   return { valid: issues.length === 0, issues };
 }
 
-async function executeScan(engine, opts = {}) {
+async function executeScan(config, opts = {}) {
   const maxAttempts = RETRY.SCAN_ATTEMPTS;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -55,7 +53,7 @@ async function executeScan(engine, opts = {}) {
     const projectType = hasCodeFiles(opts.projectRoot || assets.projectRoot) ? 'existing' : 'new';
     const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
 
-    const result = await engine.runSession('scan', {
+    const result = await Session.run('scan', config, {
       logFileName: `scan_${dateStr}.log`,
       label: `scan (${projectType})`,
 
@@ -63,10 +61,8 @@ async function executeScan(engine, opts = {}) {
         log('info', `正在调用 Claude Code 执行项目扫描（${projectType}项目）...`);
 
         const prompt = buildScanPrompt(projectType);
-        const queryOpts = engine.buildQueryOptions(opts);
+        const queryOpts = session.buildQueryOptions(opts);
         queryOpts.systemPrompt = buildSystemPrompt('scan');
-        queryOpts.hooks = session.hooks;
-        queryOpts.abortController = session.abortController;
 
         const { cost } = await session.runQuery(prompt, queryOpts);
         return { cost };

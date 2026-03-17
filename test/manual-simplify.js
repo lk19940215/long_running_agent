@@ -1,16 +1,14 @@
 #!/usr/bin/env node
 'use strict';
 
-const { Engine } = require('../src');
+const { main } = require('../src');
 
-async function main() {
+async function run() {
   const userInput = '创建一个 hello world 函数。';
 
-  console.log('Testing engine.plan()...\n');
+  console.log('Testing main("plan")...\n');
 
-  const engine = new Engine('plan', { projectRoot: process.cwd() });
-
-  const result = await engine.plan(userInput, {
+  const result = await main('plan', userInput, {
     projectRoot: process.cwd(),
     planOnly: true,
   });
@@ -28,4 +26,4 @@ async function main() {
   }
 }
 
-main();
+run();

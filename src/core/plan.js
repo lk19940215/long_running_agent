@@ -10,6 +10,7 @@ const { assets } = require('../common/assets');
 const { extractResultText } = require('../common/logging');
 const { printStats } = require('../common/tasks');
 const { syncAfterPlan } = require('./state');
+const { Session } = require('./session');
 
 const PLANS_DIR = path.join(os.homedir(), '.claude', 'plans');
 
@@ -124,7 +125,7 @@ function copyPlanToProject(generatedPath) {
   }
 }
 
-async function _executePlanGen(session, engine, instruction, opts = {}) {
+async function _executePlanGen(session, instruction, opts = {}) {
   const interactive = opts.interactive || false;
   const prompt = buildPlanOnlyPrompt(instruction, opts);
   const queryOpts = {
@@ -169,30 +170,19 @@ async function promptAutoRun() {
 
 // ─── Main Entry ──────────────────────────────────────────
 
-async function executePlan(engine, input, opts = {}) {
+async function executePlan(config, input, opts = {}) {
   const instruction = input || '';
 
-  if (opts.readFile) {
-    const reqPath = path.resolve(assets.projectRoot, opts.readFile);
-    if (!fs.existsSync(reqPath)) {
-      log('error', `文件不存在: ${reqPath}`);
-      process.exit(1);
-    }
-    opts.reqFile = reqPath;
-    if (instruction) {
-      log('info', `-r 模式下忽略文本输入，使用需求文件: ${reqPath}`);
-    } else {
-      console.log(`需求文件: ${reqPath}`);
-    }
+  if (opts.reqFile && instruction) {
+    log('info', `-r 模式下忽略文本输入，使用需求文件: ${opts.reqFile}`);
+  } else if (opts.reqFile) {
+    console.log(`需求文件: ${opts.reqFile}`);
   }
 
   if (!instruction && !opts.reqFile) {
-    log('error', '用法: claude-coder plan "需求内容"  或  claude-coder plan -r [requirements.md]');
-    process.exit(1);
+    throw new Error('用法: claude-coder plan "需求内容"  或  claude-coder plan -r [requirements.md]');
   }
 
-  const displayModel = opts.model || engine.config.model || '(default)';
-  log('ok', `模型配置已加载: ${engine.config.provider || 'claude'} (plan 使用: ${displayModel})`);
   if (opts.interactive) {
     log('info', '交互模式已启用，模型可能会向您提问');
   }
@@ -206,14 +196,14 @@ async function executePlan(engine, input, opts = {}) {
   const ts = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 12);
   const label = opts.planOnly ? 'plan_only' : 'plan_tasks';
 
-  const result = await engine.runSession(hookType, {
+  const result = await Session.run(hookType, config, {
     logFileName: `plan_${ts}.log`,
     label,
 
     async execute(session) {
       log('info', '正在生成计划方案...');
 
-      const planResult = await _executePlanGen(session, engine, instruction, opts);
+      const planResult = await _executePlanGen(session, instruction, opts);
 
       if (!planResult.success) {
         log('error', `\n计划生成失败: ${planResult.reason || planResult.error}`);
@@ -229,10 +219,8 @@ async function executePlan(engine, input, opts = {}) {
       log('info', '正在生成任务列表...');
 
       const tasksPrompt = buildPlanPrompt(planResult.targetPath);
-      const queryOpts = engine.buildQueryOptions(opts);
+      const queryOpts = session.buildQueryOptions(opts);
       queryOpts.systemPrompt = buildSystemPrompt('plan');
-      queryOpts.hooks = session.hooks;
-      queryOpts.abortController = session.abortController;
 
       const { success } = await session.runQuery(tasksPrompt, queryOpts);
       if (!success) {
@@ -251,7 +239,8 @@ async function executePlan(engine, input, opts = {}) {
     if (shouldAutoRun) {
       console.log('');
       log('info', '开始自动执行任务...');
-      await engine.run(opts);
+      const { executeRun } = require('./runner');
+      await executeRun(config, opts);
     }
   }
 }

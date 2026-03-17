@@ -3,8 +3,9 @@
 const fs = require('fs');
 const path = require('path');
 const { log } = require('../common/config');
+const { Session } = require('./session');
 
-async function executeRepair(engine, filePath, opts = {}) {
+async function executeRepair(config, filePath, opts = {}) {
   if (!fs.existsSync(filePath)) return;
 
   const rawContent = fs.readFileSync(filePath, 'utf8');
@@ -16,14 +17,12 @@ async function executeRepair(engine, filePath, opts = {}) {
   const prompt = `文件 ${filePath} 的 JSON 格式已损坏，请修复并用 Write 工具写入原路径。\n\n当前损坏内容：\n${rawContent}`;
 
   try {
-    await engine.runSession('repair', {
+    await Session.run('repair', config, {
       logFileName: `repair_${fileName.replace('.json', '')}.log`,
       label: `repair:${fileName}`,
 
       async execute(session) {
-        const queryOpts = engine.buildQueryOptions(opts);
-        queryOpts.hooks = session.hooks;
-        queryOpts.abortController = session.abortController;
+        const queryOpts = session.buildQueryOptions(opts);
         await session.runQuery(prompt, queryOpts);
         log('ok', `AI 修复 ${fileName} 完成`);
         return {};

@@ -11,9 +11,9 @@
  * 然后通过 interaction.js 的 Hook 拦截并在终端展示问题。
  */
 
-const { Engine } = require('../src');
+const { main } = require('../src');
 
-async function main() {
+async function run() {
   const userInput = process.argv[2] || '优化这个项目的整体架构';
 
   console.log('╔══════════════════════════════════════════════╗');
@@ -27,9 +27,7 @@ async function main() {
   console.log('请输入数字选择选项，或直接输入自定义内容。');
   console.log('');
 
-  const engine = new Engine('plan', { projectRoot: process.cwd() });
-
-  const result = await engine.plan(userInput, {
+  const result = await main('plan', userInput, {
     projectRoot: process.cwd(),
     interactive: true,
     planOnly: true,
@@ -48,7 +46,7 @@ async function main() {
   }
 }
 
-main().catch(err => {
+run().catch(err => {
   console.error('Fatal:', err.message);
   if (process.env.DEBUG) console.error(err.stack);
   process.exit(1);

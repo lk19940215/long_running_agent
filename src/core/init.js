@@ -107,24 +107,23 @@ async function startService(svc, projectRoot, stepNum) {
   }
 }
 
-async function executeInit(engine) {
+async function executeInit(config, opts = {}) {
   const projectRoot = assets.projectRoot;
 
   ensureEnvironment(projectRoot);
 
   if (!assets.exists('profile')) {
     log('info', 'profile 不存在，正在执行项目扫描...');
-    const scanResult = await engine.scan({});
+    const { executeScan } = require('./scan');
+    const scanResult = await executeScan(config, opts);
     if (!scanResult.success) {
-      log('error', '项目扫描失败');
-      process.exit(1);
+      throw new Error('项目扫描失败');
     }
   }
 
   const profile = assets.readJson('profile', null);
   if (!profile) {
-    log('error', 'project_profile.json 读取失败或已损坏');
-    process.exit(1);
+    throw new Error('project_profile.json 读取失败或已损坏');
   }
 
   for (const file of assets.deployAll()) log('ok', `已部署 → .claude-coder/assets/${file}`);

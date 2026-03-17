@@ -145,18 +145,51 @@ function ensureGitignore(projectRoot) {
 // 进程工具
 // ─────────────────────────────────────────────────────────────
 
-/**
- * 休眠
- * @param {number} ms - 毫秒
- * @returns {Promise<void>}
- */
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+// ─────────────────────────────────────────────────────────────
+// 项目服务管理
+// ─────────────────────────────────────────────────────────────
+
+function tryPush(projectRoot) {
+  const { log } = require('./config');
+  try {
+    const remotes = execSync('git remote', { cwd: projectRoot, encoding: 'utf8' }).trim();
+    if (!remotes) return;
+    log('info', '正在推送代码...');
+    execSync('git push', { cwd: projectRoot, stdio: 'inherit' });
+    log('ok', '推送成功');
+  } catch {
+    log('warn', '推送失败 (请检查网络或权限)，继续执行...');
+  }
+}
+
+function killServices(projectRoot) {
+  const { log } = require('./config');
+  const { assets } = require('./assets');
+  const profile = assets.readJson('profile', null);
+  if (!profile) return;
+  const ports = (profile.services || []).map(s => s.port).filter(Boolean);
+  if (ports.length === 0) return;
+
+  for (const port of ports) {
+    try {
+      if (process.platform === 'win32') {
+        const out = execSync(`netstat -ano | findstr :${port} | findstr LISTENING`, { encoding: 'utf8', stdio: 'pipe' }).trim();
+        const pids = [...new Set(out.split('\n').map(l => l.trim().split(/\s+/).pop()).filter(Boolean))];
+        for (const pid of pids) { try { execSync(`taskkill /F /T /PID ${pid}`, { stdio: 'pipe' }); } catch { /* ignore */ } }
+      } else {
+        execSync(`lsof -ti :${port} | xargs kill -9 2>/dev/null`, { stdio: 'pipe' });
+      }
+    } catch { /* no process on port */ }
+  }
+  log('info', `已停止端口 ${ports.join(', ')} 上的服务`);
+}
 
 // ─────────────────────────────────────────────────────────────
-// 日志工具 - 统一的日志处理
+// 日志工具
 // ─────────────────────────────────────────────────────────────
 function localTimestamp() {
   const d = new Date();
@@ -175,5 +208,7 @@ module.exports = {
   appendGitignore,
   ensureGitignore,
   sleep,
+  tryPush,
+  killServices,
   localTimestamp,
 };

@@ -2,9 +2,10 @@
 
 const { log } = require('../common/config');
 const { assets } = require('../common/assets');
+const { Session } = require('./session');
 const { execSync } = require('child_process');
 
-async function executeSimplify(engine, focus = null, opts = {}) {
+async function executeSimplify(config, focus = null, opts = {}) {
   const n = opts.n || 3;
   const projectRoot = assets.projectRoot;
   let diff = '';
@@ -18,16 +19,14 @@ async function executeSimplify(engine, focus = null, opts = {}) {
   const prompt = `/simplify\n\n审查范围：最近 ${n} 个 commit${focusLine}\n\n${diff.slice(0, 50000)}`;
   const dateStr = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 12);
 
-  return engine.runSession('simplify', {
+  return Session.run('simplify', config, {
     logFileName: `simplify_${dateStr}.log`,
     label: 'simplify',
 
     async execute(session) {
       log('info', `正在审查最近 ${n} 个 commit 的代码变更...`);
 
-      const queryOpts = engine.buildQueryOptions(opts);
-      queryOpts.hooks = session.hooks;
-      queryOpts.abortController = session.abortController;
+      const queryOpts = session.buildQueryOptions(opts);
       queryOpts.disallowedTools = ['askUserQuestion'];
 
       await session.runQuery(prompt, queryOpts);
