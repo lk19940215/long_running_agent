@@ -1,6 +1,7 @@
 'use strict';
 
 const fs = require('fs');
+const path = require('path');
 const net = require('net');
 const http = require('http');
 const { spawn, execSync } = require('child_process');
@@ -71,12 +72,12 @@ function buildEnvSteps(profile, projectRoot) {
   const pkgManagers = profile.tech_stack?.package_managers || [];
   for (const pm of pkgManagers) {
     if (['npm', 'yarn', 'pnpm'].includes(pm)) {
-      if (fs.existsSync(`${projectRoot}/node_modules`)) {
+      if (fs.existsSync(path.join(projectRoot, 'node_modules'))) {
         steps.push({ label: `${pm} 依赖已安装，跳过`, skip: true });
       } else {
         steps.push({ label: `安装依赖: ${pm} install`, cmd: `${pm} install`, cwd: projectRoot });
       }
-    } else if (pm === 'pip' && fs.existsSync(`${projectRoot}/requirements.txt`)) {
+    } else if (pm === 'pip' && fs.existsSync(path.join(projectRoot, 'requirements.txt'))) {
       steps.push({ label: '安装依赖: pip install -r requirements.txt', cmd: 'pip install -r requirements.txt', cwd: projectRoot });
     }
   }
@@ -96,7 +97,7 @@ async function startService(svc, projectRoot, stepNum) {
   }
 
   log('info', `[${stepNum}] 启动 ${svc.name} (端口 ${svc.port})...`);
-  const cwd = svc.cwd ? `${projectRoot}/${svc.cwd}` : projectRoot;
+  const cwd = svc.cwd ? path.join(projectRoot, svc.cwd) : projectRoot;
   const child = spawn(svc.command, { cwd, shell: true, detached: true, stdio: 'ignore' });
   child.unref();
 

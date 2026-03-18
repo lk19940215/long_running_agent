@@ -92,22 +92,22 @@ function normalizePath(raw, projectRoot) {
   if (!raw) return '';
   if (projectRoot && raw.startsWith(projectRoot)) {
     const rel = raw.slice(projectRoot.length);
-    return rel.startsWith('/') ? rel.slice(1) : rel;
+    return (rel[0] === '/' || rel[0] === '\\') ? rel.slice(1) : rel;
   }
-  const home = process.env.HOME || '';
+  const home = process.env.HOME || process.env.USERPROFILE || '';
   if (home && raw.startsWith(home)) return '~' + raw.slice(home.length);
-  const parts = raw.split('/').filter(Boolean);
+  const parts = raw.split(/[/\\]/).filter(Boolean);
   return parts.length > 3 ? '.../' + parts.slice(-3).join('/') : raw;
 }
 
 function stripAbsolutePaths(str, projectRoot) {
   let result = str;
   if (projectRoot) {
-    result = result.replace(new RegExp(projectRoot.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '/?', 'g'), './');
+    result = result.replace(new RegExp(projectRoot.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[/\\\\]?', 'g'), './');
   }
-  const home = process.env.HOME || '';
+  const home = process.env.HOME || process.env.USERPROFILE || '';
   if (home) {
-    result = result.replace(new RegExp(home.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '/?', 'g'), '~/');
+    result = result.replace(new RegExp(home.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[/\\\\]?', 'g'), '~/');
   }
   return result;
 }

@@ -26,34 +26,34 @@ function truncateMiddle(str, maxLen) {
  * @param {number} maxLen - 最大长度
  * @returns {string}
  */
-function truncatePath(path, maxLen) {
-  if (!path || path.length <= maxLen) return path || '';
+function truncatePath(p, maxLen) {
+  if (!p || p.length <= maxLen) return p || '';
 
-  const lastSlash = path.lastIndexOf('/');
+  const lastSlashFwd = p.lastIndexOf('/');
+  const lastSlashBwd = p.lastIndexOf('\\');
+  const lastSlash = Math.max(lastSlashFwd, lastSlashBwd);
   if (lastSlash === -1) {
-    return truncateMiddle(path, maxLen);
+    return truncateMiddle(p, maxLen);
   }
 
-  const fileName = path.slice(lastSlash + 1);
-  const dirPath = path.slice(0, lastSlash);
+  const sep = p[lastSlash];
+  const fileName = p.slice(lastSlash + 1);
+  const dirPath = p.slice(0, lastSlash);
 
-  // 文件名本身超长，截断文件名
   if (fileName.length >= maxLen - 2) {
-    return truncateMiddle(path, maxLen);
+    return truncateMiddle(p, maxLen);
   }
 
-  // 保留文件名，截断目录
-  const availableForDir = maxLen - fileName.length - 2; // -2 for '…/'
+  const availableForDir = maxLen - fileName.length - 2;
   if (availableForDir <= 0) {
-    return '…/' + fileName.slice(0, maxLen - 2);
+    return '…' + sep + fileName.slice(0, maxLen - 2);
   }
 
-  // 目录两端保留
   const dirStart = Math.ceil(availableForDir / 2);
   const dirEnd = Math.floor(availableForDir / 2);
   const truncatedDir = dirPath.slice(0, dirStart) + '…' + (dirEnd > 0 ? dirPath.slice(-dirEnd) : '');
 
-  return truncatedDir + '/' + fileName;
+  return truncatedDir + sep + fileName;
 }
 
 /**

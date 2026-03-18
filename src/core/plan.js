@@ -74,7 +74,8 @@ async function _executePlanGen(session, instruction, opts = {}) {
       for (const block of message.message.content) {
         if (block.type === 'tool_use' && block.name === 'Write') {
           const target = block.input?.file_path || block.input?.path || '';
-          if (target.includes('.claude/plans/') && target.endsWith('.md')) {
+          const normalized = target.replace(/\\/g, '/');
+          if (normalized.includes('.claude/plans/') && normalized.endsWith('.md')) {
             capturedPlanPath = target;
           }
         }
