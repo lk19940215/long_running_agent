@@ -95,6 +95,20 @@
       "depends_on": ["feat-004"]
     },
     {
+      "id": "feat-006",
+      "category": "frontend",
+      "priority": 6,
+      "description": "重构 Features 页面 - 使用新组件和侧边栏优化",
+      "steps": [
+        "重构 src/pages/Features.tsx",
+        "使用 PageLayout 包装页面",
+        "使用 useMobileSidebar Hook 管理移动端侧边栏状态",
+        "添加移动端汉堡菜单按钮",
+        "使用 SectionCard 重构 4 个功能区域",
+        "为功能列表添加 slide-in-left 动画",
+        "添加导航项激活状态样式",
+        "验证: 移动端侧边栏可展开/收起，桌面端固定定位"
+      ],
       "status": "done",
       "depends_on": ["feat-005"]
     },
