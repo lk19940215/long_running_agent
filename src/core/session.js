@@ -113,7 +113,6 @@ class Session {
     this.cleanup = null;
     this._isStalled = () => false;
     this.abortController = new AbortController();
-    this._lastStatusKey = '';
 
     this._initLogging(logFileName, logStream);
     writeSessionSeparator(this.logStream, sessionNum, label);
@@ -256,12 +255,6 @@ class Session {
     baseLogMessage(message, this.logStream, this.indicator);
 
     if (hasText && this.indicator) {
-      const contentKey = `${this.indicator.phase}|${this.indicator.step}|${this.indicator.toolTarget}`;
-      if (contentKey !== this._lastStatusKey) {
-        this._lastStatusKey = contentKey;
-        const statusLine = this.indicator.getStatusLine();
-        if (statusLine) process.stderr.write(statusLine + '\n');
-      }
       this.indicator.resumeRendering();
     }
   }

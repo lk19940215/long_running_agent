@@ -21,7 +21,10 @@
         "添加代码块响应式优化样式：code-block-responsive",
         "验证: npm run dev && 查看控制台无 CSS 解析错误"
       ],
-      "status": "done",
+      "status": "done"
+    },
+    {
+      "id": "feat-002",
       "category": "frontend",
       "priority": 2,
       "description": "创建通用布局组件 - PageLayout、SectionCard、AnimatedTitle",
@@ -34,7 +37,7 @@
         "实现 AnimatedTitle 的渐变文字效果和自动动画",
         "验证: TypeScript 编译通过，无类型错误"
       ],
-      "status": "pending",
+      "status": "done",
       "depends_on": ["feat-001"]
     },
     {

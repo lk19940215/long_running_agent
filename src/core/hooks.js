@@ -357,8 +357,6 @@ function createEndToolHook(indicator) {
   return async (_input, _toolUseID, _context) => {
     indicator.endTool();
     indicator.updatePhase('thinking');
-    indicator.updateStep('');
-    indicator.toolTarget = '';
     return {};
   };
 }
