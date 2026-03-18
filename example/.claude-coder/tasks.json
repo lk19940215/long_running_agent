@@ -239,7 +239,7 @@
         "【P2】测试动画：检查 staggered 动画效果",
         "验证: 所有 P0 测试通过，截图保存到 assets/screenshots/"
       ],
-      "status": "pending",
+      "status": "done",
       "depends_on": ["feat-007", "feat-008"]
     },
     {
