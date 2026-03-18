@@ -220,7 +220,7 @@
         "【P2】测试粒子效果：检查侧边栏粒子渲染",
         "验证: 所有 P0 测试通过，截图保存到 assets/screenshots/"
       ],
-      "status": "pending",
+      "status": "done",
       "depends_on": ["feat-006"]
     },
     {
