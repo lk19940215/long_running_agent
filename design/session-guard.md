@@ -123,21 +123,28 @@ tool_result       → updateActivity()    PostToolUseFailure → endTool()
 
 ## 五、终端指示器（Indicator）
 
+> 完整讲解见 [indicator-mechanism.md](indicator-mechanism.md)
+
+采用双通道显示架构：
+
+- **通道 A（Spinner）**：`_render()` 每秒覆盖同一行，仅显示 spinner + 时间 + 阶段
+- **通道 B（工具行）**：`inferPhaseStep()` 在 PreToolUse 触发时输出永久行（以 `\n` 结尾）
+
 ### 5.1 核心方法
 
 | 方法 | 说明 |
 |------|------|
-| `startTool(name)` | 标记工具开始 + 重置倒计时 |
+| `startTool()` | 标记工具开始 + 重置倒计时 |
 | `endTool()` | 标记工具结束 + 重置倒计时（幂等） |
 | `updateActivity()` | 仅重置倒计时 |
 | `pauseRendering()` / `resumeRendering()` | 暂停/恢复 stderr 定时刷新 |
 
 ### 5.2 防刷屏
 
-1. `_render()` 定时器：每秒执行，`\r\x1b[K` 覆盖同一行
-2. `contentKey` 去重（`session.js` 的 `_logMessage`）：`phase|step|toolTarget` 不变时不输出新状态行
-3. `pauseRendering`：文本输出期间暂停定时器，避免 stdout/stderr 交叉
-4. `getStatusLine()` 动态内容：工具耗时由 `_render()` 覆盖，不产生新行
+1. Spinner 行始终覆盖：`\r\x1b[K` + 固定短格式（`⠇ S1 02:05 思考中`）
+2. 工具行独立追加：每次工具调用输出一行 + `\n`，不覆盖
+3. `pauseRendering`：模型文本输出期间暂停定时器，避免 stdout/stderr 交叉
+4. CJK 宽度计算：`displayWidth()` 正确处理中文双宽字符，`clampLine()` 截断超宽行
 
 ---
 

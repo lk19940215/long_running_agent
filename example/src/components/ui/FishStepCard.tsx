@@ -1,4 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+
+// Variant styles - moved outside component to avoid recreation
+const VARIANT_STYLES = {
+  default: 'bg-[var(--bg-200)] border border-[var(--border-300)]',
+  primary: 'bg-gradient-to-br from-[var(--bg-200)] to-[var(--bg-100)] border border-[var(--primary-600)]/30',
+  success: 'bg-[var(--bg-200)] border border-[var(--success-500)]/30',
+} as const;
 
 interface FishStepCardProps {
   stepNumber: number;
@@ -8,7 +15,7 @@ interface FishStepCardProps {
   icon?: React.ReactNode;
   variant?: 'default' | 'primary' | 'success';
   animate?: boolean;
-  staggerIndex?: 1 | 2 | 3 | 4 | 5;
+  staggerIndex?: number;
   className?: string;
 }
 
@@ -23,39 +30,22 @@ const FishStepCard: React.FC<FishStepCardProps> = ({
   staggerIndex = 1,
   className = '',
 }) => {
-  const [isVisible, setIsVisible] = useState(false);
-
-  useEffect(() => {
-    if (animate) {
-      requestAnimationFrame(() => {
-        setIsVisible(true);
-      });
-    }
-  }, [animate]);
-
-  const variantStyles = {
-    default: 'bg-[var(--bg-200)] border border-[var(--border-300)]',
-    primary: 'bg-gradient-to-br from-[var(--bg-200)] to-[var(--bg-100)] border border-[var(--primary-600)]/30',
-    success: 'bg-[var(--bg-200)] border border-[var(--success-500)]/30',
-  };
-
-  const staggerClass = animate ? `animate-stagger-${staggerIndex}` : '';
-  const animationStyle = animate && isVisible
-    ? 'opacity-100 translate-y-0'
-    : animate
-      ? 'opacity-0 translate-y-4'
-      : '';
+  // Compute delay dynamically instead of fixed CSS classes
+  const animationDelay = staggerIndex * 100;
+  const animationStyle = animate
+    ? { animationDelay: `${animationDelay}ms` }
+    : undefined;
 
   return (
     <div
       className={`
         rounded-xl p-6 transition-all duration-500 ease-out
-        ${variantStyles[variant]}
-        ${staggerClass}
-        ${animationStyle}
+        ${VARIANT_STYLES[variant]}
+        ${animate ? 'animate-stagger-1' : ''}
         hover:shadow-lg hover:shadow-[var(--primary-600)]/5
         ${className}
       `}
+      style={animationStyle}
     >
       <div className="flex gap-4">
         {/* Step number with gradient background */}

@@ -50,7 +50,8 @@ export function useScrollAnimation(
 
   const ref = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
-  const [hasBeenVisible, setHasBeenVisible] = useState(false);
+  // Use ref to avoid triggering effect re-runs
+  const hasBeenVisibleRef = useRef(false);
 
   useEffect(() => {
     const element = ref.current;
@@ -59,8 +60,8 @@ export function useScrollAnimation(
       return;
     }
 
-    // 如果 triggerOnce 为 true 且已经触发过，直接返回
-    if (triggerOnce && hasBeenVisible) {
+    // If triggerOnce is true and already triggered, set visible and return
+    if (triggerOnce && hasBeenVisibleRef.current) {
       setIsVisible(true);
       return;
     }
@@ -71,7 +72,7 @@ export function useScrollAnimation(
 
         if (isIntersecting) {
           setIsVisible(true);
-          setHasBeenVisible(true);
+          hasBeenVisibleRef.current = true;
         } else if (!triggerOnce) {
           setIsVisible(false);
         }
@@ -87,9 +88,9 @@ export function useScrollAnimation(
     return () => {
       observer.disconnect();
     };
-  }, [threshold, rootMargin, triggerOnce, enabled, hasBeenVisible]);
+  }, [threshold, rootMargin, triggerOnce, enabled]);
 
-  return { ref, isVisible, hasBeenVisible };
+  return { ref, isVisible, hasBeenVisible: hasBeenVisibleRef.current };
 }
 
 export default useScrollAnimation;

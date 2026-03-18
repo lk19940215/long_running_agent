@@ -1,4 +1,34 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
+import { copyToClipboard } from '../../utils';
+
+// Language display mapping - moved outside component to avoid recreation
+const LANGUAGE_MAP: Record<string, string> = {
+  bash: 'Bash',
+  sh: 'Shell',
+  shell: 'Shell',
+  js: 'JavaScript',
+  javascript: 'JavaScript',
+  ts: 'TypeScript',
+  typescript: 'TypeScript',
+  tsx: 'TypeScript React',
+  jsx: 'JavaScript React',
+  python: 'Python',
+  py: 'Python',
+  json: 'JSON',
+  html: 'HTML',
+  css: 'CSS',
+  scss: 'SCSS',
+  markdown: 'Markdown',
+  md: 'Markdown',
+  yaml: 'YAML',
+  yml: 'YAML',
+  sql: 'SQL',
+  go: 'Go',
+  rust: 'Rust',
+  java: 'Java',
+  cpp: 'C++',
+  c: 'C',
+};
 
 interface EnhancedCodeBlockProps {
   children: string;
@@ -25,45 +55,19 @@ const EnhancedCodeBlock: React.FC<EnhancedCodeBlockProps> = ({
   const lineCount = lines.length;
   const lineNumberWidth = String(lineCount).length;
 
+  // Use Set for O(1) lookup instead of O(n) array.includes()
+  const highlightedSet = useMemo(() => new Set(highlightLines), [highlightLines]);
+
   const handleCopy = useCallback(async () => {
-    try {
-      await navigator.clipboard.writeText(children);
+    const success = await copyToClipboard(children);
+    if (success) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy:', err);
     }
   }, [children]);
 
   const getLanguageDisplay = (lang: string): string => {
-    const languageMap: Record<string, string> = {
-      bash: 'Bash',
-      sh: 'Shell',
-      shell: 'Shell',
-      js: 'JavaScript',
-      javascript: 'JavaScript',
-      ts: 'TypeScript',
-      typescript: 'TypeScript',
-      tsx: 'TypeScript React',
-      jsx: 'JavaScript React',
-      python: 'Python',
-      py: 'Python',
-      json: 'JSON',
-      html: 'HTML',
-      css: 'CSS',
-      scss: 'SCSS',
-      markdown: 'Markdown',
-      md: 'Markdown',
-      yaml: 'YAML',
-      yml: 'YAML',
-      sql: 'SQL',
-      go: 'Go',
-      rust: 'Rust',
-      java: 'Java',
-      cpp: 'C++',
-      c: 'C',
-    };
-    return languageMap[lang.toLowerCase()] || lang.toUpperCase();
+    return LANGUAGE_MAP[lang.toLowerCase()] || lang.toUpperCase();
   };
 
   return (
@@ -117,7 +121,7 @@ const EnhancedCodeBlock: React.FC<EnhancedCodeBlockProps> = ({
           <code className="block">
             {lines.map((line, index) => {
               const lineNumber = index + 1;
-              const isHighlighted = highlightLines.includes(lineNumber);
+              const isHighlighted = highlightedSet.has(lineNumber);
 
               return (
                 <div

@@ -51,6 +51,11 @@ function parseArgs(argv) {
   const positional = [];
 
   for (let i = 1; i < args.length; i++) {
+    // support --key=value syntax
+    if (args[i].startsWith('--') && args[i].includes('=')) {
+      const eq = args[i].indexOf('=');
+      args.splice(i, 1, args[i].slice(0, eq), args[i].slice(eq + 1));
+    }
     switch (args[i]) {
       case '--max':
         opts.max = parseInt(args[++i], 10) || 50;

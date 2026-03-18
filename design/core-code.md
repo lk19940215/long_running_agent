@@ -257,33 +257,35 @@ state.js                                            ← src/core/state.js
 
 ---
 
-## indicator — 终端指示器
+## indicator — 终端指示器（双通道显示）
 
-> 详细讲解见 [session-guard.md](session-guard.md)
+> 详细讲解见 [indicator-mechanism.md](indicator-mechanism.md)
 
 ```
+通道 A — Spinner 心跳（Indicator._render, 每秒覆盖）
+  ⠇ S1 02:05 思考中
+
+通道 B — 永久工具行（inferPhaseStep, 每次工具调用追加 \n）
+  [HH:MM:SS] MM:SS ToolName target
+
 Indicator                                           ← src/common/indicator.js
 ├── start(sessionNum, stallTimeoutMin, projectRoot)
 ├── stop()
-├── startTool(name)     → toolRunning=true, 重置 lastActivityTime
+├── startTool()         → toolRunning=true, 重置 lastActivityTime
 ├── endTool()           → toolRunning=false, 重置 lastActivityTime（幂等）
 ├── updateActivity()    → 仅重置 lastActivityTime
 ├── pauseRendering()    → _paused=true（文本输出期间）
 ├── resumeRendering()   → _paused=false
-├── getStatusLine()     → 组装状态行
-│   ├── toolRunning && idle >= 2min → 黄色"工具执行中"
-│   ├── !toolRunning && idle >= 2min → 红色"无响应"
-│   └── step + toolTarget
-└── _render()           → 每秒 \r\x1b[K 覆盖同一行
+└── _render()           → 每秒 \r\x1b[K 覆盖同一行（仅 spinner + 时间 + 阶段）
 
-inferPhaseStep(indicator, toolName, toolInput)
-├── Write/Edit/MultiEdit  → coding / 编辑文件
-├── Bash/Shell            → extractBashLabel + extractBashTarget
-├── Read/Glob/Grep/LS    → thinking / 读取文件
-├── Task                  → thinking / 子 Agent 搜索
-├── WebSearch/WebFetch    → thinking / 查阅文档
-├── mcp__*                → coding / 浏览器: action
-└── 其他                  → 工具调用
+inferPhaseStep(indicator, toolName, toolInput)       ← 输出永久行
+├── Write/Edit/MultiEdit  → coding, target: file_path
+├── Bash/Shell            → target: extractBashCore(command)
+├── Read/Glob/Grep/LS    → thinking, target: file_path / pattern
+├── Task                  → thinking
+├── WebSearch/WebFetch    → thinking
+├── mcp__*                → coding, target: url / element
+└── 其他                  → 原始工具名
 ```
 
 ---

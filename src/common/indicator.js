@@ -152,8 +152,19 @@ function extractBashCore(cmd) {
 
 // ─── inferPhaseStep: 输出永久工具行 ─────────────────────
 
+function formatElapsed(indicator) {
+  const elapsed = Math.floor((Date.now() - indicator.startTime) / 1000);
+  const mm = String(Math.floor(elapsed / 60)).padStart(2, '0');
+  const ss = String(elapsed % 60).padStart(2, '0');
+  return `${mm}:${ss}`;
+}
+
+const CODING_TOOLS = /^(write|edit|multiedit|str_replace_editor|strreplace)$/;
+const READ_TOOLS = /^(read|glob|grep|ls)$/;
+
 function inferPhaseStep(indicator, toolName, toolInput) {
   const name = (toolName || '').toLowerCase();
+  const displayName = toolName || name;
   const pr = indicator.projectRoot || '';
   const cols = termCols();
 
@@ -161,47 +172,45 @@ function inferPhaseStep(indicator, toolName, toolInput) {
 
   let step, target;
 
-  if (/^(write|edit|multiedit|str_replace_editor|strreplace)$/.test(name)) {
+  if (CODING_TOOLS.test(name)) {
     indicator.updatePhase('coding');
-    step = '编辑';
+    step = displayName;
     target = normalizePath(
       (typeof toolInput === 'object' ? (toolInput.file_path || toolInput.path || '') : ''), pr
     );
   } else if (name === 'bash' || name === 'shell') {
     const cmd = typeof toolInput === 'object' ? (toolInput.command || '') : String(toolInput || '');
-    step = extractBashLabel(cmd);
-    if (step === '网络') {
-      const url = extractCurlUrl(cmd);
-      target = url || stripAbsolutePaths(extractBashCore(cmd), pr);
-    } else {
-      target = stripAbsolutePaths(extractBashCore(cmd), pr);
-    }
-    if (['测试', '执行'].includes(step)) indicator.updatePhase('coding');
-  } else if (/^(read|glob|grep|ls)$/.test(name)) {
+    const label = extractBashLabel(cmd);
+    step = displayName;
+    const url = (label === '网络') ? extractCurlUrl(cmd) : null;
+    target = url || stripAbsolutePaths(extractBashCore(cmd), pr);
+    if (['测试', '执行'].includes(label)) indicator.updatePhase('coding');
+  } else if (READ_TOOLS.test(name)) {
     indicator.updatePhase('thinking');
-    step = '读取';
+    step = displayName;
     target = extractTarget(toolInput, pr);
   } else if (name === 'task') {
     indicator.updatePhase('thinking');
-    step = 'Agent';
+    step = displayName;
     target = '';
   } else if (name === 'websearch' || name === 'webfetch') {
     indicator.updatePhase('thinking');
-    step = '查阅';
+    step = displayName;
     target = '';
   } else if (name.startsWith('mcp__')) {
     indicator.updatePhase('coding');
-    step = `浏览器: ${name.split('__').pop() || name}`;
+    step = name.split('__').pop() || displayName;
     target = typeof toolInput === 'object'
       ? String(toolInput.url || toolInput.text || toolInput.element || '').slice(0, 60)
       : '';
   } else {
-    step = '工具';
+    step = displayName;
     target = '';
   }
 
   const time = localTimestamp();
-  let line = `  ${COLOR.dim}${time}${COLOR.reset} ${step}`;
+  const el = formatElapsed(indicator);
+  let line = `  ${COLOR.dim}${time}${COLOR.reset} ${COLOR.dim}${el}${COLOR.reset} ${step}`;
   if (target) {
     const maxTarget = Math.max(10, cols - displayWidth(stripAnsi(line)) - 3);
     line += ` ${truncateMiddle(target, maxTarget)}`;
