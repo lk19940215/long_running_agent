@@ -21,11 +21,7 @@
         "添加代码块响应式优化样式：code-block-responsive",
         "验证: npm run dev && 查看控制台无 CSS 解析错误"
       ],
-      "status": "pending",
-      "depends_on": []
-    },
-    {
-      "id": "feat-002",
+      "status": "done",
       "category": "frontend",
       "priority": 2,
       "description": "创建通用布局组件 - PageLayout、SectionCard、AnimatedTitle",
