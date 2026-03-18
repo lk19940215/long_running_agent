@@ -14,12 +14,12 @@ const CTASection: React.FC = () => {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link to="/quick-start" className="btn-primary text-base no-underline">
+            <Link to="/quick-start" className="btn-primary animate-pulse-glow text-base no-underline">
               快速开始
             </Link>
             <Link
               to="/docs"
-              className="px-6 py-3 text-[var(--text-200)] hover:text-[var(--text-50)] transition-colors"
+              className="px-6 py-3 text-[var(--text-200)] hover:text-[var(--text-50)] transition-colors link-underline"
             >
               阅读文档 →
             </Link>

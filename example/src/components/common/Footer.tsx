@@ -57,14 +57,14 @@ const Footer: React.FC = () => {
                       href={link.href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-[var(--text-400)] text-sm hover:text-[var(--text-50)] transition-colors"
+                      className="text-[var(--text-400)] text-sm hover:text-[var(--text-50)] transition-colors link-underline"
                     >
                       {link.label}
                     </a>
                   ) : (
                     <Link
                       to={link.path!}
-                      className="text-[var(--text-400)] text-sm hover:text-[var(--text-50)] transition-colors"
+                      className="text-[var(--text-400)] text-sm hover:text-[var(--text-50)] transition-colors link-underline"
                     >
                       {link.label}
                     </Link>
@@ -82,7 +82,7 @@ const Footer: React.FC = () => {
                 <a
                   key={social.name}
                   href={social.href}
-                  className="text-[var(--text-400)] hover:text-[var(--text-50)] transition-colors"
+                  className="text-[var(--text-400)] hover:text-[var(--text-50)] transition-all duration-300 hover:scale-110"
                   aria-label={social.name}
                 >
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">

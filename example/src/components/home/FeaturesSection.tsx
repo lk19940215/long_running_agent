@@ -53,7 +53,7 @@ const FeaturesSection: React.FC = () => {
           {features.map((feature, index) => (
             <div
               key={index}
-              className={`card animate-float-delay-${index % 3}`}
+              className={`card card-hover-enhanced animate-float-delay-${index % 3}`}
             >
               <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-[var(--gradient-start)] to-[var(--gradient-end)] flex items-center justify-center mb-4">
                 <svg

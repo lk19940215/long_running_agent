@@ -149,7 +149,7 @@
         "优化 Header 导航悬停反馈",
         "验证: 所有交互动画流畅，无性能卡顿"
       ],
-      "status": "pending",
+      "status": "done",
       "depends_on": ["feat-008"]
     },
     {
