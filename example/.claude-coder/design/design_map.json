@@ -5,6 +5,10 @@
     "home": {
       "pen": "pages/home.pen",
       "description": "Claude Coder 官网首页"
+    },
+    "about": {
+      "pen": "pages/about.pen",
+      "description": "关于我们 - 团队介绍与联系方式"
     }
   }
 }

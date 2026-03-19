@@ -112,6 +112,7 @@
 - **操作类型**: 新建页面 / 修改已有页面 / 调整全局风格
 - 页面已存在 → 先 Read 对应 .pen 文件再修改
 - 页面不存在 → 新建 .pen 文件
+- **新增页面时，不重写已有页面**（只写新页面 + 更新 design_map.json）
 - 一次输入可涉及多个页面
 
 ---
@@ -130,7 +131,7 @@
 ## 文件输出规范
 
 1. **system.lib.pen** — 设计库，设计目录根路径
-2. **pages/xxx.pen** — 页面文件，`pages/` 子目录
+2. **pages/xxx.pen** — 页面文件，`pages/` 子目录，每个页面文件必须包含 `"imports": { "sys": "../system.lib.pen" }`
 3. **design_map.json** — 最后更新
 4. `.lib.pen` 后缀让 Pencil 自动识别为设计库
 5. **初次设计**（system.lib.pen 不存在时）→ 参考 prompt 中注入的「初始化模板」
