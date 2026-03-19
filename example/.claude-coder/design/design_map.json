@@ -4,7 +4,7 @@
   "pages": {
     "home": {
       "pen": "pages/home.pen",
-      "description": "首页 - Hero区域、核心特性、工作原理、CTA"
+      "description": "Claude Coder 官网首页"
     }
   }
 }

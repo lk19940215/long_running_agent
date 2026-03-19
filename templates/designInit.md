@@ -82,7 +82,7 @@
       "width": 160,
       "height": 48,
       "fill": "$color.primary",
-      "cornerRadius": "$radius.lg",
+      "cornerRadius": 12,
       "justifyContent": "center",
       "alignItems": "center",
       "padding": [0, 32],
@@ -104,21 +104,27 @@
       "x": 0,
       "y": 200,
       "reusable": true,
-      "width": 380,
-      "height": 240,
+      "width": 400,
+      "height": 220,
       "fill": "$color.bg-card",
-      "cornerRadius": "$radius.lg",
+      "stroke": { "align": "inside", "thickness": 1, "fill": { "type": "gradient", "gradientType": "linear", "enabled": true, "colors": [{"color":"#8B5CF6","position":0},{"color":"#EC4899","position":1}], "rotation": 135 } },
+      "cornerRadius": 12,
       "layout": "vertical",
-      "gap": 12,
+      "gap": 16,
       "padding": 24,
       "children": [
         {
-          "type": "text",
+          "type": "frame",
           "id": "card-icon",
-          "fill": "$color.primary",
-          "content": "📌",
-          "fontFamily": "Inter, system-ui, sans-serif",
-          "fontSize": 32
+          "width": 48,
+          "height": 48,
+          "fill": { "type": "gradient", "gradientType": "linear", "enabled": true, "colors": [{"color":"#8B5CF6","position":0},{"color":"#EC4899","position":1}], "rotation": 135 },
+          "cornerRadius": 8,
+          "justifyContent": "center",
+          "alignItems": "center",
+          "children": [
+            { "type": "text", "id": "card-icon-symbol", "fill": "#FFFFFF", "content": "⚡", "fontFamily": "Inter, system-ui, sans-serif", "fontSize": 24 }
+          ]
         },
         {
           "type": "text",
@@ -137,7 +143,7 @@
           "fontFamily": "Inter, system-ui, sans-serif",
           "fontSize": 14,
           "textGrowth": "fixed-width",
-          "width": 332
+          "width": 352
         }
       ]
     },
@@ -252,7 +258,6 @@
       "x": 0,
       "y": 0,
       "width": 1440,
-      "height": 2000,
       "fill": "$sys:color.bg",
       "layout": "vertical",
       "children": [

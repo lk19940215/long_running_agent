@@ -16,6 +16,7 @@
 - 如果需求涉及还原已有页面 → Read 页面入口文件，识别所有子组件
 - 列出 Section 清单（如：`Header → Hero → Features → HowItWorks → CTA → Footer`）
 - 识别跨页面复用组件（Header/Footer）→ 放入 system.lib.pen
+- 识别弹窗/浮层/状态变体（Modal/Loading/Error）→ 作为独立 frame 放在主页面右侧（x: 主页面宽度 + 100）
 
 ### Step 2: 逐 Section 还原（核心！每次只处理一个 Section）
 
@@ -30,9 +31,9 @@
 标题区: layout: "vertical", alignItems: "center", gap: 16
 卡片网格: layout: "vertical", width: "fill_container", gap: 32
   → 行1: horizontal, gap: 32, width: "fill_container"
-    → 3个卡片: width: "fill_container", stroke: gradient-border(紫→粉)
+    → 3个卡片: width: "fill_container"
   → 行2: horizontal, gap: 32, width: "fill_container"
-    → 3个卡片: width: "fill_container", stroke: gradient-border(紫→粉)
+    → 3个卡片: width: "fill_container"
 ```
 
 ```
@@ -45,7 +46,7 @@
 底部版权: justifyContent: "center"
 ```
 
-**C. 提取文案和样式**：从源码中提取真实文字（禁止虚构），同时提取 CSS 的 border/shadow/gradient 等视觉效果 → 对应 `.pen` 的 stroke/effect/fill
+**C. 提取文案**：从源码中提取真实文字，禁止虚构
 
 **D. 反查检查**（对照下方「反查表」逐项验证）：
 - [ ] 多行子元素容器设了 `layout: "vertical"` 吗？

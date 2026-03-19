@@ -1,6 +1,5 @@
 {
   "version": "2.9",
-  "imports": { "sys": "../system.lib.pen" },
   "children": [
     {
       "type": "frame",
@@ -12,116 +11,395 @@
       "layout": "vertical",
       "children": [
         {
-          "type": "ref",
           "id": "section-header",
+          "type": "ref",
           "ref": "sys:header"
         },
         {
           "type": "frame",
-          "id": "section-hero",
+          "id": "hero-section",
           "width": "fill_container",
+          "fill": "$sys:color.bg",
           "layout": "vertical",
-          "padding": [128, 80, 80],
+          "padding": [
+            128,
+            32,
+            80,
+            32
+          ],
           "alignItems": "center",
-          "gap": 32,
           "children": [
             {
-              "type": "text",
-              "id": "hero-title",
-              "fill": { "type": "gradient", "gradientType": "linear", "enabled": true, "colors": [{"color":"#8B5CF6","position":0},{"color":"#EC4899","position":1}], "rotation": 90 },
-              "content": "Claude Coder",
-              "fontFamily": "Inter, system-ui, sans-serif",
-              "fontSize": 60,
-              "fontWeight": "700"
-            },
-            {
-              "type": "text",
-              "id": "hero-subtitle",
-              "fill": "$sys:color.cyan",
-              "content": "摸鱼神器 🐟",
-              "fontFamily": "Inter, system-ui, sans-serif",
-              "fontSize": 24,
-              "fontWeight": "600"
-            },
-            {
-              "type": "text",
-              "id": "hero-desc",
-              "fill": "$sys:color.text-secondary",
-              "content": "AI 加班你摸鱼，Claude Coder 帮你搞定一切。\n一句话需求 → 完整项目。长时间自运行，自动分解任务、持续编码、验证交付。",
-              "fontFamily": "Inter, system-ui, sans-serif",
-              "fontSize": 18,
-              "textAlign": "center",
-              "textGrowth": "fixed-width",
-              "width": 672
-            },
-            {
               "type": "frame",
-              "id": "hero-cta",
-              "gap": 16,
+              "id": "hero-content",
+              "width": 1280,
+              "layout": "vertical",
+              "gap": 24,
               "alignItems": "center",
               "children": [
                 {
-                  "type": "frame",
-                  "id": "hero-btn-primary",
-                  "width": 120,
-                  "height": 44,
-                  "cornerRadius": 8,
-                  "fill": { "type": "gradient", "gradientType": "linear", "enabled": true, "colors": [{"color":"#8B5CF6","position":0},{"color":"#EC4899","position":1}], "rotation": 135 },
-                  "effect": { "type": "shadow", "blur": 20, "color": "#8B5CF64D", "offset": {"x":0,"y":4} },
-                  "justifyContent": "center",
-                  "alignItems": "center",
-                  "children": [
-                    { "type": "text", "id": "hero-btn-label", "fill": "#FFFFFF", "content": "开始使用", "fontFamily": "Inter, system-ui, sans-serif", "fontSize": 16, "fontWeight": "600" }
-                  ]
+                  "type": "text",
+                  "id": "hero-title",
+                  "fill": {
+                    "type": "gradient",
+                    "gradientType": "linear",
+                    "enabled": true,
+                    "rotation": 90,
+                    "size": {
+                      "height": 1
+                    },
+                    "colors": [
+                      {
+                        "color": "#8B5CF6",
+                        "position": 0
+                      },
+                      {
+                        "color": "#EC4899",
+                        "position": 1
+                      }
+                    ]
+                  },
+                  "content": "Claude Coder",
+                  "fontFamily": "Inter, system-ui, sans-serif",
+                  "fontSize": 60,
+                  "fontWeight": "700"
                 },
                 {
                   "type": "text",
-                  "id": "hero-github-link",
-                  "fill": "$sys:color.text-muted",
-                  "content": "View on GitHub",
+                  "id": "hero-subtitle",
+                  "fill": "$sys:color.accent",
+                  "content": "摸鱼神器 🐟",
                   "fontFamily": "Inter, system-ui, sans-serif",
-                  "fontSize": 16
+                  "fontSize": 24,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "text",
+                  "id": "hero-desc",
+                  "fill": "$sys:color.text-muted",
+                  "textGrowth": "fixed-width",
+                  "width": 672,
+                  "content": "AI 加班你摸鱼，Claude Coder 帮你搞定一切。\n一句话需求 → 完整项目。长时间自运行，自动分解任务、持续编码、验证交付。",
+                  "textAlign": "center",
+                  "fontFamily": "Inter, system-ui, sans-serif",
+                  "fontSize": 18,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "hero-buttons",
+                  "gap": 16,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "hero-cta-btn",
+                      "height": 48,
+                      "fill": "$sys:color.primary",
+                      "cornerRadius": 12,
+                      "padding": [
+                        0,
+                        32
+                      ],
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "hero-cta-label",
+                          "fill": "#FFFFFF",
+                          "content": "开始使用",
+                          "fontFamily": "Inter, system-ui, sans-serif",
+                          "fontSize": 16,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "hero-github-link",
+                      "fill": "$sys:color.text-muted",
+                      "content": "View on GitHub",
+                      "fontFamily": "Inter, system-ui, sans-serif",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "hero-stats",
+                  "gap": 64,
+                  "padding": [
+                    64,
+                    0,
+                    0,
+                    0
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "stat-1",
+                      "layout": "vertical",
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "stat-1-num",
+                          "fill": "$sys:color.text",
+                          "content": "50+",
+                          "fontFamily": "Inter, system-ui, sans-serif",
+                          "fontSize": 30,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "stat-1-label",
+                          "fill": "$sys:color.text-muted",
+                          "content": "Sessions 自动运行",
+                          "fontFamily": "Inter, system-ui, sans-serif",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "stat-2",
+                      "layout": "vertical",
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "stat-2-num",
+                          "fill": "$sys:color.text",
+                          "content": "∞",
+                          "fontFamily": "Inter, system-ui, sans-serif",
+                          "fontSize": 30,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "stat-2-label",
+                          "fill": "$sys:color.text-muted",
+                          "content": "模型支持",
+                          "fontFamily": "Inter, system-ui, sans-serif",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "stat-3",
+                      "layout": "vertical",
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "stat-3-num",
+                          "fill": "$sys:color.text",
+                          "content": "0",
+                          "fontFamily": "Inter, system-ui, sans-serif",
+                          "fontSize": 30,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "stat-3-label",
+                          "fill": "$sys:color.text-muted",
+                          "content": "配置即开即用",
+                          "fontFamily": "Inter, system-ui, sans-serif",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
                 }
               ]
-            },
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "features-section",
+          "width": "fill_container",
+          "fill": "$sys:color.bg",
+          "layout": "vertical",
+          "padding": 80,
+          "alignItems": "center",
+          "children": [
             {
               "type": "frame",
-              "id": "hero-stats",
+              "id": "features-content",
+              "width": 1280,
+              "layout": "vertical",
               "gap": 64,
-              "padding": [64, 0, 0, 0],
               "alignItems": "center",
               "children": [
                 {
                   "type": "frame",
-                  "id": "stat-1",
+                  "id": "features-header",
                   "layout": "vertical",
-                  "gap": 8,
+                  "gap": 16,
                   "alignItems": "center",
                   "children": [
-                    { "type": "text", "id": "stat-1-value", "fill": "$sys:color.text", "content": "50+", "fontFamily": "Inter, system-ui, sans-serif", "fontSize": 30, "fontWeight": "700" },
-                    { "type": "text", "id": "stat-1-label", "fill": "$sys:color.text-muted", "content": "Sessions 自动运行", "fontFamily": "Inter, system-ui, sans-serif", "fontSize": 14 }
+                    {
+                      "type": "text",
+                      "id": "features-title",
+                      "fill": "$sys:color.text",
+                      "content": "核心特性",
+                      "fontFamily": "Inter, system-ui, sans-serif",
+                      "fontSize": 36,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "features-subtitle",
+                      "fill": "$sys:color.text-muted",
+                      "textGrowth": "fixed-width",
+                      "width": 672,
+                      "content": "让 AI 成为真正的编码伙伴，从需求到交付，全程自主执行",
+                      "textAlign": "center",
+                      "fontFamily": "Inter, system-ui, sans-serif",
+                      "fontSize": 18,
+                      "fontWeight": "normal"
+                    }
                   ]
                 },
                 {
                   "type": "frame",
-                  "id": "stat-2",
+                  "id": "features-grid",
+                  "width": "fill_container",
                   "layout": "vertical",
-                  "gap": 8,
-                  "alignItems": "center",
+                  "gap": 32,
                   "children": [
-                    { "type": "text", "id": "stat-2-value", "fill": "$sys:color.text", "content": "∞", "fontFamily": "Inter, system-ui, sans-serif", "fontSize": 30, "fontWeight": "700" },
-                    { "type": "text", "id": "stat-2-label", "fill": "$sys:color.text-muted", "content": "模型支持", "fontFamily": "Inter, system-ui, sans-serif", "fontSize": 14 }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "stat-3",
-                  "layout": "vertical",
-                  "gap": 8,
-                  "alignItems": "center",
-                  "children": [
-                    { "type": "text", "id": "stat-3-value", "fill": "$sys:color.text", "content": "0", "fontFamily": "Inter, system-ui, sans-serif", "fontSize": 30, "fontWeight": "700" },
-                    { "type": "text", "id": "stat-3-label", "fill": "$sys:color.text-muted", "content": "配置即开即用", "fontFamily": "Inter, system-ui, sans-serif", "fontSize": 14 }
+                    {
+                      "type": "frame",
+                      "id": "features-row-1",
+                      "width": "fill_container",
+                      "gap": 32,
+                      "children": [
+                        {
+                          "id": "feature-1",
+                          "type": "ref",
+                          "ref": "sys:feature-card",
+                          "y": 0,
+                          "descendants": {
+                            "sys:feature-card-icon-symbol": {
+                              "content": "⚡"
+                            },
+                            "sys:feature-card-title": {
+                              "content": "一句话需求 → 完整项目"
+                            },
+                            "sys:feature-card-desc": {
+                              "content": "告别繁琐的手动编码。自然语言描述需求，AI 自动分解为可执行任务队列，从零到交付一气呵成。"
+                            }
+                          }
+                        },
+                        {
+                          "id": "feature-2",
+                          "type": "ref",
+                          "ref": "sys:feature-card",
+                          "x": 432,
+                          "y": 0,
+                          "descendants": {
+                            "sys:feature-card-icon-symbol": {
+                              "content": "🔄"
+                            },
+                            "sys:feature-card-title": {
+                              "content": "数小时无人值守"
+                            },
+                            "sys:feature-card-desc": {
+                              "content": "Session 守护 + 倒计时活跃度监控 + git 回滚重试，Agent 持续编码数小时不中断。"
+                            }
+                          }
+                        },
+                        {
+                          "id": "feature-3",
+                          "type": "ref",
+                          "ref": "sys:feature-card",
+                          "x": 864,
+                          "y": 0,
+                          "descendants": {
+                            "sys:feature-card-icon-symbol": {
+                              "content": "🛡"
+                            },
+                            "sys:feature-card-title": {
+                              "content": "Hook 注入 · 安全可控"
+                            },
+                            "sys:feature-card-desc": {
+                              "content": "JSON 配置即可在工具调用时注入规则引导，零代码修改扩展 AI 行为，代码审查自动护航。"
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "features-row-2",
+                      "width": "fill_container",
+                      "gap": 32,
+                      "children": [
+                        {
+                          "id": "feature-4",
+                          "type": "ref",
+                          "ref": "sys:feature-card",
+                          "y": 0,
+                          "descendants": {
+                            "sys:feature-card-icon-symbol": {
+                              "content": "🔀"
+                            },
+                            "sys:feature-card-title": {
+                              "content": "任意模型 · 自由切换"
+                            },
+                            "sys:feature-card-desc": {
+                              "content": "支持 Claude、DeepSeek、GLM-5、Qwen 等任意 Anthropic 兼容 API，多模型路由灵活编排。"
+                            }
+                          }
+                        },
+                        {
+                          "id": "feature-5",
+                          "type": "ref",
+                          "ref": "sys:feature-card",
+                          "x": 432,
+                          "y": 0,
+                          "descendants": {
+                            "sys:feature-card-icon-symbol": {
+                              "content": "🧪"
+                            },
+                            "sys:feature-card-title": {
+                              "content": "E2E 测试自动化"
+                            },
+                            "sys:feature-card-desc": {
+                              "content": "Playwright 登录态一键导出、API Key 持久化存储，Agent 编码后自动验证，交付即可用。"
+                            }
+                          }
+                        },
+                        {
+                          "id": "feature-6",
+                          "type": "ref",
+                          "ref": "sys:feature-card",
+                          "x": 864,
+                          "y": 0,
+                          "descendants": {
+                            "sys:feature-card-icon-symbol": {
+                              "content": "⚙"
+                            },
+                            "sys:feature-card-title": {
+                              "content": "配置驱动 · 开箱即用"
+                            },
+                            "sys:feature-card-desc": {
+                              "content": "JSON 配置 + 环境变量 + CLI 参数三位一体，claude-coder setup 一键配好，即刻开跑。"
+                            }
+                          }
+                        }
+                      ]
+                    }
                   ]
                 }
               ]
@@ -130,234 +408,366 @@
         },
         {
           "type": "frame",
-          "id": "section-features",
+          "id": "how-it-works-section",
           "width": "fill_container",
+          "fill": "$sys:color.bg-card",
           "layout": "vertical",
-          "padding": [80, 80],
-          "gap": 64,
+          "padding": 80,
           "alignItems": "center",
           "children": [
             {
               "type": "frame",
-              "id": "features-header",
+              "id": "how-it-works-content",
+              "width": 1280,
+              "layout": "vertical",
+              "gap": 64,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "how-it-works-header",
+                  "layout": "vertical",
+                  "gap": 16,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "how-it-works-title",
+                      "fill": "$sys:color.text",
+                      "content": "工作原理",
+                      "fontFamily": "Inter, system-ui, sans-serif",
+                      "fontSize": 36,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "how-it-works-subtitle",
+                      "fill": "$sys:color.text-muted",
+                      "content": "四步完成从需求到交付的完整流程",
+                      "fontFamily": "Inter, system-ui, sans-serif",
+                      "fontSize": 18,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "steps-grid",
+                  "width": "fill_container",
+                  "gap": 32,
+                  "children": [
+                    {
+                      "id": "step-1",
+                      "type": "ref",
+                      "ref": "sys:step-card",
+                      "y": 0,
+                      "descendants": {
+                        "sys:step-card-num": {
+                          "content": "1"
+                        },
+                        "sys:step-card-title": {
+                          "content": "描述需求"
+                        },
+                        "sys:step-card-desc": {
+                          "content": "一句话或 requirements.md，用自然语言告诉 AI 你想要什么。"
+                        }
+                      }
+                    },
+                    {
+                      "id": "step-2",
+                      "type": "ref",
+                      "ref": "sys:step-card",
+                      "x": 312,
+                      "y": 0,
+                      "descendants": {
+                        "sys:step-card-num": {
+                          "content": "2"
+                        },
+                        "sys:step-card-title": {
+                          "content": "智能分解"
+                        },
+                        "sys:step-card-desc": {
+                          "content": "AI 自动扫描项目技术栈，将需求拆分为可执行任务并按依赖排序。"
+                        }
+                      }
+                    },
+                    {
+                      "id": "step-3",
+                      "type": "ref",
+                      "ref": "sys:step-card",
+                      "x": 624,
+                      "y": 0,
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1,
+                        "fill": "#9f0606ff"
+                      },
+                      "descendants": {
+                        "sys:step-card-num": {
+                          "content": "3"
+                        },
+                        "sys:step-card-title": {
+                          "content": "持续编码"
+                        },
+                        "sys:step-card-desc": {
+                          "content": "Agent 多 Session 循环编码，生成代码、处理依赖、运行测试，自动 git commit。"
+                        }
+                      }
+                    },
+                    {
+                      "id": "step-4",
+                      "type": "ref",
+                      "ref": "sys:step-card",
+                      "x": 936,
+                      "y": 0,
+                      "descendants": {
+                        "sys:step-card-num": {
+                          "content": "4"
+                        },
+                        "sys:step-card-title": {
+                          "content": "验证交付"
+                        },
+                        "sys:step-card-desc": {
+                          "content": "每个 Session 自动验证功能，失败则 git 回滚重试，通过即产出可用代码。"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "cta-section",
+          "width": "fill_container",
+          "fill": "$sys:color.bg",
+          "layout": "vertical",
+          "padding": 80,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "cta-content",
+              "width": 896,
               "layout": "vertical",
               "gap": 16,
               "alignItems": "center",
               "children": [
-                { "type": "text", "id": "features-title", "fill": "$sys:color.text", "content": "核心特性", "fontFamily": "Inter, system-ui, sans-serif", "fontSize": 36, "fontWeight": "700" },
-                { "type": "text", "id": "features-subtitle", "fill": "$sys:color.text-muted", "content": "让 AI 成为真正的编码伙伴，从需求到交付，全程自主执行", "fontFamily": "Inter, system-ui, sans-serif", "fontSize": 18, "textAlign": "center", "textGrowth": "fixed-width", "width": 672 }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "features-row-1",
-              "width": 1280,
-              "gap": 32,
-              "children": [
                 {
-                  "type": "ref",
-                  "id": "feature-card-1",
-                  "ref": "sys:feature-card",
-                  "descendants": {
-                    "sys:card-icon": { "content": "⚡" },
-                    "sys:card-title": { "content": "一句话需求 → 完整项目" },
-                    "sys:card-desc": { "content": "告别繁琐的手动编码。自然语言描述需求，AI 自动分解为可执行任务队列，从零到交付一气呵成。", "width": 352 }
-                  }
-                },
-                {
-                  "type": "ref",
-                  "id": "feature-card-2",
-                  "ref": "sys:feature-card",
-                  "descendants": {
-                    "sys:card-icon": { "content": "🔄" },
-                    "sys:card-title": { "content": "数小时无人值守" },
-                    "sys:card-desc": { "content": "Session 守护 + 倒计时活跃度监控 + git 回滚重试，Agent 持续编码数小时不中断，真正解放双手。", "width": 352 }
-                  }
-                },
-                {
-                  "type": "ref",
-                  "id": "feature-card-3",
-                  "ref": "sys:feature-card",
-                  "descendants": {
-                    "sys:card-icon": { "content": "🛡️" },
-                    "sys:card-title": { "content": "Hook 注入 · 安全可控" },
-                    "sys:card-desc": { "content": "JSON 配置即可在工具调用时注入规则引导，零代码修改扩展 AI 行为，代码审查自动护航。", "width": 352 }
-                  }
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "features-row-2",
-              "width": 1280,
-              "gap": 32,
-              "children": [
-                {
-                  "type": "ref",
-                  "id": "feature-card-4",
-                  "ref": "sys:feature-card",
-                  "descendants": {
-                    "sys:card-icon": { "content": "🔀" },
-                    "sys:card-title": { "content": "任意模型 · 自由切换" },
-                    "sys:card-desc": { "content": "支持 Claude、DeepSeek、GLM-5、Qwen 等任意 Anthropic 兼容 API，多模型路由灵活编排。", "width": 352 }
-                  }
-                },
-                {
-                  "type": "ref",
-                  "id": "feature-card-5",
-                  "ref": "sys:feature-card",
-                  "descendants": {
-                    "sys:card-icon": { "content": "🧪" },
-                    "sys:card-title": { "content": "E2E 测试自动化" },
-                    "sys:card-desc": { "content": "Playwright 登录态一键导出、API Key 持久化存储，Agent 编码后自动验证，交付即可用。", "width": 352 }
-                  }
-                },
-                {
-                  "type": "ref",
-                  "id": "feature-card-6",
-                  "ref": "sys:feature-card",
-                  "descendants": {
-                    "sys:card-icon": { "content": "⚙️" },
-                    "sys:card-title": { "content": "配置驱动 · 开箱即用" },
-                    "sys:card-desc": { "content": "JSON 配置 + 环境变量 + CLI 参数三位一体，`claude-coder setup` 一键配好，即刻开跑。", "width": 352 }
-                  }
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "type": "frame",
-          "id": "section-how-it-works",
-          "width": "fill_container",
-          "fill": "$sys:color.bg-alt",
-          "layout": "vertical",
-          "padding": [80, 80],
-          "gap": 64,
-          "alignItems": "center",
-          "children": [
-            {
-              "type": "frame",
-              "id": "how-header",
-              "layout": "vertical",
-              "gap": 16,
-              "alignItems": "center",
-              "children": [
-                { "type": "text", "id": "how-title", "fill": "$sys:color.text", "content": "工作原理", "fontFamily": "Inter, system-ui, sans-serif", "fontSize": 36, "fontWeight": "700" },
-                { "type": "text", "id": "how-subtitle", "fill": "$sys:color.text-muted", "content": "四步完成从需求到交付的完整流程", "fontFamily": "Inter, system-ui, sans-serif", "fontSize": 18 }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "how-steps",
-              "width": 1280,
-              "gap": 32,
-              "children": [
-                {
-                  "type": "ref",
-                  "id": "step-card-1",
-                  "ref": "sys:step-card",
-                  "descendants": {
-                    "sys:step-number": { "content": "1" },
-                    "sys:step-title": { "content": "描述需求" },
-                    "sys:step-desc": { "content": "一句话或 requirements.md，用自然语言告诉 AI 你想要什么。", "width": 232 }
-                  }
-                },
-                {
-                  "type": "ref",
-                  "id": "step-card-2",
-                  "ref": "sys:step-card",
-                  "descendants": {
-                    "sys:step-number": { "content": "2" },
-                    "sys:step-title": { "content": "智能分解" },
-                    "sys:step-desc": { "content": "AI 自动扫描项目技术栈，将需求拆分为可执行任务并按依赖排序。", "width": 232 }
-                  }
-                },
-                {
-                  "type": "ref",
-                  "id": "step-card-3",
-                  "ref": "sys:step-card",
-                  "descendants": {
-                    "sys:step-number": { "content": "3" },
-                    "sys:step-title": { "content": "持续编码" },
-                    "sys:step-desc": { "content": "Agent 多 Session 循环编码，生成代码、处理依赖、运行测试，自动 git commit。", "width": 232 }
-                  }
-                },
-                {
-                  "type": "ref",
-                  "id": "step-card-4",
-                  "ref": "sys:step-card",
-                  "descendants": {
-                    "sys:step-number": { "content": "4" },
-                    "sys:step-title": { "content": "验证交付" },
-                    "sys:step-desc": { "content": "每个 Session 自动验证功能，失败则 git 回滚重试，通过即产出可用代码。", "width": 232 }
-                  }
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "type": "frame",
-          "id": "section-cta",
-          "width": "fill_container",
-          "layout": "vertical",
-          "padding": [80, 80],
-          "alignItems": "center",
-          "children": [
-            {
-              "type": "ref",
-              "id": "cta-card",
-              "ref": "sys:cta-card",
-              "descendants": {
-                "sys:cta-title": { "content": "准备好开始了吗？" },
-                "sys:cta-desc": { "content": "几分钟内配置完成，立即体验自主编码 Agent 的强大能力。" }
-              }
-            },
-            {
-              "type": "frame",
-              "id": "cta-buttons",
-              "gap": 16,
-              "alignItems": "center",
-              "padding": [0, 0, 32, 0],
-              "children": [
-                {
-                  "type": "frame",
-                  "id": "cta-btn-primary",
-                  "width": 120,
-                  "height": 44,
-                  "cornerRadius": 8,
-                  "fill": { "type": "gradient", "gradientType": "linear", "enabled": true, "colors": [{"color":"#8B5CF6","position":0},{"color":"#EC4899","position":1}], "rotation": 135 },
-                  "effect": { "type": "shadow", "blur": 20, "color": "#8B5CF64D", "offset": {"x":0,"y":4} },
-                  "justifyContent": "center",
-                  "alignItems": "center",
-                  "children": [
-                    { "type": "text", "id": "cta-btn-label", "fill": "#FFFFFF", "content": "快速开始", "fontFamily": "Inter, system-ui, sans-serif", "fontSize": 16, "fontWeight": "600" }
-                  ]
+                  "type": "text",
+                  "id": "cta-title",
+                  "fill": "$sys:color.text",
+                  "content": "准备好开始了吗？",
+                  "fontFamily": "Inter, system-ui, sans-serif",
+                  "fontSize": 36,
+                  "fontWeight": "700"
                 },
                 {
                   "type": "text",
-                  "id": "cta-docs-link",
+                  "id": "cta-desc",
                   "fill": "$sys:color.text-muted",
-                  "content": "阅读文档 →",
+                  "textGrowth": "fixed-width",
+                  "width": 672,
+                  "content": "几分钟内配置完成，立即体验自主编码 Agent 的强大能力。",
+                  "textAlign": "center",
                   "fontFamily": "Inter, system-ui, sans-serif",
-                  "fontSize": 16
+                  "fontSize": 18,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "cta-buttons",
+                  "gap": 16,
+                  "padding": [
+                    16,
+                    0,
+                    0,
+                    0
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "cta-btn-primary",
+                      "height": 48,
+                      "fill": "$sys:color.primary",
+                      "cornerRadius": 12,
+                      "padding": [
+                        0,
+                        32
+                      ],
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "cta-btn-label",
+                          "fill": "#FFFFFF",
+                          "content": "快速开始",
+                          "fontFamily": "Inter, system-ui, sans-serif",
+                          "fontSize": 16,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "cta-link",
+                      "fill": "$sys:color.text-muted",
+                      "content": "阅读文档 →",
+                      "fontFamily": "Inter, system-ui, sans-serif",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "terminal-wrapper",
+                  "width": "fill_container",
+                  "padding": [
+                    32,
+                    0,
+                    0,
+                    0
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "terminal-preview",
+                      "width": "fill_container",
+                      "fill": "#0D1117",
+                      "cornerRadius": 8,
+                      "layout": "vertical",
+                      "gap": 8,
+                      "padding": 16,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "terminal-header",
+                          "gap": 8,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "ellipse",
+                              "id": "dot-red",
+                              "fill": "#FF5F56",
+                              "width": 12,
+                              "height": 12
+                            },
+                            {
+                              "type": "ellipse",
+                              "id": "dot-yellow",
+                              "fill": "#FFBD2E",
+                              "width": 12,
+                              "height": 12
+                            },
+                            {
+                              "type": "ellipse",
+                              "id": "dot-green",
+                              "fill": "#27C93F",
+                              "width": 12,
+                              "height": 12
+                            },
+                            {
+                              "type": "text",
+                              "id": "terminal-title",
+                              "fill": "$sys:color.text-muted",
+                              "content": "Terminal",
+                              "fontFamily": "SF Mono, Monaco, monospace",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "terminal-body",
+                          "layout": "vertical",
+                          "gap": 4,
+                          "padding": [
+                            16,
+                            0,
+                            0,
+                            0
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "term-line-1",
+                              "fill": "#22C55E",
+                              "content": "$ claude-coder run \"创建个人博客\"",
+                              "fontFamily": "SF Mono, Monaco, monospace",
+                              "fontSize": 14,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "term-line-2",
+                              "fill": "$sys:color.text-muted",
+                              "content": "✓ 分析需求...",
+                              "fontFamily": "SF Mono, Monaco, monospace",
+                              "fontSize": 14,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "term-line-3",
+                              "fill": "$sys:color.text-muted",
+                              "content": "✓ 生成任务计划 (5 个任务)",
+                              "fontFamily": "SF Mono, Monaco, monospace",
+                              "fontSize": 14,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "term-line-4",
+                              "fill": "$sys:color.text-muted",
+                              "content": "✓ 初始化项目配置",
+                              "fontFamily": "SF Mono, Monaco, monospace",
+                              "fontSize": 14,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "term-line-5",
+                              "fill": "$sys:color.text-muted",
+                              "content": "✓ 开始编码 Session 1/5",
+                              "fontFamily": "SF Mono, Monaco, monospace",
+                              "fontSize": 14,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "term-line-6",
+                              "fill": "#8B5CF6",
+                              "content": "▎ 正在执行...",
+                              "fontFamily": "SF Mono, Monaco, monospace",
+                              "fontSize": 14,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
                 }
               ]
-            },
-            {
-              "type": "ref",
-              "id": "terminal",
-              "ref": "sys:terminal"
             }
           ]
         },
         {
-          "type": "ref",
           "id": "section-footer",
-          "ref": "sys:footer"
+          "type": "ref",
+          "ref": "sys:footer",
+          "y": 2622
         }
       ]
     }
-  ]
+  ],
+  "imports": {
+    "sys": "../system.lib.pen"
+  }
 }
