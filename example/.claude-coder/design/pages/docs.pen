@@ -1,0 +1,858 @@
+{
+  "version": "2.8",
+  "imports": {
+    "sys": "../system.pen"
+  },
+  "children": [
+    {
+      "type": "frame",
+      "id": "docs-page",
+      "name": "文档中心",
+      "x": 0,
+      "y": 0,
+      "width": 1440,
+      "height": 2200,
+      "clip": true,
+      "fill": "$sys/color.bg-100",
+      "children": [
+        {
+          "type": "frame",
+          "id": "page-header",
+          "x": 200,
+          "y": 120,
+          "width": 800,
+          "height": 100,
+          "layout": "vertical",
+          "gap": 16,
+          "children": [
+            {
+              "type": "text",
+              "id": "page-title",
+              "content": "文档中心",
+              "fontSize": 40,
+              "fontWeight": "700",
+              "fill": "$sys/color.text-50"
+            },
+            {
+              "type": "text",
+              "id": "page-desc",
+              "content": "快速了解 Claude Coder 的完整使用指南",
+              "fontSize": 18,
+              "fontWeight": "400",
+              "fill": "$sys/color.text-400"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "content-grid",
+          "x": 200,
+          "y": 240,
+          "width": 1040,
+          "height": 1800,
+          "layout": "horizontal",
+          "gap": 32,
+          "children": [
+            {
+              "type": "frame",
+              "id": "sidebar",
+              "width": 240,
+              "height": 1800,
+              "layout": "vertical",
+              "gap": 8,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "sidebar-title",
+                  "content": "文档导航",
+                  "fontSize": 12,
+                  "fontWeight": "600",
+                  "fill": "$sys/color.text-400",
+                  "textTransform": "uppercase"
+                },
+                {
+                  "type": "frame",
+                  "id": "nav-item-1",
+                  "width": 240,
+                  "height": 40,
+                  "fill": "$sys/color.primary-400",
+                  "cornerRadius": 8,
+                  "padding": [0, 12, 0, 12],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "nav-text-1",
+                      "content": "入门指南",
+                      "fontSize": 14,
+                      "fontWeight": "500",
+                      "fill": "$sys/color.text-50",
+                      "x": 0,
+                      "y": 12
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "nav-item-2",
+                  "width": 240,
+                  "height": 40,
+                  "fill": "transparent",
+                  "border": {
+                    "thickness": 1,
+                    "fill": "$sys/color.border-300"
+                  },
+                  "cornerRadius": 8,
+                  "padding": [0, 12, 0, 12],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "nav-text-2",
+                      "content": "核心概念",
+                      "fontSize": 14,
+                      "fontWeight": "500",
+                      "fill": "$sys/color.text-400",
+                      "x": 0,
+                      "y": 12
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "nav-item-3",
+                  "width": 240,
+                  "height": 40,
+                  "fill": "transparent",
+                  "border": {
+                    "thickness": 1,
+                    "fill": "$sys/color.border-300"
+                  },
+                  "cornerRadius": 8,
+                  "padding": [0, 12, 0, 12],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "nav-text-3",
+                      "content": "命令参考",
+                      "fontSize": 14,
+                      "fontWeight": "500",
+                      "fill": "$sys/color.text-400",
+                      "x": 0,
+                      "y": 12
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "nav-item-4",
+                  "width": 240,
+                  "height": 40,
+                  "fill": "transparent",
+                  "border": {
+                    "thickness": 1,
+                    "fill": "$sys/color.border-300"
+                  },
+                  "cornerRadius": 8,
+                  "padding": [0, 12, 0, 12],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "nav-text-4",
+                      "content": "故障排查",
+                      "fontSize": 14,
+                      "fontWeight": "500",
+                      "fill": "$sys/color.text-400",
+                      "x": 0,
+                      "y": 12
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "main-content",
+              "width": 768,
+              "height": 1800,
+              "layout": "vertical",
+              "gap": 32,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "section-getting-started",
+                  "width": 768,
+                  "height": 280,
+                  "fill": "$sys/color.bg-200",
+                  "border": {
+                    "thickness": 1,
+                    "fill": "$sys/color.border-300"
+                  },
+                  "cornerRadius": 12,
+                  "padding": [24, 24, 24, 24],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "getting-started-title",
+                      "content": "入门指南",
+                      "fontSize": 28,
+                      "fontWeight": "700",
+                      "fill": "$sys/color.text-50"
+                    },
+                    {
+                      "type": "text",
+                      "id": "getting-started-desc",
+                      "content": "三步即可启动你的第一个自主编码 Agent：安装 → 配置 → 运行。",
+                      "fontSize": 16,
+                      "fontWeight": "400",
+                      "fill": "$sys/color.text-400",
+                      "lineHeight": 1.6,
+                      "y": 48
+                    },
+                    {
+                      "type": "frame",
+                      "id": "getting-started-steps",
+                      "layout": "vertical",
+                      "gap": 12,
+                      "y": 90,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "step-1",
+                          "layout": "horizontal",
+                          "gap": 8,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "arrow-1",
+                              "content": "→",
+                              "fontSize": 16,
+                              "fill": "$sys/color.gradient-start"
+                            },
+                            {
+                              "type": "text",
+                              "id": "step-1-link",
+                              "content": "安装指南",
+                              "fontSize": 14,
+                              "fontWeight": "500",
+                              "fill": "$sys/color.primary-400"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "step-2",
+                          "layout": "horizontal",
+                          "gap": 8,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "arrow-2",
+                              "content": "→",
+                              "fontSize": 16,
+                              "fill": "$sys/color.gradient-start"
+                            },
+                            {
+                              "type": "text",
+                              "id": "step-2-text",
+                              "content": "模型配置：",
+                              "fontSize": 14,
+                              "fontWeight": "400",
+                              "fill": "$sys/color.text-400"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "code-inline-1",
+                              "padding": [4, 8, 4, 8],
+                              "background": "$sys/color.bg-100",
+                              "cornerRadius": 4,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "code-1",
+                                  "content": "claude-coder setup",
+                                  "fontSize": 13,
+                                  "fontWeight": "500",
+                                  "fill": "$sys/color.text-200"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "step-3",
+                          "layout": "horizontal",
+                          "gap": 8,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "arrow-3",
+                              "content": "→",
+                              "fontSize": 16,
+                              "fill": "$sys/color.gradient-start"
+                            },
+                            {
+                              "type": "text",
+                              "id": "step-3-text",
+                              "content": "第一个项目：",
+                              "fontSize": 14,
+                              "fontWeight": "400",
+                              "fill": "$sys/color.text-400"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "code-inline-2",
+                              "padding": [4, 8, 4, 8],
+                              "background": "$sys/color.bg-100",
+                              "cornerRadius": 4,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "code-2",
+                                  "content": "claude-coder run \"你的需求\"",
+                                  "fontSize": 13,
+                                  "fontWeight": "500",
+                                  "fill": "$sys/color.text-200"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "section-concepts",
+                  "width": 768,
+                  "height": 400,
+                  "fill": "$sys/color.bg-200",
+                  "border": {
+                    "thickness": 1,
+                    "fill": "$sys/color.border-300"
+                  },
+                  "cornerRadius": 12,
+                  "padding": [24, 24, 24, 24],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "concepts-title",
+                      "content": "核心概念",
+                      "fontSize": 28,
+                      "fontWeight": "700",
+                      "fill": "$sys/color.text-50"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "concept-1",
+                      "layout": "vertical",
+                      "gap": 8,
+                      "y": 48,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "concept-1-title",
+                          "content": "Hook 注入机制",
+                          "fontSize": 20,
+                          "fontWeight": "600",
+                          "fill": "$sys/color.text-50"
+                        },
+                        {
+                          "type": "text",
+                          "id": "concept-1-desc",
+                          "content": "在 SDK 工具调用（如 edit_file、run_command）时自动注入上下文提示，三级匹配粒度灵活控制 AI 行为，无需修改源码。",
+                          "fontSize": 14,
+                          "fontWeight": "400",
+                          "fill": "$sys/color.text-400",
+                          "lineHeight": 1.5
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "concept-2",
+                      "layout": "vertical",
+                      "gap": 8,
+                      "y": 110,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "concept-2-title",
+                          "content": "Session 守护",
+                          "fontSize": 20,
+                          "fontWeight": "600",
+                          "fill": "$sys/color.text-50"
+                        },
+                        {
+                          "type": "text",
+                          "id": "concept-2-desc",
+                          "content": "Harness 持续监控 Agent Session 状态，自动处理超时、中断、无响应。失败时 git 回滚 + 重试，确保长时间无人值守编码的稳定性。",
+                          "fontSize": 14,
+                          "fontWeight": "400",
+                          "fill": "$sys/color.text-400",
+                          "lineHeight": 1.5
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "concept-3",
+                      "layout": "vertical",
+                      "gap": 8,
+                      "y": 172,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "concept-3-title",
+                          "content": "任务分解与编排",
+                          "fontSize": 20,
+                          "fontWeight": "600",
+                          "fill": "$sys/color.text-50"
+                        },
+                        {
+                          "type": "text",
+                          "id": "concept-3-desc",
+                          "content": "将复杂需求拆分为独立子任务，按依赖关系排序。每个 Session 执行 6 步流程：恢复上下文 → 环境检查 → 选任务 → 编码 → 测试 → 收尾。",
+                          "fontSize": 14,
+                          "fontWeight": "400",
+                          "fill": "$sys/color.text-400",
+                          "lineHeight": 1.5
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "section-commands",
+                  "width": 768,
+                  "height": 480,
+                  "fill": "$sys/color.bg-200",
+                  "border": {
+                    "thickness": 1,
+                    "fill": "$sys/color.border-300"
+                  },
+                  "cornerRadius": 12,
+                  "padding": [24, 24, 24, 24],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "commands-title",
+                      "content": "命令参考",
+                      "fontSize": 28,
+                      "fontWeight": "700",
+                      "fill": "$sys/color.text-50"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "command-list",
+                      "layout": "vertical",
+                      "gap": 12,
+                      "y": 48,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "cmd-1",
+                          "layout": "horizontal",
+                          "gap": 16,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "cmd-code-1",
+                              "padding": [6, 12, 6, 12],
+                              "background": "$sys/color.bg-100",
+                              "border": {
+                                "thickness": 1,
+                                "fill": "$sys/color.border-300"
+                              },
+                              "cornerRadius": 6,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "cmd-text-1",
+                                  "content": "setup",
+                                  "fontSize": 13,
+                                  "fontWeight": "600",
+                                  "fill": "$sys/color.text-200"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "cmd-desc-1",
+                              "content": "交互式配置（模型、MCP、安全限制、自动审查）",
+                              "fontSize": 14,
+                              "fontWeight": "400",
+                              "fill": "$sys/color.text-400"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "cmd-2",
+                          "layout": "horizontal",
+                          "gap": 16,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "cmd-code-2",
+                              "padding": [6, 12, 6, 12],
+                              "background": "$sys/color.bg-100",
+                              "border": {
+                                "thickness": 1,
+                                "fill": "$sys/color.border-300"
+                              },
+                              "cornerRadius": 6,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "cmd-text-2",
+                                  "content": "init",
+                                  "fontSize": 13,
+                                  "fontWeight": "600",
+                                  "fill": "$sys/color.text-200"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "cmd-desc-2",
+                              "content": "初始化项目（扫描技术栈、生成 profile、部署食谱）",
+                              "fontSize": 14,
+                              "fontWeight": "400",
+                              "fill": "$sys/color.text-400"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "cmd-3",
+                          "layout": "horizontal",
+                          "gap": 16,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "cmd-code-3",
+                              "padding": [6, 12, 6, 12],
+                              "background": "$sys/color.bg-100",
+                              "border": {
+                                "thickness": 1,
+                                "fill": "$sys/color.border-300"
+                              },
+                              "cornerRadius": 6,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "cmd-text-3",
+                                  "content": "go",
+                                  "fontSize": 13,
+                                  "fontWeight": "600",
+                                  "fill": "$sys/color.text-200"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "cmd-desc-3",
+                              "content": "AI 对话式需求收集与方案组装",
+                              "fontSize": 14,
+                              "fontWeight": "400",
+                              "fill": "$sys/color.text-400"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "cmd-4",
+                          "layout": "horizontal",
+                          "gap": 16,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "cmd-code-4",
+                              "padding": [6, 12, 6, 12],
+                              "background": "$sys/color.bg-100",
+                              "border": {
+                                "thickness": 1,
+                                "fill": "$sys/color.border-300"
+                              },
+                              "cornerRadius": 6,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "cmd-text-4",
+                                  "content": "plan \"需求\"",
+                                  "fontSize": 13,
+                                  "fontWeight": "600",
+                                  "fill": "$sys/color.text-200"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "cmd-desc-4",
+                              "content": "生成任务计划方案",
+                              "fontSize": 14,
+                              "fontWeight": "400",
+                              "fill": "$sys/color.text-400"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "cmd-5",
+                          "layout": "horizontal",
+                          "gap": 16,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "cmd-code-5",
+                              "padding": [6, 12, 6, 12],
+                              "background": "$sys/color.bg-100",
+                              "border": {
+                                "thickness": 1,
+                                "fill": "$sys/color.border-300"
+                              },
+                              "cornerRadius": 6,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "cmd-text-5",
+                                  "content": "run \"需求\"",
+                                  "fontSize": 13,
+                                  "fontWeight": "600",
+                                  "fill": "$sys/color.text-200"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "cmd-desc-5",
+                              "content": "启动自动编码循环",
+                              "fontSize": 14,
+                              "fontWeight": "400",
+                              "fill": "$sys/color.text-400"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "cmd-6",
+                          "layout": "horizontal",
+                          "gap": 16,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "cmd-code-6",
+                              "padding": [6, 12, 6, 12],
+                              "background": "$sys/color.bg-100",
+                              "border": {
+                                "thickness": 1,
+                                "fill": "$sys/color.border-300"
+                              },
+                              "cornerRadius": 6,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "cmd-text-6",
+                                  "content": "auth [url]",
+                                  "fontSize": 13,
+                                  "fontWeight": "600",
+                                  "fill": "$sys/color.text-200"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "cmd-desc-6",
+                              "content": "配置浏览器测试工具 / 导出登录状态",
+                              "fontSize": 14,
+                              "fontWeight": "400",
+                              "fill": "$sys/color.text-400"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "cmd-7",
+                          "layout": "horizontal",
+                          "gap": 16,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "cmd-code-7",
+                              "padding": [6, 12, 6, 12],
+                              "background": "$sys/color.bg-100",
+                              "border": {
+                                "thickness": 1,
+                                "fill": "$sys/color.border-300"
+                              },
+                              "cornerRadius": 6,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "cmd-text-7",
+                                  "content": "status",
+                                  "fontSize": 13,
+                                  "fontWeight": "600",
+                                  "fill": "$sys/color.text-200"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "cmd-desc-7",
+                              "content": "查看进度和成本统计",
+                              "fontSize": 14,
+                              "fontWeight": "400",
+                              "fill": "$sys/color.text-400"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "section-troubleshooting",
+                  "width": 768,
+                  "height": 500,
+                  "fill": "$sys/color.bg-200",
+                  "border": {
+                    "thickness": 1,
+                    "fill": "$sys/color.border-300"
+                  },
+                  "cornerRadius": 12,
+                  "padding": [24, 24, 24, 24],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "troubleshooting-title",
+                      "content": "故障排查",
+                      "fontSize": 28,
+                      "fontWeight": "700",
+                      "fill": "$sys/color.text-50"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "issue-1",
+                      "layout": "vertical",
+                      "gap": 8,
+                      "y": 48,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "issue-1-title",
+                          "content": "余额不足 (Credit balance too low)",
+                          "fontSize": 20,
+                          "fontWeight": "600",
+                          "fill": "$sys/color.text-50"
+                        },
+                        {
+                          "type": "text",
+                          "id": "issue-1-desc",
+                          "content": "运行 claude-coder setup 重新配置 API Key，或切换至其他模型。",
+                          "fontSize": 14,
+                          "fontWeight": "400",
+                          "fill": "$sys/color.text-400",
+                          "lineHeight": 1.5
+                        },
+                        {
+                          "type": "frame",
+                          "id": "issue-1-code",
+                          "padding": [4, 8, 4, 8],
+                          "background": "$sys/color.bg-100",
+                          "cornerRadius": 4,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "issue-1-code-text",
+                              "content": "claude-coder setup",
+                              "fontSize": 13,
+                              "fontWeight": "500",
+                              "fill": "$sys/color.primary-300"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "issue-2",
+                      "layout": "vertical",
+                      "gap": 8,
+                      "y": 120,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "issue-2-title",
+                          "content": "中断恢复",
+                          "fontSize": 20,
+                          "fontWeight": "600",
+                          "fill": "$sys/color.text-50"
+                        },
+                        {
+                          "type": "text",
+                          "id": "issue-2-desc",
+                          "content": "Session 自动保存进度，直接重新运行 claude-coder run 即可从断点继续。",
+                          "fontSize": 14,
+                          "fontWeight": "400",
+                          "fill": "$sys/color.text-400",
+                          "lineHeight": 1.5
+                        },
+                        {
+                          "type": "frame",
+                          "id": "issue-2-code",
+                          "padding": [4, 8, 4, 8],
+                          "background": "$sys/color.bg-100",
+                          "cornerRadius": 4,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "issue-2-code-text",
+                              "content": "claude-coder run",
+                              "fontSize": 13,
+                              "fontWeight": "500",
+                              "fill": "$sys/color.primary-300"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                          "id": "issue-3",
+                          "layout": "vertical",
+                          "gap": 8,
+                          "y": 192,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "issue-3-title",
+                              "content": "长时间无响应",
+                              "fontSize": 20,
+                              "fontWeight": "600",
+                              "fill": "$sys/color.text-50"
+                            },
+                            {
+                              "type": "text",
+                              "id": "issue-3-desc",
+                              "content": "模型处理复杂任务时可能出现长思考间隔，这是正常行为。超过阈值后 Harness 自动中断并重试。可通过 SESSION_STALL_TIMEOUT 调整。",
+                              "fontSize": 14,
+                              "fontWeight": "400",
+                              "fill": "$sys/color.text-400",
+                              "lineHeight": 1.5
+                            }
+                          ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

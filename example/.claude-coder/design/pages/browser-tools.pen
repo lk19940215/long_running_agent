@@ -1,0 +1,448 @@
+{
+  "version": "2.8",
+  "imports": {
+    "sys": "../system.pen"
+  },
+  "children": [
+    {
+      "type": "frame",
+      "id": "browser-tools-page",
+      "name": "浏览器测试工具",
+      "x": 0,
+      "y": 0,
+      "width": 1440,
+      "height": 2400,
+      "clip": true,
+      "fill": "$sys/color.bg-100",
+      "children": [
+        {
+          "type": "frame",
+          "id": "page-header",
+          "x": 200,
+          "y": 120,
+          "width": 800,
+          "height": 100,
+          "layout": "vertical",
+          "gap": 16,
+          "children": [
+            {
+              "type": "text",
+              "id": "page-title",
+              "content": "浏览器测试工具",
+              "fontSize": 40,
+              "fontWeight": "700",
+              "fill": "$sys/color.text-50"
+            },
+            {
+              "type": "text",
+              "id": "page-desc",
+              "content": "Playwright MCP 与 Chrome DevTools MCP 的对比、安装与配置",
+              "fontSize": 18,
+              "fontWeight": "400",
+              "fill": "$sys/color.text-400"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "content-grid",
+          "x": 200,
+          "y": 240,
+          "width": 1040,
+          "height": 2000,
+          "layout": "horizontal",
+          "gap": 32,
+          "children": [
+            {
+              "type": "frame",
+              "id": "sidebar",
+              "width": 240,
+              "height": 2000,
+              "layout": "vertical",
+              "gap": 8,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "sidebar-title",
+                  "content": "目录导航",
+                  "fontSize": 12,
+                  "fontWeight": "600",
+                  "fill": "$sys/color.text-400",
+                  "textTransform": "uppercase"
+                },
+                {
+                  "type": "frame",
+                  "id": "nav-item-1",
+                  "width": 240,
+                  "height": 40,
+                  "fill": "$sys/color.primary-400",
+                  "cornerRadius": 8,
+                  "padding": [0, 12, 0, 12],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "nav-text-1",
+                      "content": "工具对比",
+                      "fontSize": 14,
+                      "fontWeight": "500",
+                      "fill": "$sys/color.text-50",
+                      "x": 0,
+                      "y": 12
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "nav-item-2",
+                  "width": 240,
+                  "height": 40,
+                  "fill": "transparent",
+                  "border": {
+                    "thickness": 1,
+                    "fill": "$sys/color.border-300"
+                  },
+                  "cornerRadius": 8,
+                  "padding": [0, 12, 0, 12],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "nav-text-2",
+                      "content": "Playwright MCP",
+                      "fontSize": 14,
+                      "fontWeight": "500",
+                      "fill": "$sys/color.text-400",
+                      "x": 0,
+                      "y": 12
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "nav-item-3",
+                  "width": 240,
+                  "height": 40,
+                  "fill": "transparent",
+                  "border": {
+                    "thickness": 1,
+                    "fill": "$sys/color.border-300"
+                  },
+                  "cornerRadius": 8,
+                  "padding": [0, 12, 0, 12],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "nav-text-3",
+                      "content": "Chrome DevTools MCP",
+                      "fontSize": 12,
+                      "fontWeight": "500",
+                      "fill": "$sys/color.text-400",
+                      "x": 0,
+                      "y": 12
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "nav-item-4",
+                  "width": 240,
+                  "height": 40,
+                  "fill": "transparent",
+                  "border": {
+                    "thickness": 1,
+                    "fill": "$sys/color.border-300"
+                  },
+                  "cornerRadius": 8,
+                  "padding": [0, 12, 0, 12],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "nav-text-4",
+                      "content": "配置参考",
+                      "fontSize": 14,
+                      "fontWeight": "500",
+                      "fill": "$sys/color.text-400",
+                      "x": 0,
+                      "y": 12
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "nav-item-5",
+                  "width": 240,
+                  "height": 40,
+                  "fill": "transparent",
+                  "border": {
+                    "thickness": 1,
+                    "fill": "$sys/color.border-300"
+                  },
+                  "cornerRadius": 8,
+                  "padding": [0, 12, 0, 12],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "nav-text-5",
+                      "content": "常见问题",
+                      "fontSize": 14,
+                      "fontWeight": "500",
+                      "fill": "$sys/color.text-400",
+                      "x": 0,
+                      "y": 12
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "main-content",
+              "width": 768,
+              "height": 2000,
+              "layout": "vertical",
+              "gap": 32,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "section-comparison",
+                  "width": 768,
+                  "height": 480,
+                  "fill": "$sys/color.bg-200",
+                  "border": {
+                    "thickness": 1,
+                    "fill": "$sys/color.border-300"
+                  },
+                  "cornerRadius": 12,
+                  "padding": [24, 24, 24, 24],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "comparison-title",
+                      "content": "工具对比",
+                      "fontSize": 28,
+                      "fontWeight": "700",
+                      "fill": "$sys/color.text-50"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "comparison-table",
+                      "width": 720,
+                      "height": 360,
+                      "layout": "vertical",
+                      "gap": 12,
+                      "y": 48,
+                      "overflow": "auto",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "table-header",
+                          "width": 720,
+                          "height": 40,
+                          "fill": "$sys/color.bg-100",
+                          "borderBottom": {
+                            "thickness": 1,
+                            "fill": "$sys/color.border-300"
+                          },
+                          "layout": "horizontal",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "th-dimension",
+                              "content": "维度",
+                              "fontSize": 13,
+                              "fontWeight": "600",
+                              "fill": "$sys/color.text-400",
+                              "x": 16,
+                              "y": 12
+                            },
+                            {
+                              "type": "text",
+                              "id": "th-playwright",
+                              "content": "Playwright MCP",
+                              "fontSize": 13,
+                              "fontWeight": "600",
+                              "fill": "$sys/color.primary-400",
+                              "x": 200,
+                              "y": 12
+                            },
+                            {
+                              "type": "text",
+                              "id": "th-devtools",
+                              "content": "Chrome DevTools MCP",
+                              "fontSize": 13,
+                              "fontWeight": "600",
+                              "fill": "$sys/color.lazy-cyan",
+                              "x": 420,
+                              "y": 12
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "row-1",
+                          "width": 720,
+                          "height": 40,
+                          "layout": "horizontal",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "row1-col1",
+                              "content": "维护方",
+                              "fontSize": 13,
+                              "fontWeight": "600",
+                              "fill": "$sys/color.text-400",
+                              "x": 16,
+                              "y": 12
+                            },
+                            {
+                              "type": "text",
+                              "id": "row1-col2",
+                              "content": "微软 (Microsoft)",
+                              "fontSize": 13,
+                              "fontWeight": "400",
+                              "fill": "$sys/color.text-200",
+                              "x": 200,
+                              "y": 12
+                            },
+                            {
+                              "type": "text",
+                              "id": "row1-col3",
+                              "content": "Google",
+                              "fontSize": 13,
+                              "fontWeight": "400",
+                              "fill": "$sys/color.text-200",
+                              "x": 420,
+                              "y": 12
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "row-2",
+                          "width": 720,
+                          "height": 40,
+                          "background": "$sys/color.bg-100",
+                          "layout": "horizontal",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "row2-col1",
+                              "content": "多实例",
+                              "fontSize": 13,
+                              "fontWeight": "600",
+                              "fill": "$sys/color.text-400",
+                              "x": 16,
+                              "y": 12
+                            },
+                            {
+                              "type": "text",
+                              "id": "row2-col2",
+                              "content": "✓ 支持",
+                              "fontSize": 13,
+                              "fontWeight": "400",
+                              "fill": "$sys/color.text-200",
+                              "x": 200,
+                              "y": 12
+                            },
+                            {
+                              "type": "text",
+                              "id": "row2-col3",
+                              "content": "✗ 单实例限制",
+                              "fontSize": 13,
+                              "fontWeight": "400",
+                              "fill": "$sys/color.text-200",
+                              "x": 420,
+                              "y": 12
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "row-3",
+                          "width": 720,
+                          "height": 40,
+                          "layout": "horizontal",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "row3-col1",
+                              "content": "性能分析",
+                              "fontSize": 13,
+                              "fontWeight": "600",
+                              "fill": "$sys/color.text-400",
+                              "x": 16,
+                              "y": 12
+                            },
+                            {
+                              "type": "text",
+                              "id": "row3-col2",
+                              "content": "基础（截图 + DOM 快照）",
+                              "fontSize": 13,
+                              "fontWeight": "400",
+                              "fill": "$sys/color.text-200",
+                              "x": 200,
+                              "y": 12
+                            },
+                            {
+                              "type": "text",
+                              "id": "row3-col3",
+                              "content": "✓ Trace / Lighthouse / Core Web Vitals",
+                              "fontSize": 13,
+                              "fontWeight": "400",
+                              "fill": "$sys/color.text-200",
+                              "x": 420,
+                              "y": 12
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "row-4",
+                          "width": 720,
+                          "height": 40,
+                          "background": "$sys/color.bg-100",
+                          "layout": "horizontal",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "row4-col1",
+                              "content": "适合场景",
+                              "fontSize": 13,
+                              "fontWeight": "600",
+                              "fill": "$sys/color.text-400",
+                              "x": 16,
+                              "y": 12
+                            },
+                            {
+                              "type": "text",
+                              "id": "row4-col2",
+                              "content": "CI/CD、并行测试、隔离环境",
+                              "fontSize": 13,
+                              "fontWeight": "400",
+                              "fill": "$sys/color.text-200",
+                              "x": 200,
+                              "y": 12
+                            },
+                            {
+                              "type": "text",
+                              "id": "row4-col3",
+                              "content": "本地开发、调试、复用已有环境",
+                              "fontSize": 13,
+                              "fontWeight": "400",
+                              "fill": "$sys/color.text-200",
+                              "x": 420,
+                              "y": 12
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

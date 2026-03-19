@@ -1,0 +1,196 @@
+{
+  "version": "2.8",
+  "imports": {
+    "sys": "./system.pen"
+  },
+  "children": [
+    {
+      "type": "frame",
+      "id": "header",
+      "name": "Header 导航栏",
+      "x": 0,
+      "y": 0,
+      "width": 1440,
+      "height": 64,
+      "clip": true,
+      "fill": "$sys/color.bg-100",
+      "borderBottom": {
+        "thickness": 1,
+        "fill": "$sys/color.border-300"
+      },
+      "children": [
+        {
+          "type": "frame",
+          "id": "header-container",
+          "x": 200,
+          "y": 0,
+          "width": 1040,
+          "height": 64,
+          "layout": "horizontal",
+          "justifyContent": "space-between",
+          "alignItems": "center",
+          "padding": [0, 0, 0, 0],
+          "children": [
+            {
+              "type": "frame",
+              "id": "logo-section",
+              "layout": "horizontal",
+              "gap": 12,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "logo-badge",
+                  "width": 32,
+                  "height": 32,
+                  "fill": {
+                    "type": "linear_gradient",
+                    "from": "$sys/color.gradient-start",
+                    "to": "$sys/color.gradient-end"
+                  },
+                  "cornerRadius": 8,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "logo-text",
+                      "content": "C",
+                      "fontSize": 18,
+                      "fontWeight": "700",
+                      "fill": "$sys/color.text-50",
+                      "x": 8,
+                      "y": 4
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "brand-name",
+                  "content": "Claude Coder",
+                  "fontSize": 20,
+                  "fontWeight": "700",
+                  "fill": "$sys/color.text-50"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "nav-links",
+              "layout": "horizontal",
+              "gap": 32,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "nav-home",
+                  "content": "首页",
+                  "fontSize": 14,
+                  "fontWeight": "500",
+                  "fill": "$sys/color.primary-400"
+                },
+                {
+                  "type": "text",
+                  "id": "nav-quick-start",
+                  "content": "快速上手",
+                  "fontSize": 14,
+                  "fontWeight": "500",
+                  "fill": "$sys/color.text-400"
+                },
+                {
+                  "type": "text",
+                  "id": "nav-features",
+                  "content": "功能特性",
+                  "fontSize": 14,
+                  "fontWeight": "500",
+                  "fill": "$sys/color.text-400"
+                },
+                {
+                  "type": "text",
+                  "id": "nav-docs",
+                  "content": "文档",
+                  "fontSize": 14,
+                  "fontWeight": "500",
+                  "fill": "$sys/color.text-400"
+                },
+                {
+                  "type": "text",
+                  "id": "nav-examples",
+                  "content": "案例",
+                  "fontSize": 14,
+                  "fontWeight": "500",
+                  "fill": "$sys/color.text-400"
+                },
+                {
+                  "type": "text",
+                  "id": "nav-browser-tools",
+                  "content": "浏览器工具",
+                  "fontSize": 14,
+                  "fontWeight": "500",
+                  "fill": "$sys/color.text-400"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "header-actions",
+              "layout": "horizontal",
+              "gap": 16,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "github-btn",
+                  "layout": "horizontal",
+                  "gap": 8,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "github-icon",
+                      "iconFontFamily": "lucide",
+                      "iconFontName": "github",
+                      "width": 20,
+                      "height": 20,
+                      "fill": "$sys/color.text-400"
+                    },
+                    {
+                      "type": "text",
+                      "id": "github-label",
+                      "content": "Star",
+                      "fontSize": 14,
+                      "fontWeight": "500",
+                      "fill": "$sys/color.text-400"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "download-btn",
+                  "width": 110,
+                  "height": 40,
+                  "fill": {
+                    "type": "linear_gradient",
+                    "from": "$sys/color.gradient-start",
+                    "to": "$sys/color.gradient-end"
+                  },
+                  "cornerRadius": 8,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "download-label",
+                      "content": "下载安装",
+                      "fontSize": 14,
+                      "fontWeight": "600",
+                      "fill": "$sys/color.text-50",
+                      "x": 18,
+                      "y": 11
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

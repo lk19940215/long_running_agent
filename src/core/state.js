@@ -91,6 +91,19 @@ function markSimplifyDone() {
   saveState(state);
 }
 
+// ─── Design State Helpers ─────────────────────────────────
+
+function loadDesignState() {
+  const state = loadState();
+  return state.design || {};
+}
+
+function saveDesignState(designData) {
+  const state = loadState();
+  state.design = { ...state.design, ...designData };
+  saveState(state);
+}
+
 module.exports = {
   DEFAULT_STATE,
   loadState,
@@ -101,5 +114,7 @@ module.exports = {
   appendProgress,
   incrementSession,
   markSimplifyDone,
+  loadDesignState,
+  saveDesignState,
   TASK_STATUSES,
 };

@@ -1,0 +1,505 @@
+{
+  "version": "2.8",
+  "imports": {
+    "sys": "../system.pen"
+  },
+  "children": [
+    {
+      "type": "frame",
+      "id": "features-page",
+      "name": "功能特性",
+      "x": 0,
+      "y": 0,
+      "width": 1440,
+      "height": 1600,
+      "clip": true,
+      "fill": "$sys/color.bg-100",
+      "children": [
+        {
+          "type": "frame",
+          "id": "page-header",
+          "x": 200,
+          "y": 120,
+          "width": 800,
+          "height": 100,
+          "layout": "vertical",
+          "gap": 16,
+          "children": [
+            {
+              "type": "text",
+              "id": "page-title",
+              "content": "功能特性",
+              "fontSize": 40,
+              "fontWeight": "700",
+              "fill": "$sys/color.text-50"
+            },
+            {
+              "type": "text",
+              "id": "page-desc",
+              "content": "探索 Claude Coder 的核心能力",
+              "fontSize": 18,
+              "fontWeight": "400",
+              "fill": "$sys/color.text-400"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "content-grid",
+          "x": 200,
+          "y": 240,
+          "width": 1040,
+          "height": 1200,
+          "layout": "horizontal",
+          "gap": 32,
+          "children": [
+            {
+              "type": "frame",
+              "id": "sidebar",
+              "width": 240,
+              "height": 1200,
+              "layout": "vertical",
+              "gap": 8,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "sidebar-title",
+                  "content": "功能导航",
+                  "fontSize": 12,
+                  "fontWeight": "600",
+                  "fill": "$sys/color.text-400",
+                  "textTransform": "uppercase"
+                },
+                {
+                  "type": "frame",
+                  "id": "nav-item-1",
+                  "width": 240,
+                  "height": 40,
+                  "fill": "$sys/color.primary-400",
+                  "cornerRadius": 8,
+                  "padding": [0, 12, 0, 12],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "nav-text-1",
+                      "content": "Hook 提示注入",
+                      "fontSize": 14,
+                      "fontWeight": "500",
+                      "fill": "$sys/color.text-50",
+                      "x": 0,
+                      "y": 12
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "nav-item-2",
+                  "width": 240,
+                  "height": 40,
+                  "fill": "transparent",
+                  "border": {
+                    "thickness": 1,
+                    "fill": "$sys/color.border-300"
+                  },
+                  "cornerRadius": 8,
+                  "padding": [0, 12, 0, 12],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "nav-text-2",
+                      "content": "Session 守护",
+                      "fontSize": 14,
+                      "fontWeight": "500",
+                      "fill": "$sys/color.text-400",
+                      "x": 0,
+                      "y": 12
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "nav-item-3",
+                  "width": 240,
+                  "height": 40,
+                  "fill": "transparent",
+                  "border": {
+                    "thickness": 1,
+                    "fill": "$sys/color.border-300"
+                  },
+                  "cornerRadius": 8,
+                  "padding": [0, 12, 0, 12],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "nav-text-3",
+                      "content": "多模型路由",
+                      "fontSize": 14,
+                      "fontWeight": "500",
+                      "fill": "$sys/color.text-400",
+                      "x": 0,
+                      "y": 12
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "nav-item-4",
+                  "width": 240,
+                  "height": 40,
+                  "fill": "transparent",
+                  "border": {
+                    "thickness": 1,
+                    "fill": "$sys/color.border-300"
+                  },
+                  "cornerRadius": 8,
+                  "padding": [0, 12, 0, 12],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "nav-text-4",
+                      "content": "测试凭证管理",
+                      "fontSize": 14,
+                      "fontWeight": "500",
+                      "fill": "$sys/color.text-400",
+                      "x": 0,
+                      "y": 12
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "main-content",
+              "width": 768,
+              "height": 1200,
+              "layout": "vertical",
+              "gap": 32,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "section-hook",
+                  "width": 768,
+                  "height": 300,
+                  "fill": "$sys/color.bg-200",
+                  "border": {
+                    "thickness": 1,
+                    "fill": "$sys/color.border-300"
+                  },
+                  "cornerRadius": 12,
+                  "padding": [24, 24, 24, 24],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "hook-title",
+                      "content": "Hook 提示注入机制",
+                      "fontSize": 28,
+                      "fontWeight": "700",
+                      "fill": "$sys/color.text-50"
+                    },
+                    {
+                      "type": "text",
+                      "id": "hook-desc",
+                      "content": "核心亮点：通过 JSON 配置，在 SDK 工具调用时自动向模型注入上下文引导。零代码修改即可扩展 AI 行为规则——无需改动源码，只需编辑配置文件就能引导 Agent 遵守编码规范、安全策略。",
+                      "fontSize": 16,
+                      "fontWeight": "400",
+                      "fill": "$sys/color.text-400",
+                      "lineHeight": 1.6,
+                      "y": 48
+                    },
+                    {
+                      "type": "frame",
+                      "id": "hook-code",
+                      "width": 720,
+                      "height": 120,
+                      "fill": "$sys/color.bg-100",
+                      "border": {
+                        "thickness": 1,
+                        "fill": "$sys/color.border-300"
+                      },
+                      "cornerRadius": 8,
+                      "padding": [16, 16, 16, 16],
+                      "y": 120,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "hook-code-content",
+                          "content": "{\n  \"hooks\": [\n    {\n      \"trigger\": \"tool_call\",\n      \"tool\": \"edit_file\",\n      \"inject\": \"请确保代码符合项目编码规范\"\n    }\n  ]\n}",
+                          "fontSize": 14,
+                          "fontWeight": "400",
+                          "fill": "$sys/color.text-200",
+                          "lineHeight": 1.5
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "hook-note",
+                      "content": "支持三级匹配（全局 / 工具级 / 参数级），可灵活控制注入粒度。",
+                      "fontSize": 12,
+                      "fontWeight": "400",
+                      "fill": "$sys/color.text-400",
+                      "y": 250
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "section-session",
+                  "width": 768,
+                  "height": 300,
+                  "fill": "$sys/color.bg-200",
+                  "border": {
+                    "thickness": 1,
+                    "fill": "$sys/color.border-300"
+                  },
+                  "cornerRadius": 12,
+                  "padding": [24, 24, 24, 24],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "session-title",
+                      "content": "Session 守护机制",
+                      "fontSize": 28,
+                      "fontWeight": "700",
+                      "fill": "$sys/color.text-50"
+                    },
+                    {
+                      "type": "text",
+                      "id": "session-desc",
+                      "content": "专为长时间无人值守编码设计。多 Session 编排 + 倒计时活跃度监控，Agent 可连续运行数小时自主完成数十个任务。",
+                      "fontSize": 16,
+                      "fontWeight": "400",
+                      "fill": "$sys/color.text-400",
+                      "lineHeight": 1.6,
+                      "y": 48
+                    },
+                    {
+                      "type": "frame",
+                      "id": "session-features",
+                      "width": 720,
+                      "height": 160,
+                      "layout": "vertical",
+                      "gap": 12,
+                      "y": 100,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "feature-1",
+                          "layout": "horizontal",
+                          "gap": 8,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "dot-1",
+                              "content": "●",
+                              "fontSize": 16,
+                              "fill": "$sys/color.gradient-start"
+                            },
+                            {
+                              "type": "text",
+                              "id": "feature-1-text",
+                              "content": "自动检测 Session 超时 / 中断，智能恢复上下文",
+                              "fontSize": 14,
+                              "fontWeight": "400",
+                              "fill": "$sys/color.text-400"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "feature-2",
+                          "layout": "horizontal",
+                          "gap": 8,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "dot-2",
+                              "content": "●",
+                              "fontSize": 16,
+                              "fill": "$sys/color.gradient-start"
+                            },
+                            {
+                              "type": "text",
+                              "id": "feature-2-text",
+                              "content": "倒计时活跃度检测 + 工具运行状态实时追踪",
+                              "fontSize": 14,
+                              "fontWeight": "400",
+                              "fill": "$sys/color.text-400"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "feature-3",
+                          "layout": "horizontal",
+                          "gap": 8,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "dot-3",
+                              "content": "●",
+                              "fontSize": 16,
+                              "fill": "$sys/color.gradient-start"
+                            },
+                            {
+                              "type": "text",
+                              "id": "feature-3-text",
+                              "content": "失败自动 git 回滚 + 重试，保障代码仓库安全",
+                              "fontSize": 14,
+                              "fontWeight": "400",
+                              "fill": "$sys/color.text-400"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "feature-4",
+                          "layout": "horizontal",
+                          "gap": 8,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "dot-4",
+                              "content": "●",
+                              "fontSize": 16,
+                              "fill": "$sys/color.gradient-start"
+                            },
+                            {
+                              "type": "text",
+                              "id": "feature-4-text",
+                              "content": "智能防刷屏机制，避免无效循环消耗 Token",
+                              "fontSize": 14,
+                              "fontWeight": "400",
+                              "fill": "$sys/color.text-400"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "section-model",
+                  "width": 768,
+                  "height": 260,
+                  "fill": "$sys/color.bg-200",
+                  "border": {
+                    "thickness": 1,
+                    "fill": "$sys/color.border-300"
+                  },
+                  "cornerRadius": 12,
+                  "padding": [24, 24, 24, 24],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "model-title",
+                      "content": "多模型路由",
+                      "fontSize": 28,
+                      "fontWeight": "700",
+                      "fill": "$sys/color.text-50"
+                    },
+                    {
+                      "type": "text",
+                      "id": "model-desc",
+                      "content": "不绑定单一模型。支持 Claude 官方、Coding Plan 多模型路由、DeepSeek、GLM-5、Qwen 等任意 Anthropic 兼容 API，按任务类型灵活分配最优模型，兼顾质量与成本。",
+                      "fontSize": 16,
+                      "fontWeight": "400",
+                      "fill": "$sys/color.text-400",
+                      "lineHeight": 1.6,
+                      "y": 48
+                    },
+                    {
+                      "type": "frame",
+                      "id": "model-code",
+                      "width": 720,
+                      "height": 120,
+                      "fill": "$sys/color.bg-100",
+                      "border": {
+                        "thickness": 1,
+                        "fill": "$sys/color.border-300"
+                      },
+                      "cornerRadius": 8,
+                      "padding": [16, 16, 16, 16],
+                      "y": 100,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "model-code-content",
+                          "content": "# 推荐配置（长时间自运行最稳）\nANTHROPIC_DEFAULT_OPUS_MODEL=glm-5\nANTHROPIC_DEFAULT_SONNET_MODEL=qwen3-coder-next\nANTHROPIC_DEFAULT_HAIKU_MODEL=qwen3-coder-plus\nANTHROPIC_MODEL=kimi-k2.5",
+                          "fontSize": 14,
+                          "fontWeight": "400",
+                          "fill": "$sys/color.text-200",
+                          "lineHeight": 1.5
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "section-test",
+                  "width": 768,
+                  "height": 220,
+                  "fill": "$sys/color.bg-200",
+                  "border": {
+                    "thickness": 1,
+                    "fill": "$sys/color.border-300"
+                  },
+                  "cornerRadius": 12,
+                  "padding": [24, 24, 24, 24],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "test-title",
+                      "content": "测试凭证管理",
+                      "fontSize": 28,
+                      "fontWeight": "700",
+                      "fill": "$sys/color.text-50"
+                    },
+                    {
+                      "type": "text",
+                      "id": "test-desc",
+                      "content": "Agent 编完代码还能自动验证。Playwright 一键导出浏览器登录态，API Key 持久化存储，端到端测试全程自动化，交付即可用。",
+                      "fontSize": 16,
+                      "fontWeight": "400",
+                      "fill": "$sys/color.text-400",
+                      "lineHeight": 1.6,
+                      "y": 48
+                    },
+                    {
+                      "type": "frame",
+                      "id": "test-code",
+                      "width": 720,
+                      "height": 80,
+                      "fill": "$sys/color.bg-100",
+                      "border": {
+                        "thickness": 1,
+                        "fill": "$sys/color.border-300"
+                      },
+                      "cornerRadius": 8,
+                      "padding": [16, 16, 16, 16],
+                      "y": 100,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "test-code-content",
+                          "content": "# 一键导出浏览器登录态\nclaude-coder auth http://localhost:3000\n\n# Agent 测试时自动使用保存的凭证",
+                          "fontSize": 14,
+                          "fontWeight": "400",
+                          "fill": "$sys/color.text-200",
+                          "lineHeight": 1.5
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

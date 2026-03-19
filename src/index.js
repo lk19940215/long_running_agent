@@ -68,6 +68,10 @@ async function main(command, input, opts = {}) {
       const { executeGo } = require('./core/go');
       return executeGo(config, input, opts);
     }
+    case 'design': {
+      const { executeDesign } = require('./core/design');
+      return executeDesign(config, input, opts);
+    }
     default:
       throw new Error(`未知命令: ${command}`);
   }

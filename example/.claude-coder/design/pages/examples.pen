@@ -1,0 +1,600 @@
+{
+  "version": "2.8",
+  "imports": {
+    "sys": "../system.pen"
+  },
+  "children": [
+    {
+      "type": "frame",
+      "id": "examples-page",
+      "name": "使用案例",
+      "x": 0,
+      "y": 0,
+      "width": 1440,
+      "height": 1600,
+      "clip": true,
+      "fill": "$sys/color.bg-100",
+      "children": [
+        {
+          "type": "frame",
+          "id": "page-header",
+          "x": 200,
+          "y": 120,
+          "width": 800,
+          "height": 120,
+          "layout": "vertical",
+          "gap": 16,
+          "children": [
+            {
+              "type": "text",
+              "id": "page-title",
+              "content": "使用案例",
+              "fontSize": 56,
+              "fontWeight": "700",
+              "fill": "$sys/color.text-50"
+            },
+            {
+              "type": "text",
+              "id": "page-desc",
+              "content": "探索 Claude Coder 在实际项目中的应用，了解如何让 AI Agent 为你连续编码",
+              "fontSize": 16,
+              "fontWeight": "400",
+              "fill": "$sys/color.text-400",
+              "lineHeight": 1.6
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "examples-grid",
+          "x": 200,
+          "y": 260,
+          "width": 1040,
+          "height": 1200,
+          "layout": "grid",
+          "gridTemplateColumns": [504, 504],
+          "gridAutoRows": 560,
+          "gap": 32,
+          "children": [
+            {
+              "type": "frame",
+              "id": "example-1",
+              "width": 504,
+              "height": 560,
+              "fill": "$sys/color.bg-200",
+              "border": {
+                "thickness": 1,
+                "fill": "$sys/color.border-300"
+              },
+              "cornerRadius": 12,
+              "padding": [24, 24, 24, 24],
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "example-1-header",
+                  "layout": "horizontal",
+                  "gap": 12,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "example-1-number",
+                      "content": "01",
+                      "fontSize": 20,
+                      "fontWeight": "700",
+                      "fill": "$sys/color.text-400"
+                    },
+                    {
+                      "type": "text",
+                      "id": "example-1-title",
+                      "content": "Todo 应用",
+                      "fontSize": 28,
+                      "fontWeight": "700",
+                      "fill": "$sys/color.text-50"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "example-1-desc",
+                  "content": "用 Express + React 快速搭建 Todo 应用。",
+                  "fontSize": 14,
+                  "fontWeight": "400",
+                  "fill": "$sys/color.text-400",
+                  "y": 40
+                },
+                {
+                  "type": "frame",
+                  "id": "example-1-command",
+                  "width": 456,
+                  "height": 80,
+                  "fill": "$sys/color.bg-100",
+                  "border": {
+                    "thickness": 1,
+                    "fill": "$sys/color.border-300"
+                  },
+                  "cornerRadius": 8,
+                  "padding": [16, 16, 16, 16],
+                  "y": 72,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "example-1-cmd",
+                      "content": "claude-coder run \"用 Express + React 做 Todo 应用\"",
+                      "fontSize": 14,
+                      "fontWeight": "400",
+                      "fill": "$sys/color.text-200"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "example-1-result",
+                  "layout": "horizontal",
+                  "gap": 8,
+                  "alignItems": "center",
+                  "y": 168,
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "check-1",
+                      "iconFontFamily": "lucide",
+                      "iconFontName": "check-circle",
+                      "width": 16,
+                      "height": 16,
+                      "fill": "$sys/color.success-500"
+                    },
+                    {
+                      "type": "text",
+                      "id": "result-1",
+                      "content": "自动生成前后端代码结构",
+                      "fontSize": 12,
+                      "fontWeight": "500",
+                      "fill": "$sys/color.text-400"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "example-2",
+              "width": 504,
+              "height": 560,
+              "fill": "$sys/color.bg-200",
+              "border": {
+                "thickness": 1,
+                "fill": "$sys/color.border-300"
+              },
+              "cornerRadius": 12,
+              "padding": [24, 24, 24, 24],
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "example-2-header",
+                  "layout": "horizontal",
+                  "gap": 12,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "example-2-number",
+                      "content": "02",
+                      "fontSize": 20,
+                      "fontWeight": "700",
+                      "fill": "$sys/color.text-400"
+                    },
+                    {
+                      "type": "text",
+                      "id": "example-2-title",
+                      "content": "头像上传功能",
+                      "fontSize": 28,
+                      "fontWeight": "700",
+                      "fill": "$sys/color.text-50"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "example-2-desc",
+                  "content": "为现有项目新增头像上传功能。",
+                  "fontSize": 14,
+                  "fontWeight": "400",
+                  "fill": "$sys/color.text-400",
+                  "y": 40
+                },
+                {
+                  "type": "frame",
+                  "id": "example-2-command",
+                  "width": 456,
+                  "height": 80,
+                  "fill": "$sys/color.bg-100",
+                  "border": {
+                    "thickness": 1,
+                    "fill": "$sys/color.border-300"
+                  },
+                  "cornerRadius": 8,
+                  "padding": [16, 16, 16, 16],
+                  "y": 72,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "example-2-cmd",
+                      "content": "claude-coder run \"新增头像上传功能\"",
+                      "fontSize": 14,
+                      "fontWeight": "400",
+                      "fill": "$sys/color.text-200"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "example-2-result",
+                  "layout": "horizontal",
+                  "gap": 8,
+                  "alignItems": "center",
+                  "y": 168,
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "check-2",
+                      "iconFontFamily": "lucide",
+                      "iconFontName": "check-circle",
+                      "width": 16,
+                      "height": 16,
+                      "fill": "$sys/color.success-500"
+                    },
+                    {
+                      "type": "text",
+                      "id": "result-2",
+                      "content": "自动检测项目技术栈并生成对应代码",
+                      "fontSize": 12,
+                      "fontWeight": "500",
+                      "fill": "$sys/color.text-400"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "example-3",
+              "width": 504,
+              "height": 560,
+              "fill": "$sys/color.bg-200",
+              "border": {
+                "thickness": 1,
+                "fill": "$sys/color.border-300"
+              },
+              "cornerRadius": 12,
+              "padding": [24, 24, 24, 24],
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "example-3-header",
+                  "layout": "horizontal",
+                  "gap": 12,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "example-3-number",
+                      "content": "03",
+                      "fontSize": 20,
+                      "fontWeight": "700",
+                      "fill": "$sys/color.text-400"
+                    },
+                    {
+                      "type": "text",
+                      "id": "example-3-title",
+                      "content": "需求文档驱动",
+                      "fontSize": 28,
+                      "fontWeight": "700",
+                      "fill": "$sys/color.text-50"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "example-3-desc",
+                  "content": "从 requirements.md 自动生成任务队列。",
+                  "fontSize": 14,
+                  "fontWeight": "400",
+                  "fill": "$sys/color.text-400",
+                  "y": 40
+                },
+                {
+                  "type": "frame",
+                  "id": "example-3-command",
+                  "width": 456,
+                  "height": 80,
+                  "fill": "$sys/color.bg-100",
+                  "border": {
+                    "thickness": 1,
+                    "fill": "$sys/color.border-300"
+                  },
+                  "cornerRadius": 8,
+                  "padding": [16, 16, 16, 16],
+                  "y": 72,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "example-3-cmd",
+                      "content": "claude-coder run\nclaude-coder add -r  # 同步新任务",
+                      "fontSize": 14,
+                      "fontWeight": "400",
+                      "fill": "$sys/color.text-200"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "example-3-result",
+                  "layout": "horizontal",
+                  "gap": 8,
+                  "alignItems": "center",
+                  "y": 168,
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "check-3",
+                      "iconFontFamily": "lucide",
+                      "iconFontName": "check-circle",
+                      "width": 16,
+                      "height": 16,
+                      "fill": "$sys/color.success-500"
+                    },
+                    {
+                      "type": "text",
+                      "id": "result-3",
+                      "content": "支持复杂需求的分阶段实现",
+                      "fontSize": 12,
+                      "fontWeight": "500",
+                      "fill": "$sys/color.text-400"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "example-4",
+              "width": 504,
+              "height": 560,
+              "fill": "$sys/color.bg-200",
+              "border": {
+                "thickness": 1,
+                "fill": "$sys/color.border-300"
+              },
+              "cornerRadius": 12,
+              "padding": [24, 24, 24, 24],
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "example-4-header",
+                  "layout": "horizontal",
+                  "gap": 12,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "example-4-number",
+                      "content": "04",
+                      "fontSize": 20,
+                      "fontWeight": "700",
+                      "fill": "$sys/color.text-400"
+                    },
+                    {
+                      "type": "text",
+                      "id": "example-4-title",
+                      "content": "自动测试",
+                      "fontSize": 28,
+                      "fontWeight": "700",
+                      "fill": "$sys/color.text-50"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "example-4-desc",
+                  "content": "导出浏览器登录态用于自动化测试。",
+                  "fontSize": 14,
+                  "fontWeight": "400",
+                  "fill": "$sys/color.text-400",
+                  "y": 40
+                },
+                {
+                  "type": "frame",
+                  "id": "example-4-command",
+                  "width": 456,
+                  "height": 80,
+                  "fill": "$sys/color.bg-100",
+                  "border": {
+                    "thickness": 1,
+                    "fill": "$sys/color.border-300"
+                  },
+                  "cornerRadius": 8,
+                  "padding": [16, 16, 16, 16],
+                  "y": 72,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "example-4-cmd",
+                      "content": "claude-coder auth http://localhost:3000",
+                      "fontSize": 14,
+                      "fontWeight": "400",
+                      "fill": "$sys/color.text-200"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "example-4-result",
+                  "layout": "horizontal",
+                  "gap": 8,
+                  "alignItems": "center",
+                  "y": 168,
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "check-4",
+                      "iconFontFamily": "lucide",
+                      "iconFontName": "check-circle",
+                      "width": 16,
+                      "height": 16,
+                      "fill": "$sys/color.success-500"
+                    },
+                    {
+                      "type": "text",
+                      "id": "result-4",
+                      "content": "自动生成测试凭证文件",
+                      "fontSize": 12,
+                      "fontWeight": "500",
+                      "fill": "$sys/color.text-400"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "example-5",
+              "width": 504,
+              "height": 560,
+              "fill": "$sys/color.bg-200",
+              "border": {
+                "thickness": 1,
+                "fill": "$sys/color.border-300"
+              },
+              "cornerRadius": 12,
+              "padding": [24, 24, 24, 24],
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "example-5-header",
+                  "layout": "horizontal",
+                  "gap": 12,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "example-5-number",
+                      "content": "05",
+                      "fontSize": 20,
+                      "fontWeight": "700",
+                      "fill": "$sys/color.text-400"
+                    },
+                    {
+                      "type": "text",
+                      "id": "example-5-title",
+                      "content": "AI 教学 PPT 生成器",
+                      "fontSize": 28,
+                      "fontWeight": "700",
+                      "fill": "$sys/color.text-50"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "example-5-desc",
+                  "content": "用 AI 快速生成精美教学 PPT，支持 Markdown 转幻灯片。",
+                  "fontSize": 14,
+                  "fontWeight": "400",
+                  "fill": "$sys/color.text-400",
+                  "y": 40
+                },
+                {
+                  "type": "frame",
+                  "id": "example-5-command",
+                  "width": 456,
+                  "height": 80,
+                  "fill": "$sys/color.bg-100",
+                  "border": {
+                    "thickness": 1,
+                    "fill": "$sys/color.border-300"
+                  },
+                  "cornerRadius": 8,
+                  "padding": [16, 16, 16, 16],
+                  "y": 72,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "example-5-cmd",
+                      "content": "claude-coder run \"生成 AI 教学 PPT 项目\"",
+                      "fontSize": 14,
+                      "fontWeight": "400",
+                      "fill": "$sys/color.text-200"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "example-5-result",
+                  "layout": "horizontal",
+                  "gap": 8,
+                  "alignItems": "center",
+                  "y": 168,
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "check-5",
+                      "iconFontFamily": "lucide",
+                      "iconFontName": "check-circle",
+                      "width": 16,
+                      "height": 16,
+                      "fill": "$sys/color.success-500"
+                    },
+                    {
+                      "type": "text",
+                      "id": "result-5",
+                      "content": "自动创建 React + TypeScript 项目结构",
+                      "fontSize": 12,
+                      "fontWeight": "500",
+                      "fill": "$sys/color.text-400"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "github-btn-5",
+                  "width": 180,
+                  "height": 40,
+                  "fill": "$sys/color.bg-100",
+                  "border": {
+                    "thickness": 1,
+                    "fill": "$sys/color.border-300"
+                  },
+                  "cornerRadius": 8,
+                  "layout": "horizontal",
+                  "gap": 8,
+                  "alignItems": "center",
+                  "justifyContent": "center",
+                  "y": 210,
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "github-icon-5",
+                      "iconFontFamily": "lucide",
+                      "iconFontName": "github",
+                      "width": 20,
+                      "height": 20,
+                      "fill": "$sys/color.text-200"
+                    },
+                    {
+                      "type": "text",
+                      "id": "github-text-5",
+                      "content": "查看仓库",
+                      "fontSize": 14,
+                      "fontWeight": "500",
+                      "fill": "$sys/color.text-200"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,991 @@
+{
+  "version": "2.8",
+  "imports": {
+    "sys": "../system.pen"
+  },
+  "children": [
+    {
+      "type": "frame",
+      "id": "home-page",
+      "name": "Home 首页",
+      "x": 0,
+      "y": 0,
+      "width": 1440,
+      "height": 3000,
+      "clip": true,
+      "fill": "$sys/color.bg-100",
+      "children": [
+        {
+          "type": "frame",
+          "id": "hero-section",
+          "name": "Hero 区域",
+          "x": 0,
+          "y": 64,
+          "width": 1440,
+          "height": 640,
+          "fill": "$sys/color.bg-100",
+          "padding": [160, 0, 80, 0],
+          "children": [
+            {
+              "type": "frame",
+              "id": "hero-content",
+              "x": 200,
+              "y": 160,
+              "width": 1040,
+              "height": 400,
+              "layout": "vertical",
+              "gap": 24,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "hero-title",
+                  "content": "Claude Coder",
+                  "fontSize": 64,
+                  "fontWeight": "700",
+                  "fill": {
+                    "type": "linear_gradient",
+                    "from": "$sys/color.gradient-start",
+                    "to": "$sys/color.gradient-end"
+                  },
+                  "textAlign": "center"
+                },
+                {
+                  "type": "text",
+                  "id": "hero-subtitle",
+                  "content": "摸鱼神器 🐟",
+                  "fontSize": 28,
+                  "fontWeight": "600",
+                  "fill": "$sys/color.lazy-cyan",
+                  "textAlign": "center"
+                },
+                {
+                  "type": "text",
+                  "id": "hero-desc",
+                  "content": "AI 加班你摸鱼，Claude Coder 帮你搞定一切。\n一句话需求 → 完整项目。长时间自运行，自动分解任务、持续编码、验证交付。",
+                  "fontSize": 18,
+                  "fontWeight": "400",
+                  "fill": "$sys/color.text-300",
+                  "textAlign": "center",
+                  "lineHeight": 1.6
+                },
+                {
+                  "type": "frame",
+                  "id": "hero-cta",
+                  "layout": "horizontal",
+                  "gap": 16,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "start-btn",
+                      "width": 140,
+                      "height": 48,
+                      "fill": {
+                        "type": "linear_gradient",
+                        "from": "$sys/color.gradient-start",
+                        "to": "$sys/color.gradient-end"
+                      },
+                      "cornerRadius": 8,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "start-btn-text",
+                          "content": "开始使用",
+                          "fontSize": 16,
+                          "fontWeight": "600",
+                          "fill": "$sys/color.text-50",
+                          "x": 26,
+                          "y": 14
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "github-link",
+                      "layout": "horizontal",
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon_font",
+                          "id": "github-icon-hero",
+                          "iconFontFamily": "lucide",
+                          "iconFontName": "github",
+                          "width": 20,
+                          "height": 20,
+                          "fill": "$sys/color.text-400"
+                        },
+                        {
+                          "type": "text",
+                          "id": "github-text",
+                          "content": "View on GitHub",
+                          "fontSize": 14,
+                          "fontWeight": "500",
+                          "fill": "$sys/color.text-400"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "hero-stats",
+                  "width": 600,
+                  "height": 80,
+                  "layout": "horizontal",
+                  "gap": 48,
+                  "justifyContent": "space-around",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "stat-1",
+                      "layout": "vertical",
+                      "gap": 4,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "stat-1-value",
+                          "content": "50+",
+                          "fontSize": 28,
+                          "fontWeight": "700",
+                          "fill": "$sys/color.text-50"
+                        },
+                        {
+                          "type": "text",
+                          "id": "stat-1-label",
+                          "content": "Sessions\n自动运行",
+                          "fontSize": 14,
+                          "fontWeight": "400",
+                          "fill": "$sys/color.text-400",
+                          "textAlign": "center"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "stat-2",
+                      "layout": "vertical",
+                      "gap": 4,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "stat-2-value",
+                          "content": "∞",
+                          "fontSize": 28,
+                          "fontWeight": "700",
+                          "fill": "$sys/color.text-50"
+                        },
+                        {
+                          "type": "text",
+                          "id": "stat-2-label",
+                          "content": "模型支持",
+                          "fontSize": 14,
+                          "fontWeight": "400",
+                          "fill": "$sys/color.text-400"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "stat-3",
+                      "layout": "vertical",
+                      "gap": 4,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "stat-3-value",
+                          "content": "0",
+                          "fontSize": 28,
+                          "fontWeight": "700",
+                          "fill": "$sys/color.text-50"
+                        },
+                        {
+                          "type": "text",
+                          "id": "stat-3-label",
+                          "content": "配置即开即用",
+                          "fontSize": 14,
+                          "fontWeight": "400",
+                          "fill": "$sys/color.text-400"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "features-section",
+          "name": "核心特性",
+          "x": 0,
+          "y": 704,
+          "width": 1440,
+          "height": 880,
+          "fill": "$sys/color.bg-100",
+          "padding": [120, 0, 80, 0],
+          "children": [
+            {
+              "type": "frame",
+              "id": "features-header",
+              "x": 200,
+              "y": 120,
+              "width": 1040,
+              "height": 120,
+              "layout": "vertical",
+              "gap": 16,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "features-title",
+                  "content": "核心特性",
+                  "fontSize": 40,
+                  "fontWeight": "700",
+                  "fill": "$sys/color.text-50",
+                  "textAlign": "center"
+                },
+                {
+                  "type": "text",
+                  "id": "features-desc",
+                  "content": "让 AI 成为真正的编码伙伴，从需求到交付，全程自主执行",
+                  "fontSize": 18,
+                  "fontWeight": "400",
+                  "fill": "$sys/color.text-400",
+                  "textAlign": "center"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "features-grid",
+              "x": 200,
+              "y": 240,
+              "width": 1040,
+              "height": 640,
+              "layout": "grid",
+              "gridTemplateColumns": [327, 327, 327],
+              "gridAutoRows": 200,
+              "gap": 24,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "feature-card-1",
+                  "width": 327,
+                  "height": 200,
+                  "fill": "$sys/color.bg-200",
+                  "border": {
+                    "thickness": 1,
+                    "fill": "$sys/color.border-300"
+                  },
+                  "cornerRadius": 12,
+                  "padding": [24, 24, 24, 24],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "feature-icon-1",
+                      "width": 48,
+                      "height": 48,
+                      "fill": {
+                        "type": "linear_gradient",
+                        "from": "$sys/color.gradient-start",
+                        "to": "$sys/color.gradient-end"
+                      },
+                      "cornerRadius": 8,
+                      "children": [
+                        {
+                          "type": "icon_font",
+                          "id": "icon-lightning",
+                          "iconFontFamily": "lucide",
+                          "iconFontName": "zap",
+                          "width": 24,
+                          "height": 24,
+                          "fill": "$sys/color.text-50",
+                          "x": 12,
+                          "y": 12
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "feature-title-1",
+                      "content": "一句话需求 → 完整项目",
+                      "fontSize": 20,
+                      "fontWeight": "600",
+                      "fill": "$sys/color.text-50",
+                      "x": 0,
+                      "y": 60
+                    },
+                    {
+                      "type": "text",
+                      "id": "feature-desc-1",
+                      "content": "告别繁琐的手动编码。自然语言描述需求，AI 自动分解为可执行任务队列，从零到交付一气呵成。",
+                      "fontSize": 14,
+                      "fontWeight": "400",
+                      "fill": "$sys/color.text-300",
+                      "x": 0,
+                      "y": 88,
+                      "width": 279,
+                      "lineHeight": 1.5
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "feature-card-2",
+                  "width": 327,
+                  "height": 200,
+                  "fill": "$sys/color.bg-200",
+                  "border": {
+                    "thickness": 1,
+                    "fill": "$sys/color.border-300"
+                  },
+                  "cornerRadius": 12,
+                  "padding": [24, 24, 24, 24],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "feature-icon-2",
+                      "width": 48,
+                      "height": 48,
+                      "fill": {
+                        "type": "linear_gradient",
+                        "from": "$sys/color.gradient-start",
+                        "to": "$sys/color.gradient-end"
+                      },
+                      "cornerRadius": 8,
+                      "children": [
+                        {
+                          "type": "icon_font",
+                          "id": "icon-watch",
+                          "iconFontFamily": "lucide",
+                          "iconFontName": "clock",
+                          "width": 24,
+                          "height": 24,
+                          "fill": "$sys/color.text-50",
+                          "x": 12,
+                          "y": 12
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "feature-title-2",
+                      "content": "数小时无人值守",
+                      "fontSize": 20,
+                      "fontWeight": "600",
+                      "fill": "$sys/color.text-50",
+                      "x": 0,
+                      "y": 60
+                    },
+                    {
+                      "type": "text",
+                      "id": "feature-desc-2",
+                      "content": "Session 守护 + 倒计时活跃度监控 + git 回滚重试，Agent 持续编码数小时不中断，真正解放双手。",
+                      "fontSize": 14,
+                      "fontWeight": "400",
+                      "fill": "$sys/color.text-300",
+                      "x": 0,
+                      "y": 88,
+                      "width": 279,
+                      "lineHeight": 1.5
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "feature-card-3",
+                  "width": 327,
+                  "height": 200,
+                  "fill": "$sys/color.bg-200",
+                  "border": {
+                    "thickness": 1,
+                    "fill": "$sys/color.border-300"
+                  },
+                  "cornerRadius": 12,
+                  "padding": [24, 24, 24, 24],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "feature-icon-3",
+                      "width": 48,
+                      "height": 48,
+                      "fill": {
+                        "type": "linear_gradient",
+                        "from": "$sys/color.gradient-start",
+                        "to": "$sys/color.gradient-end"
+                      },
+                      "cornerRadius": 8,
+                      "children": [
+                        {
+                          "type": "icon_font",
+                          "id": "icon-shield",
+                          "iconFontFamily": "lucide",
+                          "iconFontName": "shield-check",
+                          "width": 24,
+                          "height": 24,
+                          "fill": "$sys/color.text-50",
+                          "x": 12,
+                          "y": 12
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "feature-title-3",
+                      "content": "Hook 注入 · 安全可控",
+                      "fontSize": 20,
+                      "fontWeight": "600",
+                      "fill": "$sys/color.text-50",
+                      "x": 0,
+                      "y": 60
+                    },
+                    {
+                      "type": "text",
+                      "id": "feature-desc-3",
+                      "content": "JSON 配置即可在工具调用时注入规则引导，零代码修改扩展 AI 行为，代码审查自动护航。",
+                      "fontSize": 14,
+                      "fontWeight": "400",
+                      "fill": "$sys/color.text-300",
+                      "x": 0,
+                      "y": 88,
+                      "width": 279,
+                      "lineHeight": 1.5
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "how-it-works",
+          "name": "工作原理",
+          "x": 0,
+          "y": 1584,
+          "width": 1440,
+          "height": 560,
+          "fill": "$sys/color.bg-200",
+          "padding": [120, 0, 80, 0],
+          "children": [
+            {
+              "type": "frame",
+              "id": "how-it-works-header",
+              "x": 200,
+              "y": 120,
+              "width": 1040,
+              "height": 80,
+              "layout": "vertical",
+              "gap": 16,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "how-it-works-title",
+                  "content": "工作原理",
+                  "fontSize": 40,
+                  "fontWeight": "700",
+                  "fill": "$sys/color.text-50",
+                  "textAlign": "center"
+                },
+                {
+                  "type": "text",
+                  "id": "how-it-works-desc",
+                  "content": "四步完成从需求到交付的完整流程",
+                  "fontSize": 18,
+                  "fontWeight": "400",
+                  "fill": "$sys/color.text-400",
+                  "textAlign": "center"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "steps-grid",
+              "x": 200,
+              "y": 200,
+              "width": 1040,
+              "height": 280,
+              "layout": "grid",
+              "gridTemplateColumns": [245, 245, 245, 245],
+              "gridAutoRows": 280,
+              "gap": 24,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "step-1",
+                  "width": 245,
+                  "height": 280,
+                  "fill": "$sys/color.bg-100",
+                  "border": {
+                    "thickness": 1,
+                    "fill": "$sys/color.border-300"
+                  },
+                  "cornerRadius": 12,
+                  "padding": [32, 24, 24, 24],
+                  "layout": "vertical",
+                  "gap": 16,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "step-1-badge",
+                      "width": 48,
+                      "height": 48,
+                      "fill": {
+                        "type": "linear_gradient",
+                        "from": "$sys/color.gradient-start",
+                        "to": "$sys/color.gradient-end"
+                      },
+                      "cornerRadius": 999,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "step-1-number",
+                          "content": "1",
+                          "fontSize": 20,
+                          "fontWeight": "700",
+                          "fill": "$sys/color.text-50",
+                          "x": 15,
+                          "y": 10
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "step-1-title",
+                      "content": "描述需求",
+                      "fontSize": 20,
+                      "fontWeight": "600",
+                      "fill": "$sys/color.text-50",
+                      "textAlign": "center"
+                    },
+                    {
+                      "type": "text",
+                      "id": "step-1-desc",
+                      "content": "一句话或 requirements.md，用自然语言告诉 AI 你想要什么。",
+                      "fontSize": 14,
+                      "fontWeight": "400",
+                      "fill": "$sys/color.text-300",
+                      "textAlign": "center",
+                      "lineHeight": 1.5
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "step-2",
+                  "width": 245,
+                  "height": 280,
+                  "fill": "$sys/color.bg-100",
+                  "border": {
+                    "thickness": 1,
+                    "fill": "$sys/color.border-300"
+                  },
+                  "cornerRadius": 12,
+                  "padding": [32, 24, 24, 24],
+                  "layout": "vertical",
+                  "gap": 16,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "step-2-badge",
+                      "width": 48,
+                      "height": 48,
+                      "fill": {
+                        "type": "linear_gradient",
+                        "from": "$sys/color.gradient-start",
+                        "to": "$sys/color.gradient-end"
+                      },
+                      "cornerRadius": 999,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "step-2-number",
+                          "content": "2",
+                          "fontSize": 20,
+                          "fontWeight": "700",
+                          "fill": "$sys/color.text-50",
+                          "x": 15,
+                          "y": 10
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "step-2-title",
+                      "content": "智能分解",
+                      "fontSize": 20,
+                      "fontWeight": "600",
+                      "fill": "$sys/color.text-50",
+                      "textAlign": "center"
+                    },
+                    {
+                      "type": "text",
+                      "id": "step-2-desc",
+                      "content": "AI 自动扫描项目技术栈，将需求拆分为可执行任务并按依赖排序。",
+                      "fontSize": 14,
+                      "fontWeight": "400",
+                      "fill": "$sys/color.text-300",
+                      "textAlign": "center",
+                      "lineHeight": 1.5
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "step-3",
+                  "width": 245,
+                  "height": 280,
+                  "fill": "$sys/color.bg-100",
+                  "border": {
+                    "thickness": 1,
+                    "fill": "$sys/color.border-300"
+                  },
+                  "cornerRadius": 12,
+                  "padding": [32, 24, 24, 24],
+                  "layout": "vertical",
+                  "gap": 16,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "step-3-badge",
+                      "width": 48,
+                      "height": 48,
+                      "fill": {
+                        "type": "linear_gradient",
+                        "from": "$sys/color.gradient-start",
+                        "to": "$sys/color.gradient-end"
+                      },
+                      "cornerRadius": 999,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "step-3-number",
+                          "content": "3",
+                          "fontSize": 20,
+                          "fontWeight": "700",
+                          "fill": "$sys/color.text-50",
+                          "x": 15,
+                          "y": 10
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "step-3-title",
+                      "content": "持续编码",
+                      "fontSize": 20,
+                      "fontWeight": "600",
+                      "fill": "$sys/color.text-50",
+                      "textAlign": "center"
+                    },
+                    {
+                      "type": "text",
+                      "id": "step-3-desc",
+                      "content": "Agent 多 Session 循环编码，生成代码、处理依赖、运行测试，自动 git commit。",
+                      "fontSize": 14,
+                      "fontWeight": "400",
+                      "fill": "$sys/color.text-300",
+                      "textAlign": "center",
+                      "lineHeight": 1.5
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "step-4",
+                  "width": 245,
+                  "height": 280,
+                  "fill": "$sys/color.bg-100",
+                  "border": {
+                    "thickness": 1,
+                    "fill": "$sys/color.border-300"
+                  },
+                  "cornerRadius": 12,
+                  "padding": [32, 24, 24, 24],
+                  "layout": "vertical",
+                  "gap": 16,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "step-4-badge",
+                      "width": 48,
+                      "height": 48,
+                      "fill": {
+                        "type": "linear_gradient",
+                        "from": "$sys/color.gradient-start",
+                        "to": "$sys/color.gradient-end"
+                      },
+                      "cornerRadius": 999,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "step-4-number",
+                          "content": "4",
+                          "fontSize": 20,
+                          "fontWeight": "700",
+                          "fill": "$sys/color.text-50",
+                          "x": 15,
+                          "y": 10
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "step-4-title",
+                      "content": "验证交付",
+                      "fontSize": 20,
+                      "fontWeight": "600",
+                      "fill": "$sys/color.text-50",
+                      "textAlign": "center"
+                    },
+                    {
+                      "type": "text",
+                      "id": "step-4-desc",
+                      "content": "每个 Session 自动验证功能，失败则 git 回滚重试，通过即产出可用代码。",
+                      "fontSize": 14,
+                      "fontWeight": "400",
+                      "fill": "$sys/color.text-300",
+                      "textAlign": "center",
+                      "lineHeight": 1.5
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "cta-section",
+          "name": "CTA 区域",
+          "x": 0,
+          "y": 2144,
+          "width": 1440,
+          "height": 600,
+          "fill": "$sys/color.bg-100",
+          "padding": [120, 0, 80, 0],
+          "children": [
+            {
+              "type": "frame",
+              "id": "cta-card",
+              "x": 330,
+              "y": 120,
+              "width": 780,
+              "height": 480,
+              "fill": "$sys/color.bg-200",
+              "border": {
+                "thickness": 1,
+                "fill": "$sys/color.border-300"
+              },
+              "cornerRadius": 16,
+              "padding": [48, 48, 48, 48],
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "cta-content",
+                  "layout": "vertical",
+                  "gap": 24,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "cta-title",
+                      "content": "准备好开始了吗？",
+                      "fontSize": 40,
+                      "fontWeight": "700",
+                      "fill": "$sys/color.text-50",
+                      "textAlign": "center"
+                    },
+                    {
+                      "type": "text",
+                      "id": "cta-desc",
+                      "content": "几分钟内配置完成，立即体验自主编码 Agent 的强大能力。",
+                      "fontSize": 18,
+                      "fontWeight": "400",
+                      "fill": "$sys/color.text-400",
+                      "textAlign": "center"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "cta-buttons",
+                      "layout": "horizontal",
+                      "gap": 16,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "cta-start-btn",
+                          "width": 140,
+                          "height": 48,
+                          "fill": {
+                            "type": "linear_gradient",
+                            "from": "$sys/color.gradient-start",
+                            "to": "$sys/color.gradient-end"
+                          },
+                          "cornerRadius": 8,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "cta-btn-text",
+                              "content": "快速开始",
+                              "fontSize": 16,
+                              "fontWeight": "600",
+                              "fill": "$sys/color.text-50",
+                              "x": 26,
+                              "y": 14
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "cta-docs-link",
+                          "content": "阅读文档 →",
+                          "fontSize": 16,
+                          "fontWeight": "500",
+                          "fill": "$sys/color.text-200"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "terminal-preview",
+                      "width": 684,
+                      "height": 200,
+                      "fill": "$sys/color.bg-100",
+                      "border": {
+                        "thickness": 1,
+                        "fill": "$sys/color.border-300"
+                      },
+                      "cornerRadius": 8,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "terminal-header",
+                          "x": 16,
+                          "y": 16,
+                          "width": 200,
+                          "height": 24,
+                          "layout": "horizontal",
+                          "gap": 8,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "ellipse",
+                              "id": "dot-red",
+                              "width": 8,
+                              "height": 8,
+                              "fill": "#ff5f57",
+                              "x": 0,
+                              "y": 8
+                            },
+                            {
+                              "type": "ellipse",
+                              "id": "dot-yellow",
+                              "width": 8,
+                              "height": 8,
+                              "fill": "#ffbd2e",
+                              "x": 0,
+                              "y": 8
+                            },
+                            {
+                              "type": "ellipse",
+                              "id": "dot-green",
+                              "width": 8,
+                              "height": 8,
+                              "fill": "#28c940",
+                              "x": 0,
+                              "y": 8
+                            },
+                            {
+                              "type": "text",
+                              "id": "terminal-title",
+                              "content": "Terminal",
+                              "fontSize": 12,
+                              "fontWeight": "500",
+                              "fill": "$sys/color.text-400",
+                              "x": 0,
+                              "y": 0
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "terminal-body",
+                          "x": 16,
+                          "y": 48,
+                          "width": 652,
+                          "height": 136,
+                          "layout": "vertical",
+                          "gap": 8,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "terminal-line-1",
+                              "content": "$ claude-coder run \"创建个人博客\"",
+                              "fontSize": 14,
+                              "fontWeight": "500",
+                              "fill": "$sys/color.success-500"
+                            },
+                            {
+                              "type": "text",
+                              "id": "terminal-line-2",
+                              "content": "✓ 分析需求...",
+                              "fontSize": 14,
+                              "fontWeight": "400",
+                              "fill": "$sys/color.text-400"
+                            },
+                            {
+                              "type": "text",
+                              "id": "terminal-line-3",
+                              "content": "✓ 生成任务计划 (5 个任务)",
+                              "fontSize": 14,
+                              "fontWeight": "400",
+                              "fill": "$sys/color.text-400"
+                            },
+                            {
+                              "type": "text",
+                              "id": "terminal-line-4",
+                              "content": "✓ 初始化项目配置",
+                              "fontSize": 14,
+                              "fontWeight": "400",
+                              "fill": "$sys/color.text-400"
+                            },
+                            {
+                              "type": "text",
+                              "id": "terminal-line-5",
+                              "content": "✓ 开始编码 Session 1/5",
+                              "fontSize": 14,
+                              "fontWeight": "400",
+                              "fill": "$sys/color.text-400"
+                            },
+                            {
+                              "type": "text",
+                              "id": "terminal-line-6",
+                              "content": "▎ 正在执行...",
+                              "fontSize": 14,
+                              "fontWeight": "500",
+                              "fill": "$sys/color.primary-400"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

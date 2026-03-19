@@ -17,11 +17,13 @@ const REGISTRY = new Map([
   ['planSystem',     { file: 'planSystem.md',              kind: 'template' }],
   ['scanSystem',     { file: 'scanSystem.md',              kind: 'template' }],
   ['goSystem',       { file: 'goSystem.md',                kind: 'template' }],
+  ['designSystem',   { file: 'designSystem.md',            kind: 'template' }],
 
   // User Prompt Templates
   ['codingUser',     { file: 'codingUser.md',              kind: 'template' }],
   ['scanUser',       { file: 'scanUser.md',                kind: 'template' }],
   ['planUser',       { file: 'planUser.md',                kind: 'template' }],
+  ['designUser',     { file: 'designUser.md',              kind: 'template' }],
 
   // Other Templates
   ['testRule',       { file: 'test_rule.md',               kind: 'template' }],
@@ -38,6 +40,7 @@ const REGISTRY = new Map([
   ['profile',        { file: 'project_profile.json',       kind: 'data' }],
   ['testEnv',        { file: 'test.env',                   kind: 'data' }],
   ['playwrightAuth', { file: 'playwright-auth.json',       kind: 'data' }],
+  ['designMap',      { file: 'design/design_map.json',     kind: 'data' }],
 
   // Runtime files (.claude-coder/.runtime/)
   ['harnessState',   { file: 'harness_state.json',         kind: 'runtime' }],
@@ -52,6 +55,8 @@ const DIRS = new Map([
   ['assets',  'assets'],
   ['runtime', '.runtime'],
   ['logs',    '.runtime/logs'],
+  ['design',  'design'],
+  ['designPages', 'design/pages'],
 ]);
 
 function renderTemplate(template, vars = {}) {

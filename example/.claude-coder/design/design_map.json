@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "designSystem": "system.pen",
+  "pages": {
+    "header": {
+      "pen": "pages/header.pen",
+      "description": "网站导航栏",
+      "lastModified": "2026-03-18T12:00:00Z"
+    },
+    "footer": {
+      "pen": "pages/footer.pen",
+      "description": "网站页脚",
+      "lastModified": "2026-03-18T12:00:00Z"
+    },
+    "home": {
+      "pen": "pages/home.pen",
+      "description": "首页 - Hero + 核心特性 + 工作原理 + CTA",
+      "lastModified": "2026-03-18T12:00:00Z"
+    },
+    "quickstart": {
+      "pen": "pages/quickstart.pen",
+      "description": "快速上手 - 5步安装使用指南",
+      "lastModified": "2026-03-18T12:00:00Z"
+    },
+    "features": {
+      "pen": "pages/features.pen",
+      "description": "功能特性 - Hook注入、Session守护、多模型路由、测试凭证",
+      "lastModified": "2026-03-18T12:00:00Z"
+    },
+    "examples": {
+      "pen": "pages/examples.pen",
+      "description": "使用案例 - 5个实际应用场景",
+      "lastModified": "2026-03-18T12:00:00Z"
+    },
+    "docs": {
+      "pen": "pages/docs.pen",
+      "description": "文档中心 - 入门指南、核心概念、命令参考、故障排查",
+      "lastModified": "2026-03-18T12:00:00Z"
+    },
+    "browser-tools": {
+      "pen": "pages/browser-tools.pen",
+      "description": "浏览器工具 - Playwright vs Chrome DevTools 对比",
+      "lastModified": "2026-03-18T12:00:00Z"
+    }
+  }
+}

@@ -1,0 +1,239 @@
+{
+  "version": "2.8",
+  "imports": {
+    "sys": "./system.pen"
+  },
+  "children": [
+    {
+      "type": "frame",
+      "id": "footer",
+      "name": "Footer 页脚",
+      "x": 0,
+      "y": 0,
+      "width": 1440,
+      "height": 300,
+      "clip": true,
+      "fill": "$sys/color.bg-100",
+      "borderTop": {
+        "thickness": 1,
+        "fill": "$sys/color.border-300"
+      },
+      "padding": [48, 0, 48, 0],
+      "children": [
+        {
+          "type": "frame",
+          "id": "footer-content",
+          "x": 200,
+          "y": 48,
+          "width": 1040,
+          "height": 204,
+          "layout": "vertical",
+          "gap": 32,
+          "children": [
+            {
+              "type": "frame",
+              "id": "footer-grid",
+              "layout": "grid",
+              "gridTemplateColumns": [320, 320, 320],
+              "gap": 32,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "footer-brand",
+                  "layout": "vertical",
+                  "gap": 16,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "footer-logo",
+                      "layout": "horizontal",
+                      "gap": 12,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "footer-logo-badge",
+                          "width": 32,
+                          "height": 32,
+                          "fill": {
+                            "type": "linear_gradient",
+                            "from": "$sys/color.gradient-start",
+                            "to": "$sys/color.gradient-end"
+                          },
+                          "cornerRadius": 8,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "footer-logo-text",
+                              "content": "C",
+                              "fontSize": 18,
+                              "fontWeight": "700",
+                              "fill": "$sys/color.text-50",
+                              "x": 8,
+                              "y": 4
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "footer-brand-name",
+                          "content": "Claude Coder",
+                          "fontSize": 20,
+                          "fontWeight": "700",
+                          "fill": "$sys/color.text-50"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "footer-desc",
+                      "content": "长时间自运行的自主编码 Agent Harness，一句话需求 → 完整项目。",
+                      "fontSize": 14,
+                      "fontWeight": "400",
+                      "fill": "$sys/color.text-400",
+                      "lineHeight": 1.5
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "footer-links",
+                  "layout": "vertical",
+                  "gap": 12,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "links-title",
+                      "content": "快速链接",
+                      "fontSize": 14,
+                      "fontWeight": "600",
+                      "fill": "$sys/color.text-50"
+                    },
+                    {
+                      "type": "text",
+                      "id": "link-1",
+                      "content": "快速上手",
+                      "fontSize": 14,
+                      "fontWeight": "500",
+                      "fill": "$sys/color.text-400"
+                    },
+                    {
+                      "type": "text",
+                      "id": "link-2",
+                      "content": "功能特性",
+                      "fontSize": 14,
+                      "fontWeight": "500",
+                      "fill": "$sys/color.text-400"
+                    },
+                    {
+                      "type": "text",
+                      "id": "link-3",
+                      "content": "文档",
+                      "fontSize": 14,
+                      "fontWeight": "500",
+                      "fill": "$sys/color.text-400"
+                    },
+                    {
+                      "type": "text",
+                      "id": "link-4",
+                      "content": "案例",
+                      "fontSize": 14,
+                      "fontWeight": "500",
+                      "fill": "$sys/color.text-400"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "github-link-footer",
+                      "layout": "horizontal",
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon_font",
+                          "id": "github-icon-footer",
+                          "iconFontFamily": "lucide",
+                          "iconFontName": "github",
+                          "width": 20,
+                          "height": 20,
+                          "fill": "$sys/color.text-400"
+                        },
+                        {
+                          "type": "text",
+                          "id": "github-text-footer",
+                          "content": "GitHub",
+                          "fontSize": 14,
+                          "fontWeight": "500",
+                          "fill": "$sys/color.text-400"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "footer-social",
+                  "layout": "vertical",
+                  "gap": 12,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "social-title",
+                      "content": "关注我们",
+                      "fontSize": 14,
+                      "fontWeight": "600",
+                      "fill": "$sys/color.text-50"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "social-icons",
+                      "layout": "horizontal",
+                      "gap": 16,
+                      "children": [
+                        {
+                          "type": "icon_font",
+                          "id": "twitter-icon",
+                          "iconFontFamily": "lucide",
+                          "iconFontName": "twitter",
+                          "width": 20,
+                          "height": 20,
+                          "fill": "$sys/color.text-400"
+                        },
+                        {
+                          "type": "icon_font",
+                          "id": "discord-icon",
+                          "iconFontFamily": "lucide",
+                          "iconFontName": "discord",
+                          "width": 20,
+                          "height": 20,
+                          "fill": "$sys/color.text-400"
+                        },
+                        {
+                          "type": "icon_font",
+                          "id": "youtube-icon",
+                          "iconFontFamily": "lucide",
+                          "iconFontName": "youtube",
+                          "width": 20,
+                          "height": 20,
+                          "fill": "$sys/color.text-400"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "copyright",
+              "content": "© 2026 Claude Coder. Licensed under MIT.",
+              "fontSize": 14,
+              "fontWeight": "400",
+              "fill": "$sys/color.text-400",
+              "textAlign": "center"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
