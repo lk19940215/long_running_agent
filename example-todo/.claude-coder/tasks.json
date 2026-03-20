@@ -141,7 +141,7 @@
         "验证: 测试表单提交和验证",
         "验证: 测试编辑模式正确加载数据"
       ],
-      "status": "pending",
+      "status": "done",
       "depends_on": ["feat-004", "feat-008"]
     },
     {
