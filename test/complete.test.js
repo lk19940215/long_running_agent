@@ -317,7 +317,7 @@ test('auth 模块导出正确', () => {
 // ========== 8. 任务状态测试 ==========
 console.log('\n8. 任务状态测试');
 
-test('selectNextTask 优先返回 failed 任务', () => {
+test('selectNextTask 优先返回 pending 任务（failed 降级为最低优先）', () => {
   cleanup();
   ensureDir();
 
@@ -335,8 +335,8 @@ test('selectNextTask 优先返回 failed 任务', () => {
   const data = loadTasks();
   const next = selectNextTask(data);
 
-  assert.strictEqual(next.status, 'failed');
-  assert.strictEqual(next.id, '2');
+  assert.strictEqual(next.status, 'pending');
+  assert.strictEqual(next.id, '1');
 });
 
 test('selectNextTask pending 无依赖时返回', () => {

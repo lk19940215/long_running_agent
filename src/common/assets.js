@@ -53,7 +53,7 @@ const REGISTRY = new Map([
   ['designMap',      { file: ['design', 'design_map.json'], kind: 'data' }],
 
   // Runtime files (.claude-coder/.runtime/)
-  ['harnessState',   { file: 'harness_state.json',         kind: 'runtime' }],
+  ['harnessState',   { file: 'harness_state.json',         kind: 'data' }],
   ['browserProfile', { file: 'browser-profile',            kind: 'runtime' }],
 
   // Root files (project root)

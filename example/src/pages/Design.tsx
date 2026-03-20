@@ -52,6 +52,12 @@ const Design: React.FC = () => {
 
         <div className="lg:col-span-3 space-y-8">
 
+          <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-4 mb-8">
+            <p className="text-sm text-yellow-200">
+              <strong>⚠️ Windows 已知限制</strong>：<code className="text-yellow-300">.pen</code> 文件的跨文件组件引用（<code className="text-yellow-300">ref: "sys:header"</code>）在 Windows 的 Pencil 插件中不受支持（Pencil应用也不支持）。Mac 桌面应用、插件均正常预览。建议在 Mac 上使用 design 命令生成和预览设计稿。跨文件变量引用（<code className="text-yellow-300">$sys:color.bg</code>）和同文件内组件引用在所有平台均可用。
+            </p>
+          </div>
+
           <SectionCard id="overview" variant="default" className="card-hover-enhanced">
             <h2 className="text-heading-2 text-[var(--text-50)] mb-6">概述</h2>
             <p className="text-body text-[var(--text-200)] mb-4">
@@ -184,7 +190,7 @@ claude-coder design "增加一个登录弹窗"`}</EnhancedCodeBlock>
               {[
                 {
                   q: '.pen 文件打不开 / 提示 "Some invalid data was skipped"',
-                  a: '运行 claude-coder design --type fix 修复格式问题。常见原因：JSON 语法错误、使用了非法属性、跨文件引用格式不对（应使用冒号 sys:xxx 而非斜杠）。',
+                  a: 'Windows 上最常见的原因是跨文件组件引用（ref: "sys:xxx"）不受支持，建议在 Mac 上预览。其他原因：JSON 语法错误、使用了非法属性。可运行 claude-coder design --type fix 尝试修复格式问题。',
                 },
                 {
                   q: '提示 "The library system.pen is missing"',

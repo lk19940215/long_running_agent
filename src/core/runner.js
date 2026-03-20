@@ -100,66 +100,18 @@ function snapshot(projectRoot, taskData) {
 
 function _validateSessionResult() {
   if (!assets.exists('sessionResult')) {
-    log('error', 'Agent 未生成 session_result.json');
     return { valid: false, reason: 'session_result.json 不存在' };
   }
-
   const raw = assets.readJson('sessionResult', null);
-  if (raw === null) {
-    log('warn', 'session_result.json 解析失败');
+  if (!raw) {
     return { valid: false, reason: 'JSON 解析失败', rawContent: assets.read('sessionResult') };
   }
-
   const data = raw.current && typeof raw.current === 'object' ? raw.current : raw;
-  const { TASK_STATUSES } = require('../common/constants');
-
-  const required = ['session_result', 'status_after'];
-  const missing = required.filter(k => !(k in data));
-  if (missing.length > 0) {
-    log('warn', `session_result.json 缺少字段: ${missing.join(', ')}`);
-    return { valid: false, reason: `缺少字段: ${missing.join(', ')}`, data };
-  }
-
   if (!['success', 'failed'].includes(data.session_result)) {
     return { valid: false, reason: `无效 session_result: ${data.session_result}`, data };
   }
-
-  if (!TASK_STATUSES.includes(data.status_after)) {
-    return { valid: false, reason: `无效 status_after: ${data.status_after}`, data };
-  }
-
-  const level = data.session_result === 'success' ? 'ok' : 'warn';
-  log(level, `session_result.json 合法 (${data.session_result})`);
+  log(data.session_result === 'success' ? 'ok' : 'warn', `session_result: ${data.session_result}`);
   return { valid: true, data };
-}
-
-function _checkGitProgress(headBefore, projectRoot) {
-  if (!headBefore) {
-    log('info', '未提供 head_before，跳过 git 检查');
-    return { hasCommit: false, warning: false };
-  }
-
-  const headAfter = getGitHead(projectRoot);
-
-  if (headBefore === headAfter) {
-    log('warn', '本次会话没有新的 git 提交');
-    return { hasCommit: false, warning: true };
-  }
-
-  try {
-    const msg = execSync('git log --oneline -1', { cwd: projectRoot, encoding: 'utf8' }).trim();
-    log('ok', `检测到新提交: ${msg}`);
-  } catch { /* ignore */ }
-
-  return { hasCommit: true, warning: false };
-}
-
-function _inferFromTasks(taskId) {
-  if (!taskId) return null;
-  const data = loadTasks();
-  if (!data) return null;
-  const task = getFeatures(data).find(f => f.id === taskId);
-  return task ? task.status : null;
 }
 
 async function validate(config, headBefore, taskId) {
@@ -167,7 +119,16 @@ async function validate(config, headBefore, taskId) {
   log('info', '校验中...');
 
   let srResult = _validateSessionResult();
-  const gitResult = _checkGitProgress(headBefore, projectRoot);
+  const hasCommit = headBefore ? getGitHead(projectRoot) !== headBefore : false;
+
+  if (hasCommit) {
+    try {
+      const msg = execSync('git log --oneline -1', { cwd: projectRoot, encoding: 'utf8' }).trim();
+      log('ok', `检测到新提交: ${msg}`);
+    } catch { /* ignore */ }
+  } else if (headBefore) {
+    log('warn', '本次会话没有新的 git 提交');
+  }
 
   if (!srResult.valid && srResult.rawContent) {
     const srPath = assets.path('sessionResult');
@@ -179,35 +140,22 @@ async function validate(config, headBefore, taskId) {
   }
 
   let fatal = false;
-  let hasWarnings = false;
+  let reason = '';
 
-  if (srResult.valid) {
-    hasWarnings = gitResult.warning;
-  } else {
-    if (gitResult.hasCommit) {
-      const taskStatus = _inferFromTasks(taskId);
-      if (taskStatus === 'done' || taskStatus === 'testing') {
-        log('warn', `session_result.json 异常，但 tasks.json 显示 ${taskId} 已 ${taskStatus}，且有新提交，降级为警告`);
-      } else {
-        log('warn', 'session_result.json 异常，但有新提交，降级为警告（不回滚代码）');
-      }
-      hasWarnings = true;
-    } else {
-      log('error', '无新提交且 session_result.json 异常，视为致命');
-      fatal = true;
-    }
+  if (srResult.valid && srResult.data.session_result === 'failed') {
+    fatal = true;
+    reason = 'AI 报告任务失败';
+  } else if (!srResult.valid && !hasCommit) {
+    fatal = true;
+    reason = srResult.reason || 'session_result.json 异常';
+  } else if (!srResult.valid && hasCommit) {
+    log('warn', 'session_result.json 异常，但有新提交，降级为警告');
   }
 
-  if (fatal) {
-    log('error', '校验失败 (致命)');
-  } else if (hasWarnings) {
-    log('warn', '校验通过 (有警告)');
-  } else {
-    log('ok', '校验通过 ✓');
-  }
+  log(fatal ? 'error' : (hasCommit ? 'ok' : 'warn'),
+    fatal ? `校验失败: ${reason}` : `校验通过${hasCommit ? ' ✓' : ' (无新提交)'}`);
 
-  const reason = fatal ? (srResult.reason || '无新提交且 session_result.json 异常') : '';
-  return { fatal, hasWarnings, sessionData: srResult.data, reason };
+  return { fatal, hasCommit, sessionData: srResult.data, reason };
 }
 
 // ─── Lifecycle: Rollback ──────────────────────────────────
@@ -266,12 +214,16 @@ function _markTaskFailed(taskId) {
 }
 
 async function _handleRetryOrSkip(session, {
-  headBefore, taskId, sessionResult, consecutiveFailures, result, reason, lastFailMsg,
+  headBefore, taskId, sessionResult, consecutiveFailures, result, reason, lastFailMsg, skipRollback,
 }) {
   const newFailures = consecutiveFailures + 1;
   const exceeded = newFailures >= MAX_RETRY;
 
-  await rollback(headBefore, reason);
+  if (skipRollback) {
+    log('info', '已有提交，跳过回滚');
+  } else {
+    await rollback(headBefore, reason);
+  }
 
   if (exceeded) {
     log('error', `连续失败 ${MAX_RETRY} 次，跳过当前任务`);
@@ -306,11 +258,12 @@ async function onSuccess(session, { taskId, sessionResult, validateResult }) {
 
 async function onFailure(session, { headBefore, taskId, sessionResult, validateResult, consecutiveFailures }) {
   const reason = validateResult.reason || '校验失败';
-  log('error', `Session ${session} 校验失败 (连续失败: ${consecutiveFailures + 1}/${MAX_RETRY})`);
+  log('error', `Session ${session} 失败 (连续: ${consecutiveFailures + 1}/${MAX_RETRY})`);
   return _handleRetryOrSkip(session, {
     headBefore, taskId, sessionResult, consecutiveFailures,
     result: 'fatal', reason,
-    lastFailMsg: `上次校验失败: ${reason}，代码已回滚`,
+    lastFailMsg: `上次失败: ${reason}${validateResult.hasCommit ? '' : '，代码已回滚'}`,
+    skipRollback: validateResult.hasCommit,
   });
 }
 
@@ -320,7 +273,7 @@ async function onStall(session, { headBefore, taskId, sessionResult, consecutive
   const validateResult = await validate(config, headBefore, taskId);
 
   if (!validateResult.fatal) {
-    log('ok', `停顿超时但任务已完成，按成功处理${validateResult.hasWarnings ? ' (有警告)' : ''}`);
+    log('ok', '停顿超时但任务已完成，按成功处理');
     return onSuccess(session, { taskId, sessionResult, validateResult });
   }
 
@@ -414,6 +367,22 @@ async function executeRun(config, opts = {}) {
 
     const { headBefore, taskId } = dryRun ? { headBefore: null, taskId: null } : snapshot(projectRoot, taskData);
 
+    if (!dryRun && taskId === 'unknown') {
+      log('warn', '无可执行任务（剩余任务均已失败或依赖未满足），退出');
+      break;
+    }
+
+    const selectedTask = getFeatures(taskData).find(f => f.id === taskId);
+    if (!dryRun && selectedTask?.status === 'failed') {
+      const hasActionable = getFeatures(taskData).some(f =>
+        f.status === 'pending' || f.status === 'in_progress' || f.status === 'testing'
+      );
+      if (!hasActionable) {
+        log('warn', '所有可执行任务已完成或失败，退出（剩余 failed 任务需人工排查）');
+        break;
+      }
+    }
+
     printSessionHeader(session, maxSessions, taskData, taskId);
 
     if (dryRun) {
@@ -442,8 +411,6 @@ async function executeRun(config, opts = {}) {
     const validateResult = await validate(config, headBefore, taskId);
 
     if (!validateResult.fatal) {
-      const level = validateResult.hasWarnings ? 'warn' : 'ok';
-      log(level, `Session ${session} ${validateResult.hasWarnings ? '校验通过 (有警告)' : '校验通过 ✓'}`);
       state = await onSuccess(session, { taskId, sessionResult, validateResult });
 
       if (shouldSimplify(config)) {

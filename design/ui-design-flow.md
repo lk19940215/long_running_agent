@@ -7,6 +7,10 @@
 [格式文档](https://docs.pencil.dev/core-concepts/pen-files)
 [技能文档](https://github.com/chiroro-jr/pencil-design-skill)
 
+## 已知平台限制
+
+> ⚠️ **Windows 已知限制**：`.pen` 文件的跨文件组件引用（`ref: "sys:header"`）在 Windows 的 Pencil 插件中不受支持（Pencil应用也不支持）。Mac 桌面应用、插件均正常预览。建议在 Mac 上使用 design 命令生成和预览设计稿。跨文件变量引用（`$sys:color.bg`）和同文件内组件引用在所有平台均可用。
+
 ## 核心决策
 
 | 决策项 | 选择 | 理由 |

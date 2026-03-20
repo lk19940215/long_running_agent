@@ -134,6 +134,7 @@ function ensureGitignore(projectRoot) {
     '!.claude-coder/tasks.json',
     '!.claude-coder/project_profile.json',
     '!.claude-coder/design/',
+    '!.claude-coder/harness_state.json',
   ];
   let added = false;
   for (const p of patterns) {

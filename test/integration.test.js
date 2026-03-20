@@ -238,8 +238,8 @@ test('loadTasks 正确加载任务', () => {
 
   const nextTask = selectNextTask(data);
   assert(nextTask !== null);
-  assert.strictEqual(nextTask.status, 'failed');
-  assert.strictEqual(nextTask.id, '4');
+  assert.strictEqual(nextTask.status, 'pending');
+  assert.strictEqual(nextTask.id, '1');
 });
 
 // 清理

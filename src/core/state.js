@@ -44,10 +44,7 @@ function syncAfterPlan() {
 
 function selectNextTask(taskData) {
   const features = getFeatures(taskData);
-
-  const failed = features.filter(f => f.status === 'failed')
-    .sort((a, b) => (a.priority || 999) - (b.priority || 999));
-  if (failed.length > 0) return failed[0];
+  const byPriority = (a, b) => (a.priority || 999) - (b.priority || 999);
 
   const pending = features.filter(f => f.status === 'pending')
     .filter(f => {
@@ -57,12 +54,15 @@ function selectNextTask(taskData) {
         return dep && dep.status === 'done';
       });
     })
-    .sort((a, b) => (a.priority || 999) - (b.priority || 999));
+    .sort(byPriority);
   if (pending.length > 0) return pending[0];
 
   const active = features.filter(f => f.status === 'in_progress' || f.status === 'testing')
-    .sort((a, b) => (a.priority || 999) - (b.priority || 999));
-  return active[0] || null;
+    .sort(byPriority);
+  if (active.length > 0) return active[0];
+
+  const failed = features.filter(f => f.status === 'failed').sort(byPriority);
+  return failed[0] || null;
 }
 
 function isAllDone(taskData) {
