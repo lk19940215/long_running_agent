@@ -2,7 +2,7 @@
 
 const { execSync } = require('child_process');
 const readline = require('readline');
-const { log } = require('../common/config');
+const { log, COLOR, printModeBanner } = require('../common/config');
 const { assets } = require('../common/assets');
 const { loadTasks, saveTasks, getFeatures, getStats, printStats } = require('../common/tasks');
 const { getGitHead, sleep, tryPush, killServices } = require('../common/utils');
@@ -16,24 +16,29 @@ const MAX_RETRY = RETRY.MAX_ATTEMPTS;
 
 // ─── Display Helpers ──────────────────────────────────────
 
-function printBanner(dryRun) {
-  console.log('');
-  console.log('============================================');
-  console.log(`  Claude Coder${dryRun ? ' (预览模式)' : ''}`);
-  console.log('============================================');
-  console.log('');
+function printBanner(dryRun, config, maxSessions) {
+  const mode = dryRun ? '预览模式' : `max: ${maxSessions}`;
+  printModeBanner('run', mode, config?.model);
 }
 
-function printSessionHeader(session, maxSessions) {
-  console.log('');
-  console.log('--------------------------------------------');
-  log('info', `Session ${session} / ${maxSessions}`);
-  console.log('--------------------------------------------');
+function _progressBar(done, total, width = 24) {
+  if (total === 0) return `${COLOR.dim}[${'░'.repeat(width)}]${COLOR.reset}`;
+  const filled = Math.round(done / total * width);
+  return `${COLOR.green}[${'█'.repeat(filled)}${COLOR.dim}${'░'.repeat(width - filled)}${COLOR.reset}${COLOR.green}]${COLOR.reset}`;
 }
 
-function printProgress(taskData) {
+function printSessionHeader(session, maxSessions, taskData, taskId) {
   const stats = getStats(taskData);
-  log('info', `进度: ${stats.done}/${stats.total} done, ${stats.in_progress} in_progress, ${stats.testing} testing, ${stats.failed} failed, ${stats.pending} pending`);
+  const task = taskId ? getFeatures(taskData).find(f => f.id === taskId) : null;
+  const bar = _progressBar(stats.done, stats.total);
+
+  console.error('');
+  console.error(`${COLOR.cyan}┌─ Session ${session} / ${maxSessions} ${'─'.repeat(32)}┐${COLOR.reset}`);
+  if (task) {
+    console.error(`${COLOR.cyan}│${COLOR.reset}  任务: ${COLOR.bold}${task.id}${COLOR.reset} ${COLOR.dim}-${COLOR.reset} ${task.description || ''}`);
+  }
+  console.error(`${COLOR.cyan}│${COLOR.reset}  进度: ${bar} ${stats.done}/${stats.total}  ${COLOR.green}✔${stats.done}${COLOR.reset} ${COLOR.yellow}○${stats.pending}${COLOR.reset} ${COLOR.red}✘${stats.failed}${COLOR.reset}`);
+  console.error(`${COLOR.cyan}└${'─'.repeat(46)}┘${COLOR.reset}`);
 }
 
 function printDryRun(taskData) {
@@ -51,16 +56,17 @@ function printDryRun(taskData) {
   for (const f of features) {
     const st = f.status || 'unknown';
     const icon = { done: '✓', in_progress: '▸', pending: '○', failed: '✗', testing: '◇' }[st] || '?';
-    log('info', `  ${icon} [${st.padEnd(11)}] ${f.id} - ${f.description || ''}`);
+    const color = { done: COLOR.green, failed: COLOR.red, in_progress: COLOR.blue, testing: COLOR.yellow }[st] || '';
+    log('info', `  ${color}${icon}${COLOR.reset} [${st.padEnd(11)}] ${f.id} - ${f.description || ''}`);
   }
 }
 
 function printEndBanner() {
-  console.log('');
-  console.log('============================================');
-  console.log('  运行结束');
-  console.log('============================================');
-  console.log('');
+  console.error('');
+  console.error(`${COLOR.cyan}╔══════════════════════════════════════════════╗${COLOR.reset}`);
+  console.error(`${COLOR.cyan}║${COLOR.reset}  ${COLOR.bold}运行结束${COLOR.reset}`);
+  console.error(`${COLOR.cyan}╚══════════════════════════════════════════════╝${COLOR.reset}`);
+  console.error('');
 }
 
 async function promptContinue() {
@@ -158,7 +164,7 @@ function _inferFromTasks(taskId) {
 
 async function validate(config, headBefore, taskId) {
   const projectRoot = assets.projectRoot;
-  log('info', '========== 开始校验 ==========');
+  log('info', '校验中...');
 
   let srResult = _validateSessionResult();
   const gitResult = _checkGitProgress(headBefore, projectRoot);
@@ -193,11 +199,11 @@ async function validate(config, headBefore, taskId) {
   }
 
   if (fatal) {
-    log('error', '========== 校验失败 (致命) ==========');
+    log('error', '校验失败 (致命)');
   } else if (hasWarnings) {
-    log('warn', '========== 校验通过 (有警告) ==========');
+    log('warn', '校验通过 (有警告)');
   } else {
-    log('ok', '========== 校验全部通过 ==========');
+    log('ok', '校验通过 ✓');
   }
 
   const reason = fatal ? (srResult.reason || '无新提交且 session_result.json 异常') : '';
@@ -370,18 +376,15 @@ async function executeRun(config, opts = {}) {
   const dryRun = opts.dryRun || false;
   const maxSessions = opts.max || 50;
   const pauseEvery = opts.pause ?? 0;
-  printBanner(dryRun);
+  printBanner(dryRun, config, maxSessions);
 
   printStats();
 
   log('info', `开始编码循环 (最多 ${maxSessions} 个会话) ...`);
-  console.log('');
 
   let state = { consecutiveFailures: 0, lastFailReason: '' };
 
   for (let session = 1; session <= maxSessions; session++) {
-    printSessionHeader(session, maxSessions);
-
     let taskData = loadTasks();
     if (!taskData) {
       const tasksPath = assets.path('tasks');
@@ -403,20 +406,20 @@ async function executeRun(config, opts = {}) {
         }
         tryPush(projectRoot);
       }
-      console.log('');
+      console.error('');
       log('ok', '所有任务已完成！');
       printStats();
       break;
     }
 
-    printProgress(taskData);
+    const { headBefore, taskId } = dryRun ? { headBefore: null, taskId: null } : snapshot(projectRoot, taskData);
+
+    printSessionHeader(session, maxSessions, taskData, taskId);
 
     if (dryRun) {
       printDryRun(taskData);
       break;
     }
-
-    const { headBefore, taskId } = snapshot(projectRoot, taskData);
 
     const { executeCoding } = require('./coding');
     const sessionResult = await executeCoding(config, session, {
@@ -432,23 +435,20 @@ async function executeRun(config, opts = {}) {
       state = await onStall(session, { headBefore, taskId, sessionResult, config, ...state });
       if (state.consecutiveFailures === 0) {
         if (shouldSimplify(config)) await tryRunSimplify(config);
-        // tryPush(projectRoot);
       }
       continue;
     }
 
-    log('info', '开始 harness 校验 ...');
     const validateResult = await validate(config, headBefore, taskId);
 
     if (!validateResult.fatal) {
       const level = validateResult.hasWarnings ? 'warn' : 'ok';
-      log(level, `Session ${session} 校验通过${validateResult.hasWarnings ? ' (有警告)' : ''}`);
+      log(level, `Session ${session} ${validateResult.hasWarnings ? '校验通过 (有警告)' : '校验通过 ✓'}`);
       state = await onSuccess(session, { taskId, sessionResult, validateResult });
 
       if (shouldSimplify(config)) {
         await tryRunSimplify(config);
       }
-      // tryPush(projectRoot);
     } else {
       state = await onFailure(session, { headBefore, taskId, sessionResult, validateResult, ...state });
     }
