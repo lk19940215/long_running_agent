@@ -57,7 +57,7 @@ const PainPoints: React.FC = () => {
               <div className="flex items-start gap-4 mb-4">
                 <span className="text-3xl flex-shrink-0">{item.emoji}</span>
                 <div>
-                  <h3 className="text-lg font-semibold text-[var(--text-100)] mb-1 line-through decoration-[var(--error-500)]/40">
+                  <h3 className="text-lg font-semibold text-[var(--text-50)] mb-1 line-through decoration-[var(--error-500)]/40">
                     {item.pain}
                   </h3>
                   <p className="text-[var(--primary-400)] font-medium">

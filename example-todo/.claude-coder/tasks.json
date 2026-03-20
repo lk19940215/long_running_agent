@@ -96,7 +96,7 @@
         "验证: 测试暂停/继续/重置功能",
         "验证: 测试工作模式自动切换到休息模式"
       ],
-      "status": "pending",
+      "status": "in_progress",
       "depends_on": ["feat-002", "feat-003"]
     },
     {
@@ -110,7 +110,7 @@
         "创建 src/components/ui/Modal.tsx，支持模态框显示",
         "验证: 测试各组件在不同状态下的渲染"
       ],
-      "status": "pending",
+      "status": "done",
       "depends_on": ["feat-001"]
     },
     {
