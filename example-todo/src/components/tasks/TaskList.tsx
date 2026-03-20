@@ -1,9 +1,10 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { TaskItem } from './TaskItem'
 import { TaskDragLayer } from './TaskDragLayer'
 import { TaskForm } from './TaskForm'
 import { Button } from '../ui/Button'
 import { useTasks } from '../../hooks/useTasks'
+import { useTags } from '../../hooks/useTags'
 import type { Task, CreateTaskParams, UpdateTaskParams } from '../../types'
 
 export interface TaskListProps {
@@ -12,13 +13,23 @@ export interface TaskListProps {
 
 export function TaskList({ className = '' }: TaskListProps) {
   const {
-    tasks,
+    tasks: allTasks,
     addTask,
     updateTask,
     deleteTask,
     toggleTaskStatus,
     reorderTasks,
   } = useTasks()
+
+  const { selectedTagIds, isAllSelected } = useTags()
+
+  // 根据选中标签筛选任务
+  const tasks = useMemo(() => {
+    if (isAllSelected) return allTasks
+    return allTasks.filter(task =>
+      task.tagIds.some(tagId => selectedTagIds.includes(tagId))
+    )
+  }, [allTasks, selectedTagIds, isAllSelected])
 
   // 表单状态
   const [formOpen, setFormOpen] = useState(false)
