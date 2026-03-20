@@ -176,7 +176,7 @@
         "验证: 测试控制按钮功能",
         "验证: 测试今日番茄钟统计正确累计"
       ],
-      "status": "pending",
+      "status": "done",
       "depends_on": ["feat-006"]
     },
     {
