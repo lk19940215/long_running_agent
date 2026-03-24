@@ -1,0 +1,15 @@
+{
+  "name": "agent-demo",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node agent.mjs"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "dotenv": "^17.3.1"
+  }
+}
