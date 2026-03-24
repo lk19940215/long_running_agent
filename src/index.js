@@ -2,7 +2,8 @@
 
 const fs = require('fs');
 const path = require('path');
-const { loadConfig, log } = require('./common/config');
+const { log } = require('./common/display');
+const { loadConfig } = require('./common/config');
 const { assets } = require('./common/assets');
 const { Session } = require('./core/session');
 

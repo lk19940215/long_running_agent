@@ -1,7 +1,8 @@
 'use strict';
 
 const fs = require('fs');
-const { log, COLOR, parseEnvFile } = require('../common/config');
+const { log, COLOR } = require('../common/display');
+const { parseEnvFile } = require('../common/config');
 const { assets } = require('../common/assets');
 const {
   createInterface,

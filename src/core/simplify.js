@@ -1,6 +1,6 @@
 'use strict';
 
-const { log, printModeBanner } = require('../common/config');
+const { log, printModeBanner } = require('../common/display');
 const { assets } = require('../common/assets');
 const { Session } = require('./session');
 const { execSync } = require('child_process');

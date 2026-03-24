@@ -5,7 +5,8 @@ const os = require('os');
 const path = require('path');
 const http = require('http');
 const { execSync } = require('child_process');
-const { loadConfig, log } = require('../common/config');
+const { log } = require('../common/display');
+const { loadConfig } = require('../common/config');
 const { assets } = require('../common/assets');
 const { appendGitignore } = require('../common/utils');
 

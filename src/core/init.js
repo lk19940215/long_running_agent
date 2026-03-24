@@ -5,7 +5,7 @@ const path = require('path');
 const net = require('net');
 const http = require('http');
 const { spawn, execSync } = require('child_process');
-const { log } = require('../common/config');
+const { log } = require('../common/display');
 const { assets } = require('../common/assets');
 const { isGitRepo, ensureGitignore } = require('../common/utils');
 

@@ -2,11 +2,12 @@
 
 const fs = require('fs');
 const path = require('path');
-const { buildEnvVars, log, COLOR } = require('../common/config');
+const { log, COLOR } = require('../common/display');
+const { buildEnvVars } = require('../common/config');
+const { assets } = require('../common/assets');
 const { Indicator } = require('../common/indicator');
 const { logMessage: baseLogMessage, extractResult, writeSessionSeparator } = require('../common/logging');
 const { createHooks } = require('./hooks');
-const { assets } = require('../common/assets');
 
 /**
  * @typedef {Object} SessionRunOptions

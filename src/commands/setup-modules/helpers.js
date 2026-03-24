@@ -3,9 +3,9 @@
 const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
-const { log, COLOR, updateEnvVar } = require('../../common/config');
-const { ensureGitignore: ensureGitignoreBase } = require('../../common/utils');
+const { log, COLOR } = require('../../common/display');
 const { assets } = require('../../common/assets');
+const { ensureGitignore: ensureGitignoreBase } = require('../../common/utils');
 
 function createInterface() {
   return readline.createInterface({ input: process.stdin, output: process.stdout });

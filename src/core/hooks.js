@@ -2,11 +2,11 @@
 
 const fs = require('fs');
 const path = require('path');
-const { inferPhaseStep } = require('../common/indicator');
-const { log } = require('../common/config');
-const { EDIT_THRESHOLD } = require('../common/constants');
-const { createAskUserQuestionHook } = require('../common/interaction');
+const { log } = require('../common/display');
+const { EDIT_THRESHOLD } = require('../common/config');
 const { assets } = require('../common/assets');
+const { inferPhaseStep } = require('../common/indicator');
+const { createAskUserQuestionHook } = require('../common/interaction');
 const { localTimestamp } = require('../common/utils');
 // ─────────────────────────────────────────────────────────────
 // Constants
@@ -248,7 +248,6 @@ const guidanceInjector = new GuidanceInjector();
 // ─────────────────────────────────────────────────────────────
 // Utility Functions
 // ─────────────────────────────────────────────────────────────
-
 
 function logToolCall(logStream, input) {
   if (!logStream) return;

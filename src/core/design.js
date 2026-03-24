@@ -3,9 +3,9 @@
 const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
-const { buildSystemPrompt } = require('./prompts');
-const { log, printModeBanner } = require('../common/config');
+const { log, printModeBanner } = require('../common/display');
 const { assets } = require('../common/assets');
+const { buildSystemPrompt } = require('./prompts');
 const { saveDesignState } = require('./state');
 const { Session } = require('./session');
 
@@ -240,7 +240,7 @@ async function executeDesign(config, input, opts = {}) {
   const ts = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 12);
 
   const sessionResult = await Session.run('design', config, {
-    logFileName: `design_${ts}_1.log`,
+    logFileName: `design_${ts}.log`,
     label: isAutoMode ? 'design_auto' : 'design_dialogue',
     async execute(session) {
       const queryOpts = session.buildQueryOptions(opts);

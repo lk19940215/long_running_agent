@@ -2,7 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { log } = require('./config');
+const { log } = require('./display');
 
 let _sdkModule = null;
 

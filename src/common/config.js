@@ -2,29 +2,37 @@
 
 const fs = require('fs');
 
-const COLOR = {
-  red: '\x1b[0;31m',
-  green: '\x1b[0;32m',
-  yellow: '\x1b[1;33m',
-  blue: '\x1b[0;34m',
-  magenta: '\x1b[0;35m',
-  cyan: '\x1b[0;36m',
-  bold: '\x1b[1m',
-  dim: '\x1b[2m',
-  reset: '\x1b[0m',
-};
+// ─── 常量（原 constants.js）─────────────────────────────
 
-function log(level, msg) {
-  const tags = {
-    info:  `${COLOR.blue}[INFO]${COLOR.reset} `,
-    ok:    `${COLOR.green}[OK]${COLOR.reset}   `,
-    warn:  `${COLOR.yellow}[WARN]${COLOR.reset} `,
-    error: `${COLOR.red}[ERROR]${COLOR.reset}`,
-  };
-  console.error(`${tags[level] || ''} ${msg} \n`);
-}
+const TASK_STATUSES = Object.freeze(['pending', 'in_progress', 'testing', 'done', 'failed']);
 
-// --------------- .env parsing ---------------
+const STATUS_TRANSITIONS = Object.freeze({
+  pending: ['in_progress'],
+  in_progress: ['testing'],
+  testing: ['done', 'failed'],
+  failed: ['in_progress'],
+  done: [],
+});
+
+const FILES = Object.freeze({
+  SESSION_RESULT: 'session_result.json',
+  TASKS: 'tasks.json',
+  PROFILE: 'project_profile.json',
+  PROGRESS: 'progress.json',
+  TEST_ENV: 'test.env',
+  PLAYWRIGHT_AUTH: 'playwright-auth.json',
+  ENV: '.env',
+  MCP_CONFIG: '.mcp.json',
+});
+
+const RETRY = Object.freeze({
+  MAX_ATTEMPTS: 3,
+  SCAN_ATTEMPTS: 3,
+});
+
+const EDIT_THRESHOLD = 15;
+
+// ─── .env 解析 ───────────────────────────────────────────
 
 function parseEnvFile(filepath) {
   if (!fs.existsSync(filepath)) return {};
@@ -41,7 +49,7 @@ function parseEnvFile(filepath) {
   return vars;
 }
 
-// --------------- Model mapping ---------------
+// ─── 配置加载 ────────────────────────────────────────────
 
 function loadConfig() {
   const { assets } = require('./assets');
@@ -115,31 +123,12 @@ function updateEnvVar(key, value) {
   return true;
 }
 
-const REPO_URL = 'https://lk19940215.github.io/claude-coder';
-
-/**
- * @param {string} command - 命令名（run / plan / design / go / simplify / scan）
- * @param {string} detail  - 右侧附加信息（模式、范围等）
- * @param {string} [model] - 模型名
- */
-function printModeBanner(command, detail, model) {
-  const sep = `  ${COLOR.dim}│${COLOR.reset}  `;
-  const parts = [`${COLOR.bold}Claude Coder${COLOR.reset}`, command];
-  if (model)  parts.push(`model: ${model}`);
-  if (detail) parts.push(detail);
-  const inner = parts.join(sep);
-  console.error('');
-  console.error(`${COLOR.cyan}╔══════════════════════════════════════════════╗${COLOR.reset}`);
-  console.error(`${COLOR.cyan}║${COLOR.reset}  ${inner}`);
-  console.error(`${COLOR.cyan}║${COLOR.reset}  ${COLOR.dim}${REPO_URL}${COLOR.reset}`);
-  console.error(`${COLOR.cyan}╚══════════════════════════════════════════════╝${COLOR.reset}`);
-  console.error('');
-}
-
 module.exports = {
-  COLOR,
-  log,
-  printModeBanner,
+  TASK_STATUSES,
+  STATUS_TRANSITIONS,
+  FILES,
+  RETRY,
+  EDIT_THRESHOLD,
   parseEnvFile,
   loadConfig,
   buildEnvVars,

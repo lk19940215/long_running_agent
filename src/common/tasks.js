@@ -1,6 +1,6 @@
 'use strict';
 
-const { log, COLOR } = require('./config');
+const { log, COLOR } = require('./display');
 const { assets } = require('./assets');
 
 function loadTasks() {

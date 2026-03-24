@@ -2,7 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { log } = require('../common/config');
+const { log } = require('../common/display');
 const { Session } = require('./session');
 
 async function executeRepair(config, filePath, opts = {}) {

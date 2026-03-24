@@ -1,7 +1,8 @@
 'use strict';
 
+const { log, COLOR } = require('../../common/display');
+const { updateEnvVar } = require('../../common/config');
 const { ask } = require('./helpers');
-const { log, COLOR, updateEnvVar } = require('../../common/config');
 
 // ── 自动审查配置 ──
 

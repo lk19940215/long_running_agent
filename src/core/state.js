@@ -2,7 +2,7 @@
 
 const { assets } = require('../common/assets');
 const { getFeatures } = require('../common/tasks');
-const { TASK_STATUSES } = require('../common/constants');
+const { TASK_STATUSES } = require('../common/config');
 
 // ─── Harness State (harness_state.json) ───────────────────
 

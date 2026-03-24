@@ -2,11 +2,11 @@
 
 const { execSync } = require('child_process');
 const readline = require('readline');
-const { log, COLOR, printModeBanner } = require('../common/config');
+const { log, COLOR, printModeBanner } = require('../common/display');
+const { RETRY, TASK_STATUSES } = require('../common/config');
 const { assets } = require('../common/assets');
 const { loadTasks, saveTasks, getFeatures, getStats, printStats } = require('../common/tasks');
 const { getGitHead, sleep, tryPush, killServices } = require('../common/utils');
-const { RETRY } = require('../common/constants');
 const {
   loadState, saveState, selectNextTask, isAllDone,
   appendProgress, incrementSession, markSimplifyDone,
@@ -80,6 +80,12 @@ async function promptContinue() {
   });
 }
 
+// ─── Utilities ────────────────────────────────────────────
+
+function _timestamp() {
+  return new Date().toISOString().replace(/[-:T]/g, '').slice(0, 12);
+}
+
 // ─── Lifecycle: Snapshot ──────────────────────────────────
 
 function snapshot(projectRoot, taskData) {
@@ -111,7 +117,6 @@ function _validateSessionResult() {
   }
 
   const data = raw.current && typeof raw.current === 'object' ? raw.current : raw;
-  const { TASK_STATUSES } = require('../common/constants');
 
   const required = ['session_result', 'status_after'];
   const missing = required.filter(k => !(k in data));
@@ -357,12 +362,6 @@ async function tryRunSimplify(config, msg) {
   } catch (err) {
     log('warn', `代码审查失败，跳过: ${err.message}`);
   }
-}
-
-// ─── Utilities ────────────────────────────────────────────
-
-function _timestamp() {
-  return new Date().toISOString().replace(/[-:T]/g, '').slice(0, 12);
 }
 
 // ─── Main Orchestration Loop ──────────────────────────────

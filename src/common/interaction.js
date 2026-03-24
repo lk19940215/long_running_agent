@@ -1,7 +1,7 @@
 'use strict';
 
 const readline = require('readline');
-const { COLOR } = require('./config');
+const { COLOR } = require('./display');
 
 /**
  * 在终端渲染一个结构化问题并收集用户选择

@@ -4,10 +4,10 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const readline = require('readline');
-const { buildSystemPrompt, buildPlanPrompt } = require('./prompts');
-const { log, printModeBanner } = require('../common/config');
+const { log, printModeBanner } = require('../common/display');
 const { assets } = require('../common/assets');
 const { printStats } = require('../common/tasks');
+const { buildSystemPrompt, buildPlanPrompt } = require('./prompts');
 const { syncAfterPlan } = require('./state');
 const { Session } = require('./session');
 

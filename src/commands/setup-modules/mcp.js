@@ -1,8 +1,9 @@
 'use strict';
 
-const { askChoice } = require('./helpers');
-const { log, COLOR, updateEnvVar } = require('../../common/config');
+const { log, COLOR } = require('../../common/display');
+const { updateEnvVar } = require('../../common/config');
 const { assets } = require('../../common/assets');
+const { askChoice } = require('./helpers');
 
 // ── MCP 配置 ──
 

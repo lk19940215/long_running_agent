@@ -3,10 +3,10 @@
 const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
-const { buildSystemPrompt } = require('./prompts');
-const { log, printModeBanner } = require('../common/config');
+const { log, printModeBanner } = require('../common/display');
 const { assets } = require('../common/assets');
 const { extractResultText } = require('../common/logging');
+const { buildSystemPrompt } = require('./prompts');
 const { loadState, saveState } = require('./state');
 const { Session } = require('./session');
 

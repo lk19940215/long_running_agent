@@ -2,7 +2,7 @@
 
 const { buildSystemPrompt, buildCodingContext } = require('./prompts');
 const { Session } = require('./session');
-const { log } = require('../common/config');
+const { log } = require('../common/display');
 
 async function executeCoding(config, sessionNum, opts = {}) {
   const taskId = opts.taskId || 'unknown';

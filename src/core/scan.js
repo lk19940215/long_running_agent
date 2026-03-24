@@ -2,11 +2,11 @@
 
 const fs = require('fs');
 const path = require('path');
-const { log, printModeBanner } = require('../common/config');
+const { log, printModeBanner } = require('../common/display');
+const { RETRY } = require('../common/config');
 const { assets } = require('../common/assets');
 const { buildSystemPrompt, buildScanPrompt } = require('./prompts');
 const { Session } = require('./session');
-const { RETRY } = require('../common/constants');
 
 function hasCodeFiles(projectRoot) {
   const markers = [

@@ -184,8 +184,8 @@ claude-coder/
 │   ├── index.js                  # main() 函数：资产初始化、配置加载、命令分发
 │   ├── common/                   # 共享基础设施
 │   │   ├── assets.js             # AssetManager：路径注册、读写、模板渲染、recipesDir()
-│   │   ├── config.js             # .env 加载、模型映射、环境变量构建
-│   │   ├── constants.js          # 常量集中管理（状态、超时、文件名）
+│   │   ├── display.js            # 终端显示基础：COLOR 常量、log()、printModeBanner()
+│   │   ├── config.js             # .env 加载、模型映射、环境变量构建、常量定义
 │   │   ├── utils.js              # 公共工具（Git、休眠、gitignore 管理）
 │   │   ├── tasks.js              # 任务数据读写 + 进度统计
 │   │   ├── logging.js            # 日志工具（SDK 消息处理）
@@ -242,8 +242,8 @@ claude-coder/
 | `bin/cli.js` | CLI 入口，解析命令行参数，路由到对应模块 |
 | `src/index.js` | `main()` 函数：资产初始化、配置加载、checkReady、命令分发 |
 | `src/common/assets.js` | AssetManager 单例：路径注册表、读写接口、模板渲染、`recipesDir()` |
-| `src/common/config.js` | .env 文件解析、模型配置加载、环境变量构建 |
-| `src/common/constants.js` | 常量集中管理：任务状态、超时默认值、文件名 |
+| `src/common/display.js` | 终端显示基础设施：COLOR 常量、log()、printModeBanner() |
+| `src/common/config.js` | .env 文件解析、模型配置加载、环境变量构建 + 常量（任务状态、文件名、重试配置） |
 | `src/common/utils.js` | 公共工具：Git 操作、gitignore 管理、休眠函数 |
 | `src/common/tasks.js` | 任务数据读写：loadTasks / saveTasks / getStats / printStats |
 | `src/common/logging.js` | 日志工具：SDK 消息处理、结果提取、Session 分隔符 |

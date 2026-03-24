@@ -1,7 +1,8 @@
 'use strict';
 
+const { log, COLOR } = require('../../common/display');
+const { updateEnvVar } = require('../../common/config');
 const { ask, askChoice, askApiKey } = require('./helpers');
-const { log, COLOR, updateEnvVar } = require('../../common/config');
 
 // ── 提供商菜单 ──
 
