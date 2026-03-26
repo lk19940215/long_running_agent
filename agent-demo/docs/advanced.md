@@ -6,7 +6,7 @@
 
 原来的 `display.mjs` 用 ANSI `\r` 覆写状态，会被 `console.log` 冲掉。
 
-当前方案：`src/ink.mjs`，基于 Ink v6（React for CLI）。
+当前方案：`src/core/ink.mjs`，基于 Ink v6（React for CLI）。
 
 架构：
 ```

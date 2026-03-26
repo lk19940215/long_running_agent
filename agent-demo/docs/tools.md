@@ -8,20 +8,24 @@
 define('tool_name', '描述（模型据此决定何时调用）', { 参数schema }, ['必填'], async (input) => { ... });
 ```
 
-参考：`src/tools.mjs`
+参考：`src/tools/`（按职责拆分为 file.mjs / search.mjs / glob.mjs / ast.mjs / bash.mjs）
 
 ---
 
-## 当前工具集（6 个）
+## 当前工具集（8 个）
 
-| 工具 | 用途 | 依赖 | 对应 Claude Code |
+工具命名对齐 Claude Code 风格（短名称）。
+
+| 工具 | 用途 | 依赖 | Claude Code 对应 |
 |------|------|------|-----------------|
-| `read_file` | 读取文件内容 | Node fs | Read |
-| `write_file` | 创建新文件 | Node fs | Write |
-| `edit_file` | Search & Replace 修改文件 | Node fs | Edit |
-| `grep_search` | 正则搜索代码 | @vscode/ripgrep | Grep |
-| `list_files` | 列出目录文件 | @vscode/ripgrep `--files` | LS / Glob |
-| `execute_bash` | 执行 bash 命令 | child_process | Bash |
+| `read` | 读取文件内容 | Node fs | Read |
+| `write` | 创建新文件 | Node fs | Write |
+| `edit` | Search & Replace 修改文件 | Node fs | Edit |
+| `grep` | 正则搜索代码内容 | @vscode/ripgrep | Grep |
+| `glob` | 按文件名模式查找文件 | @vscode/ripgrep | Glob |
+| `ls` | 列出目录文件树 | @vscode/ripgrep | LS |
+| `symbols` | AST 分析（列符号/获取定义） | web-tree-sitter | — |
+| `bash` | 执行 bash 命令 | child_process | Bash |
 
 ---
 
@@ -33,9 +37,10 @@ AI 的调用链完全由 LLM 自主决策，Agent Loop 不做编排。
 
 ```
 用户 → "把 MAX_TOKENS 改成 16384"
-AI 推理 → 需要先看文件 → 调 read_file("src/config.mjs")
-结果返回 → AI 看到 '8192' → 调 edit_file(path, old_string='8192', new_string='16384')
-结果返回 → AI 确认完成 → 回复用户 → end_turn
+AI 推理 → 路径不确定 → glob("**/config.*") → src/config.mjs
+结果返回 → read("src/config.mjs")
+结果返回 → AI 看到 '8192' → edit(path, old_string='8192', new_string='16384')
+结果返回 → AI 确认完成 → end_turn
 ```
 
 你的代码不关心 AI 调了什么工具、按什么顺序，只做：
@@ -43,11 +48,11 @@ AI 推理 → 需要先看文件 → 调 read_file("src/config.mjs")
 LLM 返回 tool_use → 执行 → 结果送回 → 再调 LLM → 重复
 ```
 
-SYSTEM_PROMPT 的作用是引导 AI 的工具选择偏好（如"搜索用 grep_search，不要用 execute_bash"）。
+SYSTEM_PROMPT 的作用是引导 AI 的工具选择偏好（如"搜索用 grep，不要用 bash"）。
 
 ---
 
-## edit_file 原理
+## edit 原理
 
 ```
 readFile(path)
@@ -58,18 +63,28 @@ readFile(path)
 ```
 
 模型怎么知道 old_string？Agent Loop 自然流程保证：
-先 read_file → 内容进 messages → 模型从中复制出精确的 old_string。
+先 read → 内容进 messages → 模型从中复制出精确的 old_string。
 
 ---
 
-## grep_search 原理
+## grep 原理
 
 底层使用 ripgrep（通过 `@vscode/ripgrep` npm 包），VS Code 和 Cursor 用的同一个方案。
 
 ```javascript
 import { rgPath } from '@vscode/ripgrep';
-execSync(`"${rgPath}" --line-number --no-heading "${pattern}" "${path}" --glob "${include}"`);
+execSync(`"${rgPath}" ${modeFlag} --max-count 200 "${pattern}" "${path}" --glob "${include}"`);
 ```
+
+### output_mode 参数
+
+| 模式 | ripgrep 参数 | 返回内容 | 用途 |
+|------|-------------|---------|------|
+| `content`（默认） | `--line-number --no-heading` | 文件:行号:匹配行 | 查看具体匹配 |
+| `files_only` | `--files-with-matches` | 仅文件路径 | 快速定位哪些文件包含关键词 |
+| `count` | `--count` | 文件:匹配数 | 评估匹配范围大小 |
+
+推荐策略：先 `files_only` 定位文件 → 再 `content` 看具体行 → 或直接 `read`。
 
 ripgrep 特性：自动遵守 .gitignore、跳过二进制文件、速度极快。
 
@@ -87,7 +102,7 @@ logs/
 *.log
 ```
 
-所以 `grep_search` 和 `list_files` 默认**不会搜索/列出** `node_modules/`、`logs/`、`*.log` 文件。
+所以 `grep`、`glob`、`ls` 默认**不会搜索/列出** `node_modules/`、`logs/`、`*.log` 文件。
 
 **2. ripgrep 内置跳过**
 - 二进制文件（图片、编译产物等）
@@ -98,34 +113,55 @@ logs/
 - 直接指定路径时会绕过 `.gitignore`：`rg --files ./logs` 能列出 logs 下的文件
 - 从父目录遍历时遵守：`rg --files .` 不会进入 logs/
 - 使用 `--no-ignore` 可强制搜索所有文件（包括被忽略的）
-- `read_file` 工具用 Node.js `fs.readFile`，不受 `.gitignore` 影响，任何文件都能读
+- `read` 工具用 Node.js `fs.readFile`，不受 `.gitignore` 影响，任何文件都能读
 
 ---
 
-## list_files 原理
+## glob 原理
 
-同样使用 ripgrep 的 `--files` 模式，只列文件路径，不搜索内容。
+按文件名模式查找文件。路径不确定时先用 glob 精确定位，避免猜路径导致 ENOENT 错误。
+
+```
+glob("**/agent.*")           → src/agent.mjs
+glob("**/*.test.{js,ts}")    → 找所有测试文件
+glob("src/**/*.mjs")         → 找 src 下所有 .mjs 文件
+```
+
+### 与 ls / grep 的区别
+
+| 工具 | 搜什么 | 场景 |
+|------|--------|------|
+| `glob` | 按文件**名称**模式匹配 | 知道文件名但不知道路径 |
+| `ls` | 列出目录所有文件 | 了解项目结构 |
+| `grep` | 按文件**内容**正则匹配 | 找代码中的关键词 |
+
+底层使用 ripgrep `--files --glob`，结果超过 100 个文件自动截断。
+
+---
+
+## ls 原理
+
+列出目录文件树。和 `glob` 共享 ripgrep `--files` 底层。
 
 ```javascript
 execSync(`"${rgPath}" --files --max-depth ${max_depth} "${path}"`);
 ```
 
-和 `grep_search` 共享同一个 ripgrep 底层，好处：
-- 自动遵守 `.gitignore`，不需要手动维护 SKIP_DIRS 列表
+- 自动遵守 `.gitignore`
 - 比 Node.js `readdir` 递归快一个数量级
-- 代码只有 15 行
+- 支持 `max_depth` 控制递归深度
 
 ---
 
-## MultiEdit 原理
+## MultiEdit 原理（未实现）
 
 ### 为什么需要 MultiEdit
 
-`edit_file` 每次只能改一处。如果一个文件需要改 5 个地方：
+`edit` 每次只能改一处。如果一个文件需要改 5 个地方：
 
 ```
-edit_file → 改第 1 处 → API 调用 → 模型决定改第 2 处 →
-edit_file → 改第 2 处 → API 调用 → ... → 改第 5 处
+edit → 改第 1 处 → API 调用 → 模型决定改第 2 处 →
+edit → 改第 2 处 → API 调用 → ... → 改第 5 处
 ```
 
 5 次工具调用 = 5 次 API 往返，每次都发送完整 messages 历史，token 开销巨大。
@@ -178,7 +214,7 @@ define('multi_edit', '对同一文件执行多处 Search & Replace', {
 ### 关键细节
 
 1. **顺序执行**：edits 从上到下依次应用，每次替换后文件内容变化，后续 old_string 匹配的是**更新后的内容**
-2. **唯一性检查**：和 edit_file 相同，每个 old_string 必须精确匹配 1 次
+2. **唯一性检查**：和 edit 相同，每个 old_string 必须精确匹配 1 次
 3. **部分成功**：某处匹配失败不影响其他编辑（跳过 + 报告），最终结果告诉模型哪些成功哪些失败
 4. **原子性选择**：生产级可以做全部成功才写入（回滚），或允许部分成功（当前方案）
 
@@ -216,52 +252,9 @@ Bash, Read, Write, Edit, MultiEdit, Grep, Glob, LS,
 WebFetch, WebSearch, Task, TodoWrite, NotebookRead, NotebookEdit, mcp__*
 ```
 
-agent-demo 已实现：`Bash, Read, Write, Edit, Grep, LS`
+agent-demo 已实现：`Bash, Read, Write, Edit, Grep, Glob, LS` + `Symbols`（自研）
 
 以下是未实现工具的原理和实现思路。
-
----
-
-## Glob 原理（未实现）
-
-### 作用
-
-按文件名模式匹配查找文件。和 `list_files`（列出目录所有文件）不同，Glob 精确匹配特定模式。
-
-```
-Glob("**/*.test.ts")  →  找所有测试文件
-Glob("src/components/**/*.tsx")  →  找所有 React 组件
-```
-
-### 与 list_files / grep_search 的区别
-
-| 工具 | 做什么 | 例子 |
-|------|--------|------|
-| `list_files` | 列出目录下所有文件 | 看项目结构 |
-| `grep_search` | 按文件内容匹配 | 找 `import React` 在哪 |
-| `glob` | 按文件名模式匹配 | 找所有 `*.test.ts` 文件 |
-
-### 实现
-
-```javascript
-// 方案 1: 用已有的 ripgrep（最简）
-define('glob', '按模式查找文件名', {
-  pattern: { type: 'string', description: '文件匹配模式（如 "*.tsx"、"src/**/*.test.ts"）' },
-  path: { type: 'string', description: '搜索根目录' },
-}, ['pattern'], async ({ pattern, path = '.' }) => {
-  const cmd = `"${rgPath}" --files --glob "${pattern}" "${path}"`;
-  const output = execSync(cmd, { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] });
-  return output || `未找到匹配: ${pattern}`;
-});
-
-// 方案 2: 用 globby npm 包（功能更强）
-import { globby } from 'globby';
-const files = await globby(pattern, { cwd: path });
-
-// 方案 3: Node.js 原生 fs.glob（Node 22+）
-import { glob } from 'fs/promises';
-for await (const file of glob(pattern)) { ... }
-```
 
 ---
 
@@ -286,10 +279,7 @@ define('web_fetch', '获取 URL 内容，返回可读文本', {
   const contentType = response.headers.get('content-type') || '';
   const text = await response.text();
 
-  // JSON 直接返回
   if (contentType.includes('json')) return text;
-
-  // HTML → 提取正文
   if (contentType.includes('html')) {
     return htmlToText(text); // 需要实现或用库
   }
@@ -322,7 +312,6 @@ define('web_fetch', '获取 URL 内容，返回可读文本', {
 define('web_search', '搜索互联网，返回摘要和链接', {
   query: { type: 'string', description: '搜索关键词' },
 }, ['query'], async ({ query }) => {
-  // 方案 1: Brave Search API（免费额度，推荐）
   const resp = await fetch(`https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}`, {
     headers: { 'X-Subscription-Token': BRAVE_API_KEY },
   });
@@ -366,7 +355,6 @@ SubAgent: 独立 messages，完成后只返回一段摘要文本
 ### 实现
 
 ```javascript
-// 核心：SubAgent = 没有用户交互的 Agent Loop
 async function runSubAgent({ client, prompt, tools, systemPrompt, maxTurns = 15 }) {
   const messages = [{ role: 'user', content: prompt }];
   let lastText = '';
@@ -395,7 +383,7 @@ async function runSubAgent({ client, prompt, tools, systemPrompt, maxTurns = 15 
       messages.push({ role: 'user', content: toolResults });
     }
   }
-  return lastText; // 返回最后一段文本作为摘要
+  return lastText;
 }
 
 define('task', '委托子任务给独立 Agent', {
@@ -415,16 +403,6 @@ define('task', '委托子任务给独立 Agent', {
 | `shell` | 命令执行 | 专注终端 |
 | `browser-use` | 浏览器测试 | Web 自动化 |
 | `best-of-n-runner` | 并行尝试 | 独立 git worktree，取最优解 |
-
-### 高级：best-of-N
-
-```javascript
-const results = await Promise.all([
-  runSubAgent({ prompt: prompt + '\n方案A: 函数式', ... }),
-  runSubAgent({ prompt: prompt + '\n方案B: 面向对象', ... }),
-]);
-// 让 LLM 评判哪个方案更好
-```
 
 ---
 
@@ -468,31 +446,6 @@ define('todo_write', '创建或更新任务列表', {
   return _todos.map(t => `[${t.status}] ${t.id}: ${t.content}`).join('\n');
 });
 ```
-
-### 典型使用场景
-
-```
-用户: "给项目添加用户认证功能"
-
-模型内部:
-  todo_write([
-    { id: '1', content: '设计数据库 schema', status: 'in_progress' },
-    { id: '2', content: '实现注册 API', status: 'pending' },
-    { id: '3', content: '实现登录 API', status: 'pending' },
-    { id: '4', content: '添加 JWT 中间件', status: 'pending' },
-    { id: '5', content: '编写测试', status: 'pending' },
-  ])
-
-  → 完成第 1 步后更新:
-  todo_write([{ id: '1', status: 'completed' }, { id: '2', status: 'in_progress' }], merge: true)
-```
-
-### 设计要点
-
-- TODO 列表存在 messages 历史中（模型每次都能看到最新状态）
-- 帮助模型避免"做了上步忘了下步"
-- 复杂任务（>3 步）时模型会自动使用
-- SYSTEM_PROMPT 中引导模型在复杂任务时主动使用 TodoWrite
 
 ---
 

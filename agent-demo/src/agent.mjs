@@ -21,10 +21,10 @@
 import Anthropic from '@anthropic-ai/sdk';
 
 import { API_KEY, BASE_URL, DEFAULT_MODEL, MAX_TOKENS, DEBUG, SYSTEM_PROMPT, RESUME_FILE } from './config.mjs';
-import { toolSchemas, executeTool } from './tools.mjs';
-import { createDisplay } from './ink.mjs';
-import { Logger } from './logger.mjs';
-import { Messages } from './messages.mjs';
+import { toolSchemas, executeTool } from './tools/index.mjs';
+import { createDisplay } from './core/ink.mjs';
+import { Logger } from './core/logger.mjs';
+import { Messages } from './core/messages.mjs';
 
 // ─── 常量定义 ─────────────────────────────────────────────
 const MAX_TOOL_RESULT_LENGTH = 8000;  // 工具结果最大长度，防止上下文窗口溢出
@@ -41,31 +41,37 @@ function shouldWaitForUser(stopReason) {
 
 function toolResultPreview(name, result) {
   if (!result || result.startsWith('错误') || result.startsWith('rg:')) return result.substring(0, 60);
-  if (name === 'read_file') {
+  if (name === 'read') {
     const lines = result.split('\n').length;
     return `${lines} 行`;
   }
-  if (name === 'grep_search') {
+  if (name === 'grep') {
     const matches = result.split('\n').filter(l => l.trim()).length;
     return `${matches} 处匹配`;
   }
-  if (name === 'list_files') {
+  if (name === 'glob' || name === 'ls') {
     const files = result.split('\n').filter(l => l.trim()).length;
     return `${files} 个文件`;
   }
-  if (name === 'edit_file') return result;
-  if (name === 'write_file') return result;
-  if (name === 'execute_bash') return result.split('\n')[0]?.substring(0, 60) || '';
+  if (name === 'edit') return result;
+  if (name === 'write') return result;
+  if (name === 'symbols') {
+    const firstLine = result.split('\n')[0] || '';
+    return firstLine;
+  }
+  if (name === 'bash') return result.split('\n')[0]?.substring(0, 60) || '';
   return '';
 }
 
 function toolInputPreview(name, input) {
-  if (name === 'read_file') return input.path;
-  if (name === 'write_file') return `${input.path} (${input.content?.length || 0} 字符)`;
-  if (name === 'edit_file') return input.path;
-  if (name === 'grep_search') return `/${input.pattern}/${input.include ? ` ${input.include}` : ''}`;
-  if (name === 'list_files') return input.path || '.';
-  if (name === 'execute_bash') return `$ ${input.command?.substring(0, 80)}`;
+  if (name === 'read') return input.path;
+  if (name === 'write') return `${input.path} (${input.content?.length || 0} 字符)`;
+  if (name === 'edit') return input.path;
+  if (name === 'grep') return `/${input.pattern}/${input.include ? ` ${input.include}` : ''}`;
+  if (name === 'glob') return input.pattern;
+  if (name === 'ls') return input.path || '.';
+  if (name === 'symbols') return `${input.mode} ${input.path}${input.name ? ` → ${input.name}` : ''}`;
+  if (name === 'bash') return `$ ${input.command?.substring(0, 80)}`;
   return JSON.stringify(input).substring(0, 80);
 }
 

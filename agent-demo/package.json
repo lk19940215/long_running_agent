@@ -11,9 +11,11 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
+    "@repomix/tree-sitter-wasms": "^0.1.16",
     "@vscode/ripgrep": "^1.17.1",
     "dotenv": "^17.3.1",
     "ink": "^6.8.0",
-    "react": "^19.2.4"
+    "react": "^19.2.4",
+    "web-tree-sitter": "^0.26.7"
   }
 }

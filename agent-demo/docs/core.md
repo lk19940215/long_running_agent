@@ -88,10 +88,33 @@ const result = await client.beta.messages.toolRunner({ model, tools, messages })
 
 ---
 
+## 项目结构
+
+```
+src/
+  agent.mjs              # 主循环（Agent Loop）
+  config.mjs             # 配置 + SYSTEM_PROMPT
+  core/                  # 运行时基础设施
+    ink.mjs              # 终端 UI（Ink / React for CLI）
+    logger.mjs           # 文件日志
+    messages.mjs         # 对话历史存储
+  tools/                 # 工具系统
+    registry.mjs         # define() + 注册表（共享基础设施）
+    index.mjs            # 聚合所有工具 + 导出 toolSchemas / executeTool
+    file.mjs             # read_file / write_file / edit_file
+    search.mjs           # grep_search / list_files（@vscode/ripgrep）
+    ast.mjs              # code_symbols（web-tree-sitter AST）
+    bash.mjs             # execute_bash
+```
+
 ## 技术栈
 
 | 库 | 用途 |
 |---|------|
-| `@anthropic-ai/sdk` | HTTP 客户端 |
+| `@anthropic-ai/sdk` | LLM API 客户端 |
+| `ink` + `react` | 终端 UI 框架 |
+| `@vscode/ripgrep` | 代码搜索 / 文件列举 |
+| `web-tree-sitter` | AST 代码分析 |
+| `@repomix/tree-sitter-wasms` | 预构建语法 wasm 文件 |
 | `fs/promises` | 文件读写 |
-| `child_process` | bash 命令 |
+| `child_process` | bash 命令执行 |
