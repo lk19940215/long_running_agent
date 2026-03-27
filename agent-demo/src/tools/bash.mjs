@@ -7,7 +7,7 @@ import { define } from './registry.mjs';
 
 define(
   'bash',
-  '执行 bash 命令。用于 git 操作、运行测试、安装依赖、构建等。禁止用于搜索代码（用 grep）或列目录（用 ls）。禁止执行 rm -rf、sudo 等危险命令。',
+  '执行 bash 命令。用于 git、测试、安装、构建。禁止用于搜索（用 grep）或列目录（用 ls）。禁止 rm -rf、sudo。',
   { command: { type: 'string', description: '要执行的 bash 命令' } },
   ['command'],
   async ({ command }) => {

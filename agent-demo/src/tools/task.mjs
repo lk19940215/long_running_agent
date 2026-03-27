@@ -25,14 +25,26 @@ import {
 export const taskEvents = new EventEmitter();
 
 const SUB_TOOLS = ["read", "grep", "glob", "ls", "symbols"];
+const SUB_MAX_TURNS = 12;
 
-const getSystemPrompt = (description) => {
-  return `你是一个专注的子任务代理。\n\n任务: ${description}\n\n你只有只读工具（read/grep/glob/ls/symbols），不能修改文件。\n分析后直接给出结论。`;
-};
+function buildPrompt(description) {
+  return `你是一个专注的子任务代理。只读工具，不能修改文件。
+
+任务: ${description}
+
+你可以在一次响应中调用多个工具。批量发起搜索，不要等一个结果再决定下一步。
+
+策略:
+- 一次 grep 优于多次。用 | 组合模式
+- glob/ls 了解结构，可与 grep 并行
+- read 仅在需要完整上下文时用
+- grep 结果已含匹配行，无需再 read
+- 直接给结论`;
+}
 
 define(
   "task",
-  "委派子任务给 SubAgent（独立上下文，只读工具集 read/grep/glob/ls/symbols）。适合调研、搜索、分析等不需要修改文件的任务。",
+  "委派子任务给 SubAgent。独立上下文，只读工具集。适合调研、搜索、代码分析。搜索关键字或多文件分析时优先使用。",
   {
     description: {
       type: "string",
@@ -59,7 +71,7 @@ define(
     const logger = DEBUG ? new Logger(true, { silent: true }) : null;
     logger?.init("sub-agent");
 
-    const systemPrompt = getSystemPrompt(description);
+    const systemPrompt = buildPrompt(description);
 
     const subAgent = new AgentCore({
       apiKey: API_KEY,
@@ -81,14 +93,15 @@ define(
     taskEvents.emit("start", { description });
 
     let stepCount = 0;
-    const callbacks = {
-      onToolStart(name, input) {
-        stepCount++;
-        taskEvents.emit("tool", { step: stepCount, name, input });
+    const trace = await subAgent.run(prompt, {
+      maxTurns: SUB_MAX_TURNS,
+      on: {
+        toolStart(name, input) {
+          stepCount++;
+          taskEvents.emit("tool", { step: stepCount, name, input });
+        },
       },
-    };
-
-    const trace = await subAgent.run(prompt, [], callbacks, { maxTurns: 8 });
+    });
     taskEvents.emit("done", { toolCalls: trace.toolCalls.length, description });
 
     if (trace.stopReason === "error")

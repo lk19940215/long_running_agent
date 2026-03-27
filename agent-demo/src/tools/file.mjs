@@ -8,7 +8,7 @@ import { define } from './registry.mjs';
 
 define(
   'read',
-  '读取文件全部内容。先用 grep 定位再读取，避免盲目读取大文件。修改文件前必须先读取。',
+  '读取文件内容。修改前必须先读取。可同时批量读取多个相关文件。',
   { path: { type: 'string', description: '文件路径（相对或绝对）' } },
   ['path'],
   async ({ path }) => {
@@ -22,7 +22,7 @@ define(
 
 define(
   'write',
-  '创建新文件或完全覆盖文件。自动创建父目录。仅用于创建新文件，修改已有文件必须用 edit，禁止用 write 覆盖。',
+  '创建新文件或完全覆盖。自动创建目录。仅用于新文件，修改已有文件用 edit/multi_edit。',
   {
     path: { type: 'string', description: '文件路径' },
     content: { type: 'string', description: '要写入的完整文件内容' }
@@ -41,7 +41,7 @@ define(
 
 define(
   'edit',
-  '通过 Search & Replace 修改文件一处。同一文件改多处时必须用 multi_edit。old_string 必须完全匹配文件内容（从 read 结果复制，含空格和换行）。',
+  'Search & Replace 修改文件一处。同文件改多处必须用 multi_edit。old_string 必须精确匹配（含空格换行）。',
   {
     path: { type: 'string', description: '文件路径（相对或绝对）' },
     old_string: { type: 'string', description: '要替换的原始文本，必须从 read 结果精确复制' },
@@ -71,7 +71,7 @@ define(
 
 define(
   'multi_edit',
-  '对同一文件执行多处 Search & Replace。一个文件改 N 处时用此工具（1 次调用替代 N 次 edit）。每个 old_string 必须精确匹配且唯一。edits 按顺序执行，后续匹配基于已更新的内容。',
+  '同一文件多处 Search & Replace（1 次调用替代 N 次 edit）。edits 按顺序执行，后续匹配基于已更新内容。',
   {
     path: { type: 'string', description: '文件路径' },
     edits: {

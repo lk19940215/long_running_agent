@@ -5,6 +5,8 @@
  *   1. 单轮 — input: "读取文件"
  *   2. 多轮 — inputs: ["读取文件", "修复 bug", "验证"]
  *   3. 长上下文 — prefill: [...历史消息], input: "在此基础上..."
+ *
+ * 支持 repeat (Pass@k)：每个 case 跑 N 次，统计通过率
  */
 
 import { cp, rm } from 'fs/promises';
@@ -78,38 +80,23 @@ function mergeTraces(traces) {
   };
 }
 
-// ─── 执行单个 Case ───────────────────────────────────────
+// ─── 执行单次运行 ───────────────────────────────────────
 
-export async function runCase(agent, caseSpec, logger) {
+async function runOnce(agent, caseSpec, logger) {
   const startTime = Date.now();
-
-  // 确定输入列表（单轮 vs 多轮）
   const inputs = caseSpec.inputs || [caseSpec.input];
-  const isMultiTurn = inputs.length > 1;
-
-  console.log(`\n  ▸ ${caseSpec.id}: ${caseSpec.name}${isMultiTurn ? ` (${inputs.length} 轮)` : ''}`);
-  console.log(`    输入: "${inputs[0].substring(0, 60)}${inputs[0].length > 60 ? '...' : ''}"`);
-
-  // 初始化 messages（支持 prefill 预填充）
   const messages = caseSpec.prefill ? [...caseSpec.prefill] : [];
 
-  // 逐轮执行，共享 messages
   const traces = [];
   for (let i = 0; i < inputs.length; i++) {
     logger?.round(inputs[i]);
-
-    if (isMultiTurn && i > 0) {
-      console.log(`    ↳ 第${i + 1}轮: "${inputs[i].substring(0, 50)}${inputs[i].length > 50 ? '...' : ''}"`);
-    }
-
-    const trace = await agent.run(inputs[i], messages, {}, { maxTurns: 10 });
+    const trace = await agent.run(inputs[i], { messages, maxTurns: 10, temperature: 0 });
     traces.push(trace);
   }
 
   const elapsed = Date.now() - startTime;
   const combined = traces.length === 1 ? traces[0] : mergeTraces(traces);
 
-  // 验证
   try {
     const result = caseSpec.expect.validate(combined);
     combined.validated = result instanceof Promise ? await result : result;
@@ -117,11 +104,46 @@ export async function runCase(agent, caseSpec, logger) {
     combined.validated = false;
   }
 
-  const scores = scoreCase(caseSpec, combined);
+  return { combined, elapsed };
+}
 
-  console.log(`    轮次: ${combined.turns}/${caseSpec.expect.maxAPICalls} | 工具: ${combined.toolCalls.map(t => t.name).join(', ') || '无'}`);
-  console.log(`    Token: ${combined.tokens.input}+${combined.tokens.output} | 耗时: ${(elapsed / 1000).toFixed(1)}s`);
-  console.log(`    验证: ${combined.validated ? '✓ 通过' : '✗ 未通过'} | 得分: ${scores.total}/100`);
+// ─── 执行单个 Case（支持 repeat / Pass@k）───────────────
 
-  return { caseId: caseSpec.id, caseName: caseSpec.name, trace: combined, scores, elapsed };
+export async function runCase(agent, caseSpec, logger, repeat = 1) {
+  const inputs = caseSpec.inputs || [caseSpec.input];
+  const isMultiTurn = inputs.length > 1;
+
+  console.log(`\n  ▸ ${caseSpec.id}: ${caseSpec.name}${isMultiTurn ? ` (${inputs.length} 轮)` : ''}${repeat > 1 ? ` ×${repeat}` : ''}`);
+  console.log(`    输入: "${inputs[0].substring(0, 60)}${inputs[0].length > 60 ? '...' : ''}"`);
+
+  const runs = [];
+  for (let r = 0; r < repeat; r++) {
+    if (repeat > 1) console.log(`    ── 第 ${r + 1}/${repeat} 次运行 ──`);
+    await restoreSandbox();
+    const { combined, elapsed } = await runOnce(agent, caseSpec, logger);
+    const scores = scoreCase(caseSpec, combined);
+    runs.push({ trace: combined, scores, elapsed });
+
+    console.log(`    轮次: ${combined.turns}/${caseSpec.expect.maxAPICalls} | 工具: ${combined.toolCalls.map(t => t.name).join(', ') || '无'}`);
+    console.log(`    Token: ${combined.tokens.input}+${combined.tokens.output} | 耗时: ${(elapsed / 1000).toFixed(1)}s`);
+    console.log(`    验证: ${combined.validated ? '✓ 通过' : '✗ 未通过'} | 得分: ${scores.total}/100`);
+  }
+
+  const best = Math.max(...runs.map(r => r.scores.total));
+  const avg = Math.round(runs.reduce((s, r) => s + r.scores.total, 0) / runs.length);
+  const passRate = runs.filter(r => r.scores.total >= 80).length / runs.length;
+
+  if (repeat > 1) {
+    console.log(`    ── 汇总: best=${best} avg=${avg} pass@${repeat}=${(passRate * 100).toFixed(0)}% ──`);
+  }
+
+  return {
+    caseId: caseSpec.id,
+    caseName: caseSpec.name,
+    trace: runs[0].trace,
+    scores: runs[0].scores,
+    elapsed: runs[0].elapsed,
+    runs: repeat > 1 ? runs : undefined,
+    passK: repeat > 1 ? { best, avg, passRate, k: repeat } : undefined,
+  };
 }

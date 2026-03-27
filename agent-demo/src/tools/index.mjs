@@ -7,9 +7,10 @@ import { registry } from './registry.mjs';
 // 注册所有工具（import 即执行 define）
 // task 必须在基础工具之后注册（SubAgent 依赖 read/grep/glob/ls/symbols）
 import './file.mjs';
-import './search.mjs';
+import './grep.mjs';
+import './ls.mjs';
 import './glob.mjs';
-import './ast.mjs';
+import './symbols.mjs';
 import './bash.mjs';
 import './task.mjs';
 

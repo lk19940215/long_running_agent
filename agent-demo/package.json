@@ -4,6 +4,8 @@
   "type": "module",
   "scripts": {
     "start": "node --no-deprecation src/agent.mjs",
+    "eval": "node --no-deprecation src/eval.mjs",
+    "eval:quick": "node --no-deprecation src/eval.mjs read_basic fix_bug py_fix go_fix cross_lang_search",
     "clean": "rm -rf logs/*.log logs/*.json && echo 'logs 已清除'"
   },
   "engines": {

@@ -1,22 +1,12 @@
 /**
- * AI Coding Agent - 交互模式
+ * AI Coding Agent — 支持交互模式和 headless 模式
  *
- * 基于 AgentCore 引擎，叠加 Ink UI 和日志。
- *
- * 流程:
- *   while(true) {
- *     1. 等待用户输入
- *     2. AgentCore.run(input) — 流式回调驱动 UI
- *     3. 完成后回到 1
- *   }
- *
- * 运行: npm start
- * 恢复会话: RESUME_FILE=logs/xxx-messages.json npm start
+ * 交互模式:  npm start                           (Ink UI + 流式输出)
+ * Headless:  node src/agent.mjs -p "任务描述"      (console 输出)
  */
 
 import { API_KEY, BASE_URL, DEFAULT_MODEL, MAX_TOKENS, DEBUG, SYSTEM_PROMPT, RESUME_FILE } from './config.mjs';
 import { AgentCore } from './core/agent-core.mjs';
-import { createDisplay } from './core/ink.mjs';
 import { Logger } from './core/logger.mjs';
 import { Messages } from './core/messages.mjs';
 import { taskEvents } from './tools/task.mjs';
@@ -50,43 +40,16 @@ function toolInputPreview(name, input) {
   return JSON.stringify(input).substring(0, 80);
 }
 
-// ─── 初始化 ───────────────────────────────────────────────
+// ─── 共用初始化 ──────────────────────────────────────────────
 
-const logger = new Logger(DEBUG, { silent: true });
-const messages = new Messages();
-const display = createDisplay();
+async function setup() {
+  const logger = new Logger(DEBUG, { silent: true });
+  const messages = new Messages();
+  const agent = new AgentCore({
+    apiKey: API_KEY, baseURL: BASE_URL, model: DEFAULT_MODEL,
+    maxTokens: MAX_TOKENS, systemPrompt: SYSTEM_PROMPT, logger,
+  });
 
-const agent = new AgentCore({
-  apiKey: API_KEY,
-  baseURL: BASE_URL,
-  model: DEFAULT_MODEL,
-  maxTokens: MAX_TOKENS,
-  systemPrompt: SYSTEM_PROMPT,
-  logger,
-});
-
-const callbacks = {
-  onStatus(state) { display.status(state); },
-  onToolStart(name, input) {
-    if (name === 'task') display.status('sub-agent');
-    display.toolStart(name, toolInputPreview(name, input));
-  },
-  onToolEnd(name, result, success) {
-    display.toolEnd(name, result.length, toolResultPreview(name, result), success);
-  },
-  onBlockStart(type) { display.startStream(type); },
-  onBlockEnd() { display.finishStream(); },
-  onText(chunk) { display.appendText(chunk); },
-  onThinking(chunk) { display.appendText(chunk); },
-  onError(e) { display.print(`❌ 请求失败: ${e.message}`, 'red'); },
-};
-
-// SubAgent 进度事件 → Ink UI
-taskEvents.on('tool', ({ step, name }) => {
-  display.print(`    ↳ SubAgent [${step}] ${name}`, 'magenta');
-});
-
-async function main() {
   const logFile = logger.init();
   await messages.init(logFile);
 
@@ -95,28 +58,84 @@ async function main() {
     if (ok) logger.log('会话恢复', `加载 ${count} 条历史消息`);
   }
 
-  display.start({
-    model: DEFAULT_MODEL,
-    tools: agent.toolSchemas.map(t => t.name),
-    logFile,
+  logger.start({ systemPrompt: SYSTEM_PROMPT, toolSchemas: agent.toolSchemas });
+  return { agent, logger, messages, logFile };
+}
+
+// ─── 构建 UI 回调 ────────────────────────────────────────────
+
+function buildInkCallbacks(display) {
+  taskEvents.on('tool', ({ step, name }) => {
+    display.print(`    ↳ SubAgent [${step}] ${name}`, 'magenta');
   });
 
-  logger.start({
-    systemPrompt: SYSTEM_PROMPT,
-    toolSchemas: agent.toolSchemas,
+  return {
+    status(state) { display.status(state); },
+    toolStart(name, input) {
+      if (name === 'task') display.status('sub-agent');
+      display.toolStart(name, toolInputPreview(name, input));
+    },
+    toolEnd(name, result, success) {
+      display.toolEnd(name, result.length, toolResultPreview(name, result), success);
+    },
+    blockStart(type) { display.startStream(type); },
+    blockEnd() { display.finishStream(); },
+    text(chunk) { display.appendText(chunk); },
+    thinking(chunk) { display.appendText(chunk); },
+    error(e) { display.print(`❌ 请求失败: ${e.message}`, 'red'); },
+  };
+}
+
+function buildConsoleCallbacks() {
+  taskEvents.on('tool', ({ step, name }) => {
+    process.stdout.write(`  ↳ SubAgent [${step}] ${name}\n`);
   });
 
-  while (true) {
-    const input = await display.waitForInput();
-    if (!input) break;
+  return {
+    toolStart(name, input) {
+      process.stdout.write(`  ⚡ ${name} → ${toolInputPreview(name, input)}\n`);
+    },
+    toolEnd(name, result, success) {
+      process.stdout.write(`  ${success ? '✓' : '✗'} ${name} (${result.length} 字符)\n`);
+    },
+    text(chunk) { process.stdout.write(chunk); },
+  };
+}
 
-    display.print(`\n你: ${input}`, 'green', { bold: true });
-    logger.round(input);
+// ─── 入口 ───────────────────────────────────────────────────
 
-    await agent.run(input, messages, callbacks, { stream: true });
+async function main() {
+  const pIdx = process.argv.indexOf('-p');
+  const prompt = pIdx !== -1 ? process.argv[pIdx + 1] : null;
+
+  const { agent, logger, messages, logFile } = await setup();
+
+  if (prompt) {
+    console.log(`模型: ${DEFAULT_MODEL} | 日志: ${logFile}\n输入: ${prompt}\n`);
+    logger.round(prompt);
+
+    const trace = await agent.run(prompt, { messages, stream: true, on: buildConsoleCallbacks() });
+
+    console.log(`\n── 完成 ──`);
+    console.log(`轮次: ${trace.turns} | 工具: ${trace.toolCalls.map(t => t.name).join(', ') || '无'}`);
+    console.log(`Token: ${trace.tokens.input}+${trace.tokens.output}`);
+  } else {
+    const { createDisplay } = await import('./core/ink.mjs');
+    const display = createDisplay();
+    const on = buildInkCallbacks(display);
+
+    display.start({ model: DEFAULT_MODEL, tools: agent.toolSchemas.map(t => t.name), logFile });
+
+    while (true) {
+      const input = await display.waitForInput();
+      if (!input) break;
+      display.print(`\n你: ${input}`, 'green', { bold: true });
+      logger.round(input);
+      await agent.run(input, { messages, stream: true, on });
+    }
+
+    display.destroy();
   }
-
-  display.destroy();
 }
 
 main();

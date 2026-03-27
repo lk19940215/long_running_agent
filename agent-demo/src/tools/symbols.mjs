@@ -1,5 +1,5 @@
 /**
- * 代码结构分析工具：code_symbols
+ * symbols 工具 — 代码结构分析
  * 底层使用 web-tree-sitter (WASM) 解析 AST
  * wasm 来源：@repomix/tree-sitter-wasms
  */
@@ -9,16 +9,47 @@ import { readFile } from 'fs/promises';
 import { join, extname } from 'path';
 import { define } from './registry.mjs';
 
-const LANG_MAP = {
+const WASM_DIR = join(process.cwd(), 'node_modules/@repomix/tree-sitter-wasms/out');
+
+const EXT_TO_LANG = {
   '.js': 'javascript', '.mjs': 'javascript', '.cjs': 'javascript', '.jsx': 'javascript',
-  '.ts': 'typescript', '.tsx': 'typescript',
+  '.ts': 'typescript', '.tsx': 'tsx',
   '.py': 'python',
+  '.rs': 'rust',
+  '.go': 'go',
+  '.java': 'java',
+  '.rb': 'ruby',
+  '.php': 'php',
+  '.c': 'c', '.h': 'c',
+  '.cpp': 'cpp', '.cc': 'cpp', '.cxx': 'cpp', '.hpp': 'cpp',
+  '.cs': 'c_sharp',
+  '.swift': 'swift',
+  '.dart': 'dart',
+  '.css': 'css',
+  '.vue': 'vue',
+  '.sol': 'solidity',
 };
 
+function getSupportedExts() {
+  return Object.keys(EXT_TO_LANG).join(', ');
+}
+
 const SYMBOL_TYPES = new Set([
+  // JS/TS
   'function_declaration', 'class_declaration',
   'lexical_declaration', 'variable_declaration',
   'export_statement', 'expression_statement',
+  'interface_declaration', 'type_alias_declaration', 'enum_declaration',
+  // Python
+  'function_definition', 'class_definition', 'decorated_definition',
+  // Rust
+  'function_item', 'struct_item', 'enum_item', 'impl_item', 'trait_item', 'mod_item',
+  // Go
+  'function_declaration', 'method_declaration', 'type_declaration',
+  // Java/C#
+  'method_declaration', 'class_declaration', 'interface_declaration',
+  // C/C++
+  'function_definition', 'struct_specifier', 'class_specifier',
 ]);
 
 let _ready = false;
@@ -26,7 +57,7 @@ let _parser = null;
 const _langs = {};
 
 async function ensureParser(ext) {
-  const langName = LANG_MAP[ext];
+  const langName = EXT_TO_LANG[ext];
   if (!langName) return null;
 
   if (!_ready) {
@@ -36,10 +67,7 @@ async function ensureParser(ext) {
   }
 
   if (!_langs[langName]) {
-    const wasmPath = join(
-      process.cwd(), 'node_modules/@repomix/tree-sitter-wasms/out',
-      `tree-sitter-${langName}.wasm`
-    );
+    const wasmPath = join(WASM_DIR, `tree-sitter-${langName}.wasm`);
     _langs[langName] = await Language.load(wasmPath);
   }
 
@@ -50,14 +78,42 @@ async function ensureParser(ext) {
 function extractName(node) {
   const { type } = node;
 
-  if (type === 'function_declaration' || type === 'class_declaration') {
+  const NAME_FIELD_TYPES = new Set([
+    'function_declaration', 'class_declaration', 'function_definition',
+    'class_definition', 'function_item', 'struct_item', 'enum_item',
+    'trait_item', 'mod_item', 'method_declaration',
+    'interface_declaration', 'type_alias_declaration', 'enum_declaration',
+    'struct_specifier', 'class_specifier',
+  ]);
+
+  if (NAME_FIELD_TYPES.has(type)) {
     return node.childForFieldName('name')?.text || '';
+  }
+
+  // Go: type Config struct {} → type_declaration > type_spec > name
+  if (type === 'type_declaration') {
+    const spec = node.namedChildren.find(c => c.type === 'type_spec');
+    return spec?.childForFieldName('name')?.text || '';
+  }
+
+  // Rust: impl<T> Stack<T> {} → type field; impl Trait for Type → trait field
+  if (type === 'impl_item') {
+    const trait = node.childForFieldName('trait')?.text;
+    const implType = node.childForFieldName('type')?.text;
+    return trait ? `${trait} for ${implType}` : implType || '';
+  }
+
+  if (type === 'decorated_definition') {
+    const def = node.namedChildren.find(c =>
+      c.type === 'function_definition' || c.type === 'class_definition'
+    );
+    return def?.childForFieldName('name')?.text || '';
   }
 
   if (type === 'export_statement') {
     const decl = node.namedChild(0);
     if (!decl) return 'export';
-    if (decl.type === 'function_declaration' || decl.type === 'class_declaration') {
+    if (NAME_FIELD_TYPES.has(decl.type)) {
       return decl.childForFieldName('name')?.text || '';
     }
     if (decl.type === 'lexical_declaration' || decl.type === 'variable_declaration') {
@@ -89,7 +145,7 @@ function extractName(node) {
 async function parseFile(filePath) {
   const ext = extname(filePath);
   const parser = await ensureParser(ext);
-  if (!parser) return { error: `不支持的文件类型: ${ext}（支持: .js, .mjs, .ts, .py）` };
+  if (!parser) return { error: `不支持的文件类型: ${ext}（支持: ${getSupportedExts()}）` };
 
   const code = await readFile(filePath, 'utf-8');
   return { tree: parser.parse(code) };
@@ -136,7 +192,7 @@ async function getDefinition(filePath, name) {
 
 define(
   'symbols',
-  '分析代码结构。mode=list 列出文件所有符号（函数、类、变量）及行号。mode=definition 获取指定符号的完整代码。比 read 更精确，避免读取整个文件。',
+  '分析代码结构（AST）。list 列出符号及行号，definition 获取指定符号代码。支持 JS/TS/Python/Rust/Go/Java/C/C++/Ruby/PHP/Swift/Dart 等 17 种语言。',
   {
     path: { type: 'string', description: '文件路径' },
     mode: { type: 'string', description: '"list" 列出符号，"definition" 获取指定符号代码' },

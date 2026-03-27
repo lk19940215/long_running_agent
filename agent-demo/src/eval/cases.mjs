@@ -23,9 +23,7 @@ export const CASES = [
     expect: {
       tools: ['read'],
       maxAPICalls: 2,
-      validate: (trace) => {
-        return trace.toolCalls.find(t => t.name === 'read')?.success === true;
-      },
+      validate: (trace) => trace.toolCalls.find(t => t.name === 'read')?.success === true,
     },
   },
   {
@@ -35,29 +33,15 @@ export const CASES = [
     expect: {
       tools: ['ls', 'glob'],
       maxAPICalls: 3,
-      validate: (trace) => {
-        return trace.toolCalls.some(t => t.name === 'ls' || t.name === 'glob');
-      },
+      validate: (trace) => trace.toolCalls.some(t => t.name === 'ls' || t.name === 'glob'),
     },
   },
 
-  // ─── shopping-cart 项目 ────────────────────────────────
+  // ─── JS 项目 ──────────────────────────────────────────
 
-  {
-    id: 'search_function',
-    name: '搜索函数',
-    input: '在 test-example 目录中找到 calculateDiscount 函数的定义，告诉我它在哪个文件、什么逻辑',
-    expect: {
-      tools: ['grep', 'symbols'],
-      maxAPICalls: 5,
-      validate: (trace) => {
-        return trace.toolCalls.some(t => t.name === 'grep' || t.name === 'symbols');
-      },
-    },
-  },
   {
     id: 'fix_bug',
-    name: '修复 Bug',
+    name: 'JS 修复 Bug',
     input: 'test-example/shopping-cart/cart.mjs 的 getSubtotal() 方法有 bug：计算小计时应该用乘法 (price * quantity)，而不是加法 (price + quantity)。请修复。',
     expect: {
       tools: ['read', 'edit'],
@@ -70,7 +54,7 @@ export const CASES = [
   },
   {
     id: 'multi_edit',
-    name: '多处修改',
+    name: 'JS 多处修改',
     input: '在 test-example/shopping-cart/utils.mjs 中：1) 给 calculateDiscount 函数加一个参数 vipLevel（默认 0），2) 把 validateQuantity 函数中 qty < 0 改成 qty <= 0',
     expect: {
       tools: ['read', 'multi_edit'],
@@ -83,7 +67,7 @@ export const CASES = [
   },
   {
     id: 'explore_then_edit',
-    name: '探索后编辑',
+    name: 'JS 探索后编辑',
     input: '在 test-example 中找到 TAX_RATE 常量，把它从 0.08 改成 0.1',
     expect: {
       tools: ['grep', 'read', 'edit'],
@@ -95,90 +79,104 @@ export const CASES = [
     },
   },
 
-  // ─── todo-app 项目 ────────────────────────────────────
+  // ─── Python 项目 ──────────────────────────────────────
 
   {
-    id: 'todo_add_feature',
-    name: '添加功能',
-    input: '给 test-example/todo-app/store.mjs 的 TodoStore 类添加一个 clear() 方法，清空所有 todo（this.todos = []）',
+    id: 'py_search',
+    name: 'Python 搜索函数',
+    input: '在 test-example/py-utils 中找到所有 def 定义的函数，告诉我每个函数的用途',
+    expect: {
+      tools: ['grep', 'symbols'],
+      maxAPICalls: 4,
+      validate: (trace) => {
+        return trace.toolCalls.some(t => t.name === 'grep' || t.name === 'symbols')
+          && trace.finalText.includes('calculator') || trace.finalText.includes('validator');
+      },
+    },
+  },
+  {
+    id: 'py_fix',
+    name: 'Python 修复 Bug',
+    input: 'test-example/py-utils/calculator.py 的 divide 函数，把错误信息从 "Cannot divide by zero" 改成 "Division by zero is not allowed"',
     expect: {
       tools: ['read', 'edit'],
       maxAPICalls: 4,
       validate: async () => {
-        const content = await readFile('test-example/todo-app/store.mjs', 'utf-8');
-        return content.includes('clear()') && content.includes('this.todos = []');
+        const content = await readFile('test-example/py-utils/calculator.py', 'utf-8');
+        return content.includes('Division by zero is not allowed');
       },
     },
   },
+
+  // ─── Go 项目 ──────────────────────────────────────────
+
   {
-    id: 'todo_cross_file',
-    name: '跨文件修改',
-    input: '在 test-example/todo-app 中：1) 给 formatter.mjs 添加一个 formatSummary(todos) 函数，返回 "共N项，已完成M项" 格式的字符串，2) 在 cli.mjs 的 stats case 中使用 formatSummary 替代 formatStats',
+    id: 'go_search',
+    name: 'Go 搜索函数',
+    input: '在 test-example/go-api 中找到所有 func 定义，告诉我有哪些 HTTP handler',
     expect: {
-      tools: ['read', 'edit', 'multi_edit'],
-      maxAPICalls: 6,
-      validate: async () => {
-        const formatter = await readFile('test-example/todo-app/formatter.mjs', 'utf-8');
-        const cli = await readFile('test-example/todo-app/cli.mjs', 'utf-8');
-        return formatter.includes('formatSummary') && cli.includes('formatSummary');
+      tools: ['grep', 'symbols'],
+      maxAPICalls: 4,
+      validate: (trace) => {
+        return trace.finalText.includes('HandleHealth') || trace.finalText.includes('HandleCreateUser');
       },
     },
   },
-
-  // ─── string-utils 项目 ────────────────────────────────
-
   {
-    id: 'improve_validation',
-    name: '改进验证逻辑',
-    input: 'test-example/string-utils/validate.mjs 中的 isEmail 函数太简单了（只检查是否包含@），请改进它，至少要检查：包含@、@前后都有字符、@后面有点号',
+    id: 'go_fix',
+    name: 'Go 修改配置',
+    input: 'test-example/go-api/config.go 中默认端口是 8080，改成 3000',
     expect: {
       tools: ['read', 'edit'],
       maxAPICalls: 4,
       validate: async () => {
-        const content = await readFile('test-example/string-utils/validate.mjs', 'utf-8');
-        return content.includes('isEmail') && !content.includes("return str.includes('@');");
+        const content = await readFile('test-example/go-api/config.go', 'utf-8');
+        return content.includes('3000') && !content.includes('8080');
       },
     },
   },
+
+  // ─── Rust 项目 ─────────────────────────────────────────
+
   {
-    id: 'add_null_safety',
-    name: '增加空值保护',
-    input: 'test-example/string-utils/validate.mjs 中的 isEmpty 函数没有处理 null/undefined 输入会报错。请修复：当输入为 null 或 undefined 时返回 true',
+    id: 'rust_search',
+    name: 'Rust 搜索结构',
+    input: '在 test-example/rust-lib/lib.rs 中有哪些 struct 和 trait？列出它们的名称和方法',
     expect: {
-      tools: ['read', 'edit'],
+      tools: ['read', 'symbols'],
       maxAPICalls: 4,
-      validate: async () => {
-        const content = await readFile('test-example/string-utils/validate.mjs', 'utf-8');
-        return content.includes('null') || content.includes('undefined') || content.includes('!str');
+      validate: (trace) => {
+        return trace.finalText.includes('Stack') && trace.finalText.includes('Printable');
       },
     },
   },
 
-  // ─── 跨项目 ───────────────────────────────────────────
+  // ─── 跨语言搜索 ────────────────────────────────────────
 
   {
-    id: 'cross_project_search',
-    name: '跨项目搜索',
-    input: '在 test-example 中搜索所有导出了 format 开头函数的文件，告诉我分别在哪些文件里',
+    id: 'cross_lang_search',
+    name: '跨语言搜索',
+    input: '在 test-example 中搜索所有跟 "validate" 或 "validator" 相关的函数，不论语言（JS、Python、Go 都要搜），告诉我在哪些文件',
     expect: {
       tools: ['grep'],
       maxAPICalls: 3,
       validate: (trace) => {
-        return trace.toolCalls.some(t => t.name === 'grep') && trace.finalText.includes('format');
+        const text = trace.finalText;
+        return trace.toolCalls.some(t => t.name === 'grep')
+          && (text.includes('validate.mjs') || text.includes('validator.py'));
       },
     },
   },
   {
     id: 'bash_verify',
     name: '命令验证',
-    input: '读取 test-example/shopping-cart/config.mjs，把 MAX_ITEMS 从 50 改成 100，然后用 bash 命令 grep MAX_ITEMS test-example/shopping-cart/config.mjs 验证修改成功',
+    input: '读取 test-example/shopping-cart/config.mjs，把 MAX_ITEMS 从 50 改成 100，然后用 bash 命令验证修改成功',
     expect: {
       tools: ['read', 'edit', 'bash'],
       maxAPICalls: 6,
       validate: async (trace) => {
         const content = await readFile('test-example/shopping-cart/config.mjs', 'utf-8');
-        const hasBash = trace.toolCalls.some(t => t.name === 'bash');
-        return content.includes('100') && hasBash;
+        return content.includes('100') && trace.toolCalls.some(t => t.name === 'bash');
       },
     },
   },
@@ -189,16 +187,16 @@ export const CASES = [
     id: 'multi_turn_explore',
     name: '多轮探索修复',
     inputs: [
-      '查看 test-example/shopping-cart/ 目录有哪些文件',
-      '读取 cart.mjs，告诉我 getSubtotal 方法的逻辑',
-      'getSubtotal 里 price + quantity 应该是 price * quantity，请修复',
+      '查看 test-example/py-utils/ 目录有哪些文件',
+      '读取 calculator.py，告诉我 Calculator 类有哪些方法',
+      'calc 方法里 ops 字典缺少取模运算，请添加 "mod": 对应 a % b 的 lambda 函数',
     ],
     expect: {
       tools: ['ls', 'read', 'edit'],
       maxAPICalls: 8,
       validate: async () => {
-        const content = await readFile('test-example/shopping-cart/cart.mjs', 'utf-8');
-        return content.includes('item.price * item.quantity');
+        const content = await readFile('test-example/py-utils/calculator.py', 'utf-8');
+        return content.includes('mod') && content.includes('%');
       },
     },
   },
@@ -214,31 +212,29 @@ export const CASES = [
       maxAPICalls: 6,
       validate: async () => {
         const content = await readFile('test-example/string-utils/validate.mjs', 'utf-8');
-        const emailSafe = content.includes('!str') || content.includes('null') || content.includes('typeof');
-        const emptySafe = content.includes('!str') || (content.includes('null') && content.includes('isEmpty'));
-        return emailSafe && emptySafe;
+        return content.includes('!str') || content.includes('null') || content.includes('typeof');
       },
     },
   },
 
-  // ─── SubAgent（task 工具）────────────────────────────
+  // ─── SubAgent ─────────────────────────────────────────
 
   {
     id: 'task_analyze',
-    name: 'SubAgent 项目分析',
-    input: '用 task 工具委派一个子任务：分析 test-example 目录下有哪些子项目，每个项目的核心文件和功能是什么。汇总结果告诉我。',
+    name: 'SubAgent 多语言分析',
+    input: '用 task 工具委派一个子任务：分析 test-example 目录下有哪些子项目，每个项目用什么语言、核心文件和功能是什么。',
     expect: {
       tools: ['task'],
       maxAPICalls: 3,
       validate: (trace) => {
         const usedTask = trace.toolCalls.some(t => t.name === 'task' && t.success);
-        const mentionsProjects = trace.finalText.includes('shopping') || trace.finalText.includes('todo');
-        return usedTask && mentionsProjects;
+        const mentionsLangs = trace.finalText.includes('Python') || trace.finalText.includes('Go') || trace.finalText.includes('Rust');
+        return usedTask && mentionsLangs;
       },
     },
   },
 
-  // ─── 长上下文（注意力测试）────────────────────────────
+  // ─── 长上下文 ─────────────────────────────────────────
 
   {
     id: 'context_attention',
@@ -248,9 +244,7 @@ export const CASES = [
     expect: {
       tools: ['read'],
       maxAPICalls: 3,
-      validate: (trace) => {
-        return trace.finalText.includes('99') && trace.toolCalls.some(t => t.name === 'read');
-      },
+      validate: (trace) => trace.finalText.includes('99') && trace.toolCalls.some(t => t.name === 'read'),
     },
   },
 ];
