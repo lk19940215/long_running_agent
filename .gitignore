@@ -9,3 +9,5 @@ node_modules/
 .playwright-mcp/
 .claude-coder/.runtime/browser-profile
 .claude-coder/.env
+
+Deep-Dive-Claude-Code-master/
