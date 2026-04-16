@@ -1,3 +1,14 @@
+// ============================================================================
+// 📁 文件：query/deps.ts
+// 📌 一句话：query() 的 I/O 依赖注入点——4 个核心依赖，测试可替换。
+//
+// 设计意图：
+//   query() 依赖 callModel / microcompact / autocompact / uuid 这 4 个 I/O 操作。
+//   通过 QueryDeps 接口注入，测试时传 fakes 即可，无需 spyOn 各个模块。
+//   用 `typeof fn` 保持签名与真实实现自动同步。
+//   范围故意很窄（4 个）以验证模式，后续可扩展到 runTools / handleStopHooks 等。
+// ============================================================================
+
 import { randomUUID } from 'crypto'
 import { queryModelWithStreaming } from '../services/api/claude.js'
 import { autoCompactIfNeeded } from '../services/compact/autoCompact.js'

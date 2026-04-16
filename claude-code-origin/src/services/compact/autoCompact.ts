@@ -2,9 +2,42 @@
 // 📁 文件：autoCompact.ts
 // 📌 定位：自动压缩触发器——token 超阈值时调用模型生成摘要
 //
-// 核心概念：
-//   - autoCompactIfNeeded() 检查阈值 → 优先 SessionMemoryCompact → 回退 compactConversation()，含熔断器（连续 3 次失败停止）
-// 详细文档：→ 源码阅读/05-上下文压缩.md
+// ── 设计概览 ──────────────────────────────────────────────────────────
+//
+//   这是 query.ts 压缩管道（🅶 区域）中的第 4 层——最重量级的自动压缩。
+//   只有前 3 层（snip → microcompact → collapse）不够时才触发。
+//
+// ── 核心函数 ──────────────────────────────────────────────────────────
+//
+//   getEffectiveContextWindowSize(model)  — 有效窗口 = 模型窗口 - 预留输出 token
+//   calculateTokenWarningState(count, model)  — 计算当前 token 状态：
+//     isAtBlockingLimit → 超硬限制（auto-compact 关闭时才用）
+//     isNearLimit → 接近阈值，显示警告
+//
+//   autoCompactIfNeeded(messages, toolUseContext, cacheSafeParams, ...)
+//     ↓ token < 阈值？ → no-op
+//     ↓ 连续失败 >= 3？ → 熔断，不再尝试
+//     ↓ 优先 SessionMemoryCompact（新方式）
+//     ↓ 回退 compactConversation()（传统方式）
+//     ↓ 成功 → 返回 CompactionResult
+//     ↓ 失败 → 记录 consecutiveFailures → 下次迭代熔断
+//
+// ── 阈值设计 ──────────────────────────────────────────────────────────
+//
+//   有效窗口 = 模型上下文窗口 - min(模型最大输出, 20000)
+//   自动压缩阈值 = 有效窗口 - 13000（缓冲区）
+//   阻塞限制阈值 = 更高门槛（为 /compact 预留空间）
+//
+// ── AutoCompactTrackingState ──────────────────────────────────────────
+//
+//   {
+//     compacted: boolean      — 本次 query 是否压缩过
+//     turnId: string          — 最近一次压缩的 ID
+//     turnCounter: number     — 压缩后经过的轮次
+//     consecutiveFailures: number — 连续压缩失败次数（熔断器）
+//   }
+//
+// 详细文档：→ 源码阅读/02-核心对话循环.md → 上下文压缩管道
 // ============================================================================
 
 import { feature } from 'bun:bundle'

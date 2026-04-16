@@ -1,3 +1,14 @@
+// ============================================================================
+// 📁 文件：query/config.ts
+// 📌 一句话：query() 入口处一次性快照的不可变配置——session ID + 4 个运行时门控。
+//
+// 设计意图：
+//   将不可变的环境/statsig/会话状态与可变的 State 分离。
+//   未来可做 (state, event, config) 纯函数 reducer，config 是只读上下文。
+//   注意：故意不包含 feature() 门控——那些是 bun:bundle 的 tree-shaking 边界，
+//   必须留在被守护的代码块处（内联 if），否则死代码消除失效。
+// ============================================================================
+
 import { getSessionId } from '../bootstrap/state.js'
 import { checkStatsigFeatureGate_CACHED_MAY_BE_STALE } from '../services/analytics/growthbook.js'
 import type { SessionId } from '../types/ids.js'

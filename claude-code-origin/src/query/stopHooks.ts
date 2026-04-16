@@ -1,3 +1,24 @@
+// ============================================================================
+// 📁 文件：query/stopHooks.ts
+// 📌 一句话：模型回复无 tool_use 时的"出口守卫"——决定是放行、阻止还是追加任务。
+//
+// 设计意图：
+//   当 query 循环准备退出（!needsFollowUp）时，handleStopHooks 做最后检查：
+//   1. 执行用户定义的 stop hooks → 如有 blockingErrors → 注入消息 → continue
+//   2. 检查 task completed hooks → 评估任务完成度
+//   3. 检查 teammate idle hooks → 多 agent 协作中通知空闲
+//   4. 提取记忆（extractMemories）→ 异步保存关键信息
+//   5. 提示建议（promptSuggestion）→ 异步生成后续建议
+//   6. 自动梦境（autoDream）→ 自动发现和保存工作模式
+//   7. Computer Use 清理 → 释放锁和取消隐藏
+//
+// 返回值：
+//   StopHookResult = {
+//     blockingErrors: Message[]       — 非空 → query 循环 continue
+//     preventContinuation: boolean    — true → 强制停止，不允许后续
+//   }
+// ============================================================================
+
 import { feature } from 'bun:bundle'
 import { getShortcutDisplay } from '../keybindings/shortcutFormat.js'
 import { isExtractModeActive } from '../memdir/paths.js'
